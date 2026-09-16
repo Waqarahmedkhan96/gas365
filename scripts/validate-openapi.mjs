@@ -9,6 +9,19 @@ const schema = await response.json();
 await SwaggerParser.validate(structuredClone(schema));
 if (!schema.paths['/api/health']?.get?.responses['503'])
   throw new Error('Missing health failure contract');
+for (const [path, method] of [
+  ['/api/auth/login', 'post'],
+  ['/api/auth/me', 'get'],
+  ['/api/auth/sessions/{id}', 'delete'],
+  ['/api/workspace/tenant', 'put'],
+  ['/api/workspace/branches', 'post'],
+  ['/api/workspace/roles', 'post'],
+  ['/api/workspace/members', 'post'],
+  ['/api/workspace/audit', 'get'],
+]) {
+  if (!schema.paths[path]?.[method])
+    throw new Error(`Missing access contract: ${method} ${path}`);
+}
 await mkdir('artifacts', { recursive: true });
 await writeFile('artifacts/openapi.json', JSON.stringify(schema, null, 2));
 console.log('OpenAPI validated and saved to artifacts/openapi.json');

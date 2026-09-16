@@ -12,7 +12,9 @@ No global PostgreSQL installation is needed. The Compose configuration is for lo
 node scripts/bootstrap.mjs
 ```
 
-The script creates `.env` from the template with a random local database password if absent, builds both images, and waits for PostgreSQL, API and web health checks. It never replaces existing credentials. Open [localhost:8080](http://localhost:8080). Ports are configurable in `.env`.
+The script creates `.env` from the template with a random local database password if absent, builds both images, runs the separate migration job, and waits for PostgreSQL, API and web health checks. It never replaces existing credentials. Open [localhost:8080](http://localhost:8080). Ports are configurable in `.env`.
+
+Choose **Open workspace**, then **Create a workspace**. Register with an email and your own password, open the verification email in [the local inbox](http://localhost:8025), verify, and sign in. Mailpit captures local email without sending it externally. There are no default accounts or passwords. The owner can manage business settings, branches, team invitations, roles, sessions and activity. New team members receive a set-password link; existing accounts can switch workspaces after signing in.
 
 Do not share `.env`. The example has no usable password. A changed password does not automatically change an existing database volume's credentials. Stop services using `docker compose down`; this preserves the data volume. Removing a volume destroys its database and must be deliberate.
 
@@ -23,7 +25,8 @@ pnpm install --frozen-lockfile
 dotnet restore --locked-mode
 dotnet tool restore
 node scripts/bootstrap.mjs --env-only
-docker compose up -d --wait postgres
+docker compose up -d --wait postgres mailpit
+pnpm db:migrate
 pnpm api
 ```
 
@@ -50,12 +53,14 @@ pnpm test:e2e
 
 Integration tests create and drop an isolated random test database on the local PostgreSQL service, requiring CREATE DATABASE permission. `scripts/dotnet.mjs` supplies local environment values without printing credentials. Alternatively set `GAS365_TEST_DATABASE` explicitly. Tests fail rather than silently skip if PostgreSQL is unavailable. Never target production with this test account.
 
-Browser tests expect the complete Compose platform. OpenAPI validation expects the Development API at port 5080. Override `WEB_URL` and `OPENAPI_URL` if needed. API liveness is `/health/live`; database readiness is `/health/ready`; the typed frontend contract is `/api/health`. Only Development exposes `/openapi/v1.json`.
+Browser tests expect the complete Compose platform, including Mailpit at port 8025, and create synthetic accounts. OpenAPI validation expects the Development API at port 5080. Override `WEB_URL` and `OPENAPI_URL` if needed. API liveness is `/health/live`; database readiness is `/health/ready`; the typed frontend contract is `/api/health`. Only Development exposes `/openapi/v1.json`.
 
 ## Migrations and environments
 
-`InitialBaseline` is an empty EF migration that establishes migration history without product tables. Apply it explicitly using `pnpm db:migrate`. API replicas never auto-migrate on startup. Tests apply it to an empty database, reapply it and check model drift. There is no older product schema to upgrade yet.
+`InitialBaseline` establishes migration history. `IdentityAndTenancy` adds Identity accounts, tenants, memberships, branches, tenant roles, branch grants, sessions and audit events. Bootstrap runs a separate, one-shot `migrate` container before starting the API. Apply migrations manually using `pnpm db:migrate`; API replicas never auto-migrate during ordinary startup. Tests cover empty databases, upgrade from Phase 01, repeat application and model drift. The down migration removes identity/workspace data: restore a backup for recovery instead of rolling it back against valuable accounts.
 
-Development, Staging and Production settings contain no credentials. Set `ConnectionStrings__Database` via the environment or a secret manager. Configure allowed hosts, HTTPS termination and isolated database credentials for a deployment. Authentication and business endpoints are outside Phase 01.
+Development, Staging and Production settings contain no credentials. Set `ConnectionStrings__Database` via the environment or a secret manager. See [authentication decisions](adr/003-authentication.md) for session settings. Production requires same-origin HTTPS routing, allowed hosts, trusted proxy configuration, a shared protected Data Protection key store, TLS SMTP and isolated database credentials. Configure `Mail__Host`, `Mail__Port`, `Mail__PublicOrigin`, `Mail__From` and optional `Mail__Username`/`Mail__Password` through the deployment environment. Never expose Mailpit publicly.
+
+Provisioning limits default to 3 active branches, 10 active users and 3 active administrators including the owner. Override `Provisioning__MaxBranches`, `Provisioning__MaxUsers` and `Provisioning__MaxAdmins` before creating a tenant; existing tenants retain their stored limits. These are development defaults pending commercial plan decisions in Phase 10. The browser cannot change limits. Local Data Protection keys persist in the `identity-keys` volume; this local volume is not encrypted at rest. Removing it invalidates cookies and outstanding account links.
 
 CI builds SHA-tagged images, starts Compose, runs the same checks, validates OpenAPI and browser journeys, audits dependencies and retains evidence. No production deployment is configured. Production approval, backup/restore, full security scanning and launch gates remain scheduled work.

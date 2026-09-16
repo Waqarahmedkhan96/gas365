@@ -21,7 +21,7 @@ export function App() {
         <a href="/" className="brand">
           Gas<span>365</span>
         </a>
-        <span className="environment">Local platform</span>
+        <a href="/workspace">Open workspace</a>
       </header>
       <main>
         <p className="eyebrow">PLATFORM STATUS</p>

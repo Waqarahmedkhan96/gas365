@@ -25,10 +25,12 @@ if (args.Contains("--health-probe"))
 }
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 32768);
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.AddAccess();
 
 builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Database")
@@ -39,7 +41,14 @@ builder.Services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgres", tag
 
 var app = builder.Build();
 _ = app.Services.GetRequiredService<NpgsqlDataSource>();
+if (args.Contains("--migrate"))
+{
+    await using var migrationScope = app.Services.CreateAsyncScope();
+    await migrationScope.ServiceProvider.GetRequiredService<Gas365DbContext>().Database.MigrateAsync();
+    return;
+}
 app.UseExceptionHandler();
+app.UseAccess();
 app.Use(async (context, next) =>
 {
     context.Response.Headers.XContentTypeOptions = "nosniff";

@@ -5,6 +5,8 @@ using Gas365.Api;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 
 namespace Gas365.IntegrationTests;
@@ -23,8 +25,10 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
     public async Task BaselineMigrationAppliesToEmptyDatabaseAndIsRepeatable()
     {
         await using var context = database.CreateContext();
-        await context.Database.MigrateAsync();
+        await context.GetService<IMigrator>().MigrateAsync("20260916104311_InitialBaseline");
         Assert.Single(await context.Database.GetAppliedMigrationsAsync());
+        await context.Database.MigrateAsync();
+        Assert.Equal(2, (await context.Database.GetAppliedMigrationsAsync()).Count());
         await context.Database.MigrateAsync();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());
