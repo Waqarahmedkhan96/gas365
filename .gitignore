@@ -1,0 +1,21 @@
+# Original source pack and business data remain local.
+/Gas365-Development-Pack/
+/reference/inputs/
+*.xlsx
+*.xls
+*.zip
+
+# Local credentials, dependencies and generated output.
+.env
+.env.*
+!.env.example
+node_modules/
+bin/
+obj/
+dist/
+coverage/
+playwright-report/
+test-results/
+.vs/
+*.user
+*.log
