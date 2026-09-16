@@ -7,20 +7,20 @@ For the first implementation, use the same general visual family observed in the
 ## Tokens
 
 ```css
---navy-950: #081E31;
---navy-900: #0D2A45;
---navy-800: #12385A;
---blue-600: #1F6FA8;
---blue-500: #2F80B9;
---blue-100: #DCEEF9;
---page: #F7F9FC;
---surface: #FFFFFF;
---border: #E4EAF0;
---text: #1C2B3A;
+--navy-950: #081e31;
+--navy-900: #0d2a45;
+--navy-800: #12385a;
+--blue-600: #1f6fa8;
+--blue-500: #2f80b9;
+--blue-100: #dceef9;
+--page: #f7f9fc;
+--surface: #ffffff;
+--border: #e4eaf0;
+--text: #1c2b3a;
 --muted: #667788;
---success: #17A673;
---warning: #F3A712;
---danger: #D64545;
+--success: #17a673;
+--warning: #f3a712;
+--danger: #d64545;
 ```
 
 Use Inter or a metrically stable open font. Standard radius 8–10 px, card radius 12 px, 4/8/12/16/24/32 spacing scale. Keep dense operational tables readable; do not inflate every element.

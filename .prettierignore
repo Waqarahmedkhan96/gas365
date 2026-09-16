@@ -1,0 +1,12 @@
+Gas365-Development-Pack/
+reference/inputs/
+node_modules/
+pnpm-lock.yaml
+**/packages.lock.json
+**/bin/
+**/obj/
+**/dist/
+**/coverage/
+artifacts/
+playwright-report/
+test-results/

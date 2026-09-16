@@ -1,0 +1,82 @@
+name: Platform checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Restore locked dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          dotnet restore --locked-mode
+          dotnet tool restore
+      - name: Formatting and frontend checks
+        run: |
+          pnpm format:check
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm build
+          dotnet format --verify-no-changes --no-restore
+          dotnet build --no-restore --configuration Release
+      - name: Start local platform
+        run: node scripts/bootstrap.mjs
+      - name: Backend and PostgreSQL tests
+        run: node scripts/dotnet.mjs test --no-build --configuration Release --logger trx --results-directory artifacts/test-results
+      - name: Apply and inspect migration baseline
+        run: |
+          pnpm db:migrate
+          node scripts/dotnet.mjs ef migrations has-pending-model-changes --project src/Gas365.Infrastructure --startup-project src/Gas365.Api
+      - name: OpenAPI and browser smoke tests
+        run: |
+          pnpm validate:openapi
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:e2e
+      - name: Dependency audit
+        run: |
+          pnpm audit --audit-level high
+          dotnet list package --vulnerable --include-transitive --format json > artifacts/nuget-audit.json
+          node scripts/check-nuget-audit.mjs
+      - name: Capture service status
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker compose ps > artifacts/compose-status.txt
+          docker compose logs --no-color > artifacts/compose.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: platform-evidence
+          path: |
+            artifacts/
+            playwright-report/
+            test-results/
+          retention-days: 7
+      - name: Stop test services
+        if: always()
+        run: docker compose down --volumes

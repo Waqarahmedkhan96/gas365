@@ -1,0 +1,29 @@
+{
+  "name": "gas365",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=24.13.1 <25"
+  },
+  "scripts": {
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "dev": "pnpm --filter @gas365/web dev",
+    "build": "pnpm --filter @gas365/web build",
+    "lint": "pnpm --filter @gas365/web lint",
+    "typecheck": "pnpm --filter @gas365/web typecheck",
+    "test": "pnpm --filter @gas365/web test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:e2e": "playwright test",
+    "validate:openapi": "node scripts/validate-openapi.mjs",
+    "db:migrate": "node scripts/dotnet.mjs ef database update --project src/Gas365.Infrastructure --startup-project src/Gas365.Api",
+    "api": "node scripts/dotnet.mjs run --project src/Gas365.Api --no-launch-profile"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6",
+    "@playwright/test": "1.63.0",
+    "@apidevtools/swagger-parser": "13.0.0"
+  }
+}

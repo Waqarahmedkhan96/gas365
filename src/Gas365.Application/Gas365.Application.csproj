@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Gas365.Domain/Gas365.Domain.csproj" />
+  </ItemGroup>
+</Project>

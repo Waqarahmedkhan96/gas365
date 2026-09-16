@@ -6,21 +6,21 @@ Gas365 is an LPG operations and profitability platform for retailers and distrib
 
 ## Delivery model: 13 gated stages (00–12)
 
-| Stage | Deliverable | Exit condition |
-|---|---|---|
-| 0 | Source inventory, ADRs, backlog and repo conventions | Requirements traceability and decisions recorded |
-| 1 | Monorepo skeleton and local platform | Web/API/Postgres start with one command; CI baseline green |
-| 2 | Identity, tenants, branches, roles and permissions | Cross-tenant tests prove isolation |
-| 3 | Design system and application shell | Responsive, accessible shell and reusable tables/forms |
-| 4 | Catalog, LPG types, cylinders, spare parts and stock ledger | Stock derives from movements and reconciles |
-| 5 | Suppliers and purchasing | Posted purchase creates payable/cash and stock/cost effects atomically |
-| 6 | Customers, sales, exchanges and receipts | Posted sale creates revenue, COGS, stock and receivable/cash effects atomically |
-| 7 | Credit, supplier payments, expenses, loans and cash register | Subledgers and daily cash reconcile |
-| 8 | Reports, PDF/Excel exports and dashboard | Reports tie to ledgers and respect permissions |
-| 9 | Audit, reversals, imports and notifications | Corrections are traceable; Excel import has preview/error workflow |
-| 10 | Subscription limits, onboarding and platform administration | Plan limits enforced server-side; support access audited |
-| 11 | Hardening, staging, backup/restore and observability | Security, load, restore and deployment gates pass |
-| 12 | Pilot release and post-pilot automation/AI | Controlled tenant onboarding and measured feedback |
+| Stage | Deliverable                                                  | Exit condition                                                                  |
+| ----- | ------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| 0     | Source inventory, ADRs, backlog and repo conventions         | Requirements traceability and decisions recorded                                |
+| 1     | Monorepo skeleton and local platform                         | Web/API/Postgres start with one command; CI baseline green                      |
+| 2     | Identity, tenants, branches, roles and permissions           | Cross-tenant tests prove isolation                                              |
+| 3     | Design system and application shell                          | Responsive, accessible shell and reusable tables/forms                          |
+| 4     | Catalog, LPG types, cylinders, spare parts and stock ledger  | Stock derives from movements and reconciles                                     |
+| 5     | Suppliers and purchasing                                     | Posted purchase creates payable/cash and stock/cost effects atomically          |
+| 6     | Customers, sales, exchanges and receipts                     | Posted sale creates revenue, COGS, stock and receivable/cash effects atomically |
+| 7     | Credit, supplier payments, expenses, loans and cash register | Subledgers and daily cash reconcile                                             |
+| 8     | Reports, PDF/Excel exports and dashboard                     | Reports tie to ledgers and respect permissions                                  |
+| 9     | Audit, reversals, imports and notifications                  | Corrections are traceable; Excel import has preview/error workflow              |
+| 10    | Subscription limits, onboarding and platform administration  | Plan limits enforced server-side; support access audited                        |
+| 11    | Hardening, staging, backup/restore and observability         | Security, load, restore and deployment gates pass                               |
+| 12    | Pilot release and post-pilot automation/AI                   | Controlled tenant onboarding and measured feedback                              |
 
 ## MVP boundary
 

@@ -1,0 +1,15 @@
+.git
+Gas365-Development-Pack
+reference/inputs
+**/node_modules
+**/bin
+**/obj
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+.env
+.env.*
+*.xlsx
+*.zip
+artifacts

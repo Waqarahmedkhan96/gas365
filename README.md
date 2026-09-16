@@ -2,7 +2,11 @@
 
 Gas365 is a planned multi-tenant LPG operations platform for retailers and distributors in Pakistan. It covers LPG, cylinders, spare parts, purchasing, sales, credit, cash and profitability.
 
-Phase 00 is complete. This repository currently contains requirements and architecture documentation. There is no runnable application, database schema or deployment yet.
+The repository includes the Phase 01 local platform: a React health page, ASP.NET Core API, PostgreSQL, Docker Compose and CI. Business modules are scheduled for subsequent phases.
+
+## Run locally
+
+With Docker's Linux engine and Node installed, run `node scripts/bootstrap.mjs`, then open [localhost:8080](http://localhost:8080). The script creates local credentials and waits for healthy services. See [local development](docs/LOCAL_DEVELOPMENT.md) for exact tools, hot reload, tests and migrations.
 
 ## Project documentation
 
@@ -16,11 +20,12 @@ Phase 00 is complete. This repository currently contains requirements and archit
 - [Risks and open decisions](docs/RISKS.md)
 - [Repository conventions](docs/CONVENTIONS.md)
 - [Phase 00 verification](docs/PHASE_00_REPORT.md)
+- [Phase 01 verification](docs/PHASE_01_REPORT.md)
 - [Controlled phase prompts](prompts/PHASE_PROMPTS.md)
 - [Master prompt](00_MASTER_PROMPT.md)
 
-## Planned stack
+## Stack
 
-React, TypeScript and Vite; ASP.NET Core Web API and EF Core; PostgreSQL; Docker Compose; GitHub Actions. Supported runtime and package versions will be verified and pinned in Phase 01.
+React, TypeScript and Vite; ASP.NET Core Web API and EF Core; PostgreSQL; Docker Compose; GitHub Actions. Versions are pinned in runtime files, package manifests, lockfiles and Dockerfiles.
 
 Original workbooks, screenshots and the supplied development pack remain local and excluded from Git. Repository documentation contains workflow descriptions, not customer records or copied third-party assets.
