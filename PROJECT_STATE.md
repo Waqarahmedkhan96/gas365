@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 02 — Identity, Tenancy, Branches and Permissions: implemented and locally verified on 2026-09-16. GitHub Actions repeats acceptance checks on each push; remote results are attached to the commit. Phase 03 has not started.
+Phase 03 — Design System and Application Shell: implemented and verified on 2026-09-17. GitHub Actions repeats acceptance checks on each push; remote results are attached to the commit. Phase 04 has not started.
 
 ## Completed acceptance criteria
 
@@ -20,17 +20,21 @@ Phase 02 — Identity, Tenancy, Branches and Permissions: implemented and locall
 - Added responsive workspace administration and desktop/mobile email-verification/login/branch/logout journeys.
 - Verified fresh and Phase 01 upgrade migrations, persistent local identity keys and local email delivery.
 
+- Implemented Tailwind tokens, shared accessible components and a responsive application shell with permission-aware URLs.
+- Added branch context, keyboard page search, dialogs, notifications and an owner component showcase.
+- Verified keyboard/focus behavior, 320 px layouts, contrast tokens, axe accessibility checks and strict CSP dialog support.
+
 ## Decisions
 
 React/TypeScript SPA/PWA; ASP.NET Core modular monolith; PostgreSQL. Initial hosting uses an application service and separate database; provider choice is open. Same-origin cookie authentication is implemented with PostgreSQL session revocation, eight-hour absolute and 30-minute idle expiry. Email links expire after one hour. Weighted-average costing applies to new transactions with immutable COGS. Posted records use reversal and replacement. Source business files remain ignored. Neutral project wording and configured contributor identity apply to commits.
 
 ## Open decisions
 
-See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; costing bucket, rounding, backdating, returns and cutover; cylinder ownership/deposits/serial policy; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase.
+See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; costing bucket, rounding, backdating, returns and cutover; cylinder ownership/deposits/serial policy; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase. Tenant locale configuration beyond browser locale remains open; dates use the existing tenant time zone. Branch selection is navigation context until branch-owned operational modules are implemented.
 
 ## Verification and limitations
 
-See [Phase 02 report](docs/PHASE_02_REPORT.md). Frontend lint, types, build and 6 component tests passed. Backend Release build, 2 unit, 4 architecture and 26 PostgreSQL/API tests passed. Six desktop/mobile browser tests passed. OpenAPI and dependency audits passed. Compose starts PostgreSQL, Mailpit, API and web after a successful migration job. Migration application, upgrade, repeatability and model-drift checks passed.
+See [Phase 03 report](docs/PHASE_03_REPORT.md) and [interface patterns](docs/DESIGN_SYSTEM.md). Frontend lint, types, build and 11 component tests passed. Backend Release build, 2 unit, 4 architecture and 26 PostgreSQL/API tests passed. Fourteen desktop/mobile browser tests passed (57 tests across all suites). OpenAPI and dependency audits passed. Compose starts PostgreSQL, Mailpit, API and web after a successful migration job. Migration application, upgrade, repeatability and model-drift checks passed.
 
 Identity/workspace tables and tenant-owned administrative endpoints now exist. Inventory and financial modules have not started. The platform remains local development infrastructure, not a production deployment. Private source inputs remain ignored. Production email, encrypted shared keys, coordinated rate limits and optional MFA remain explicit gates.
 
@@ -38,4 +42,4 @@ Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and 
 
 ## Exact next prompt
 
-Run **Prompt 03 — Gas365 Design System and Application Shell** from [prompts/PHASE_PROMPTS.md](prompts/PHASE_PROMPTS.md), only when requested. Do not start it automatically.
+Run **Prompt 04 — Catalog, LPG, Cylinders, Spare Parts and Inventory Ledger** from [prompts/PHASE_PROMPTS.md](prompts/PHASE_PROMPTS.md), only when requested. Do not start it automatically.

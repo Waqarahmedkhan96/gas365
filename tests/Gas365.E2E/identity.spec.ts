@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 test('owner verifies email, signs in, manages a branch and signs out', async ({
   page,
@@ -8,6 +9,13 @@ test('owner verifies email, signs in, manages a branch and signs out', async ({
   const email = `browser-${testInfo.project.name}-${Date.now()}@test.example`;
   const password = 'Synthetic-Browser-2026!';
   await page.goto('/register');
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
   await page.screenshot({
     path: testInfo.outputPath('registration.png'),
     fullPage: true,
@@ -52,9 +60,11 @@ test('owner verifies email, signs in, manages a branch and signs out', async ({
   await page.getByLabel(/^Password/).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'Browser workspace', exact: true }),
+    page.getByRole('heading', { name: 'Overview', exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Branches', exact: true }).click();
+  if (await page.getByRole('button', { name: 'Open navigation' }).isVisible())
+    await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('link', { name: 'Branches', exact: true }).click();
   await page
     .getByLabel('New branch name', { exact: true })
     .fill('Second location');
@@ -62,6 +72,13 @@ test('owner verifies email, signs in, manages a branch and signs out', async ({
   await expect(
     page.getByLabel('Branch name', { exact: true }).nth(1),
   ).toHaveValue('Second location');
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
   await page.screenshot({
     path: testInfo.outputPath('workspace.png'),
     fullPage: true,
@@ -72,6 +89,7 @@ test('owner verifies email, signs in, manages a branch and signs out', async ({
     ),
   ).toBeTruthy();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Welcome back' }),
   ).toBeVisible();

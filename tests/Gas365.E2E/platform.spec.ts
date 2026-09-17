@@ -7,6 +7,25 @@ test('platform connects through the web proxy and fits the viewport', async ({
   const response = await request.get('/api/health');
   expect(response.ok()).toBeTruthy();
   expect((await response.json()).database).toBe('Healthy');
+  const html = await request.get('/');
+  const nonce = (await html.text()).match(
+    /name="style-nonce" content="([a-f0-9]{32})"/,
+  )?.[1];
+  expect(nonce).toBeTruthy();
+  expect(html.headers()['content-security-policy']).toContain(
+    `'nonce-${nonce}'`,
+  );
+  expect(html.headers()['content-security-policy']).not.toContain(
+    'unsafe-inline',
+  );
+  expect(html.headers()['cache-control']).toContain('no-cache');
+  const nextHtml = await request.get('/', {
+    headers: { 'If-Modified-Since': 'Wed, 01 Jan 2031 00:00:00 GMT' },
+  });
+  expect(nextHtml.status()).toBe(200);
+  expect(nextHtml.headers()['content-security-policy']).not.toEqual(
+    html.headers()['content-security-policy'],
+  );
   await page.goto('/');
   await expect(page.getByRole('status')).toHaveText('All systems ready');
   await expect(page.getByRole('button', { name: 'Check again' })).toBeEnabled();

@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from './access-api';
+import { Button } from './components/ui/button';
+import { Input } from './components/ui/form';
 
 type Mode = 'login' | 'register' | 'confirm' | 'forgot' | 'reset' | 'resend';
 const titles: Record<Mode, string> = {
@@ -81,7 +83,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
             <>
               <label>
                 Your name
-                <input
+                <Input
                   name="name"
                   autoComplete="name"
                   maxLength={120}
@@ -90,7 +92,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
               </label>
               <label>
                 Business name
-                <input
+                <Input
                   name="businessName"
                   autoComplete="organization"
                   maxLength={120}
@@ -101,7 +103,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
           )}
           <label>
             Email address
-            <input
+            <Input
               name="email"
               type="email"
               autoComplete="email"
@@ -113,8 +115,12 @@ export function AuthPage({ mode }: { mode: Mode }) {
           {(mode === 'login' || mode === 'register' || mode === 'reset') && (
             <label>
               Password
-              <input
+              <Input
                 name="password"
+                aria-label="Password"
+                aria-describedby={
+                  mode !== 'login' ? 'password-help' : undefined
+                }
                 type="password"
                 autoComplete={
                   mode === 'login' ? 'current-password' : 'new-password'
@@ -124,7 +130,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 required
               />
               {mode !== 'login' && (
-                <small>
+                <small id="password-help">
                   At least 12 characters, including uppercase, lowercase, a
                   number and a symbol.
                 </small>
@@ -137,7 +143,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
               {message}
             </p>
           )}
-          <button disabled={busy}>
+          <Button disabled={busy}>
             {busy
               ? 'Please wait…'
               : mode === 'login'
@@ -149,7 +155,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
                     : mode === 'reset'
                       ? 'Save password'
                       : 'Send email'}
-          </button>
+          </Button>
         </form>
         {mode === 'login' && (
           <p className="auth-links">

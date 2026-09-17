@@ -2,12 +2,21 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { setNonce } from 'get-nonce';
 import { App } from './App';
 import { AuthPage } from './AuthPage';
 import { WorkspacePage } from './WorkspacePage';
 import './styles.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
 
 const queryClient = new QueryClient();
+const styleNonce = document.querySelector<HTMLMetaElement>(
+  'meta[name="style-nonce"]',
+)?.content;
+if (styleNonce && styleNonce !== '__STYLE_NONCE__') setNonce(styleNonce);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -16,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/workspace" element={<WorkspacePage />} />
+          <Route path="/workspace/:section" element={<WorkspacePage />} />
           {(
             [
               'login',

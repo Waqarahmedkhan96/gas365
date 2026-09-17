@@ -22,8 +22,9 @@
     "api": "node scripts/dotnet.mjs run --project src/Gas365.Api --no-launch-profile"
   },
   "devDependencies": {
-    "prettier": "3.9.6",
+    "@apidevtools/swagger-parser": "13.0.0",
+    "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.63.0",
-    "@apidevtools/swagger-parser": "13.0.0"
+    "prettier": "3.9.6"
   }
 }

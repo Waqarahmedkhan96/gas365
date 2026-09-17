@@ -18,6 +18,12 @@ Choose **Open workspace**, then **Create a workspace**. Register with an email a
 
 Do not share `.env`. The example has no usable password. A changed password does not automatically change an existing database volume's credentials. Stop services using `docker compose down`; this preserves the data volume. Removing a volume destroys its database and must be deliberate.
 
+## Application shell
+
+After signing in, use the sidebar or **Search pages** (`Ctrl+K` / `Cmd+K`) to navigate. Owners can open `/workspace/showcase` to inspect shared components, sample tables and interface states. The header branch selector remembers a valid selection for that tenant; current administration screens remain workspace-wide. See [interface patterns](DESIGN_SYSTEM.md).
+
+Browser acceptance tests run against the built Nginx container. Its HTML response and CSP header share a fresh style nonce for accessible dialogs; preserve this pairing when changing hosts. The Vite development server does not reproduce that CSP. Playwright uses two workers to keep local password hashing and accessibility scans within the platform response budget.
+
 ## Edit with hot reload
 
 ```sh
@@ -56,6 +62,8 @@ Integration tests create and drop an isolated random test database on the local 
 Browser tests expect the complete Compose platform, including Mailpit at port 8025, and create synthetic accounts. OpenAPI validation expects the Development API at port 5080. Override `WEB_URL` and `OPENAPI_URL` if needed. API liveness is `/health/live`; database readiness is `/health/ready`; the typed frontend contract is `/api/health`. Only Development exposes `/openapi/v1.json`.
 
 ## Migrations and environments
+
+Phase 03 requires no new database migration or API contract change. Rebuild the web image through bootstrap to install the shell and matching HTML/CSP configuration.
 
 `InitialBaseline` establishes migration history. `IdentityAndTenancy` adds Identity accounts, tenants, memberships, branches, tenant roles, branch grants, sessions and audit events. Bootstrap runs a separate, one-shot `migrate` container before starting the API. Apply migrations manually using `pnpm db:migrate`; API replicas never auto-migrate during ordinary startup. Tests cover empty databases, upgrade from Phase 01, repeat application and model drift. The down migration removes identity/workspace data: restore a backup for recovery instead of rolling it back against valuable accounts.
 
