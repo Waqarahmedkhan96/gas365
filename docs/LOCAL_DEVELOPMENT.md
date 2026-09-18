@@ -20,7 +20,7 @@ Do not share `.env`. The example has no usable password. A changed password does
 
 ## Application shell
 
-After signing in, use the sidebar or **Search pages** (`Ctrl+K` / `Cmd+K`) to navigate. Owners can open `/workspace/showcase` to inspect shared components, sample tables and interface states. The header branch selector remembers a valid selection for that tenant; current administration screens remain workspace-wide. See [interface patterns](DESIGN_SYSTEM.md).
+After signing in, use the sidebar or **Search pages** (`Ctrl+K` / `Cmd+K`) to navigate. Owners can open `/workspace/showcase` to inspect shared components, sample tables and interface states. The header branch selector remembers a valid selection for that tenant; administration screens remain workspace-wide. Inventory balances and source warehouses follow the active branch; transfer destinations include other authorized branches. See [interface patterns](DESIGN_SYSTEM.md).
 
 Browser acceptance tests run against the built Nginx container. Its HTML response and CSP header share a fresh style nonce for accessible dialogs; preserve this pairing when changing hosts. The Vite development server does not reproduce that CSP. Playwright uses two workers to keep local password hashing and accessibility scans within the platform response budget.
 
@@ -61,9 +61,17 @@ Integration tests create and drop an isolated random test database on the local 
 
 Browser tests expect the complete Compose platform, including Mailpit at port 8025, and create synthetic accounts. OpenAPI validation expects the Development API at port 5080. Override `WEB_URL` and `OPENAPI_URL` if needed. API liveness is `/health/live`; database readiness is `/health/ready`; the typed frontend contract is `/api/health`. Only Development exposes `/openapi/v1.json`.
 
+## Inventory
+
+Open `/workspace/inventory` as an owner. Create units, categories and warehouses through **Catalog setup**, add items, then post reconciled opening stock. See [inventory operating rules and contracts](INVENTORY.md) and the [Phase 04 checkpoint](PHASE_04_REPORT.md). Stock commands are permanent and use separate reversal records.
+
+If Docker reports a Windows port reservation, select an available port in ignored `.env` and restart Compose. This machine currently uses database port 54320; the template default is 55432. Keep the existing database volume and password.
+
 ## Migrations and environments
 
 Phase 03 requires no new database migration or API contract change. Rebuild the web image through bootstrap to install the shell and matching HTML/CSP configuration.
+
+`InventoryLedger` adds catalog, locations, cylinder assets and immutable stock documents/movements. `InventoryGuards` adds database mutation guards and existing owner permissions. Both run before the updated API starts. No opening stock is seeded.
 
 `InitialBaseline` establishes migration history. `IdentityAndTenancy` adds Identity accounts, tenants, memberships, branches, tenant roles, branch grants, sessions and audit events. Bootstrap runs a separate, one-shot `migrate` container before starting the API. Apply migrations manually using `pnpm db:migrate`; API replicas never auto-migrate during ordinary startup. Tests cover empty databases, upgrade from Phase 01, repeat application and model drift. The down migration removes identity/workspace data: restore a backup for recovery instead of rolling it back against valuable accounts.
 

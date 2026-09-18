@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Gas365.Infrastructure;
 
-public sealed class Gas365DbContext(DbContextOptions<Gas365DbContext> options, TenantScope scope)
+public sealed partial class Gas365DbContext(DbContextOptions<Gas365DbContext> options, TenantScope scope)
     : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
     public Gas365DbContext(DbContextOptions<Gas365DbContext> options) : this(options, new TenantScope()) { }
@@ -21,6 +21,7 @@ public sealed class Gas365DbContext(DbContextOptions<Gas365DbContext> options, T
     protected override void OnModelCreating(ModelBuilder model)
     {
         base.OnModelCreating(model);
+        ConfigureInventory(model);
         model.Entity<ApplicationUser>().Property(x => x.DisplayName).HasMaxLength(120);
         model.Entity<ApplicationUser>().HasIndex(x => x.NormalizedEmail).IsUnique();
         model.Entity<Tenant>().HasKey(x => x.TenantId);
@@ -70,7 +71,7 @@ public sealed class Gas365DbContext(DbContextOptions<Gas365DbContext> options, T
             if (scope.TenantId == Guid.Empty || entry.Entity.TenantId != scope.TenantId ||
                 (entry.State != EntityState.Added && entry.Property(nameof(ITenantOwned.TenantId)).OriginalValue is Guid original && original != scope.TenantId))
                 throw new InvalidOperationException("Tenant boundary violation.");
-            if (entry.Entity is AuditEvent && entry.State != EntityState.Added)
+            if (entry.Entity is (AuditEvent or StockDocument or StockMovement) && entry.State != EntityState.Added)
                 throw new InvalidOperationException("Audit events are append-only.");
         }
     }

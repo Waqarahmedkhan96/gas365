@@ -19,3 +19,9 @@ FIFO would align more closely with workbook history but is outside the initial w
 ## Implementation gates
 
 Decide costing bucket (tenant/item/location), decimal scales, rounding residuals, backdating and return/reversal valuation before Phase 04 posting is accepted. Prevent zero-denominator and negative-stock cases by default. Test concurrent receipts/issues and reconciliation of stock quantity/value. Negative stock, if later enabled, needs its own defined costing policy.
+
+## Phase 04 implementation proposal
+
+The implementation uses a product/warehouse cost pool across stock states, configurable unit precision up to 3 places, 6-place cost snapshots and 2-place PKR movement values, midpoint away from zero. Full depletion consumes the remaining value. This numeric/cost-pool choice is awaiting owner confirmation.
+
+The owner selected current-date posting only and full reversals only where no later affected stock movement exists. Reversals preserve original values exactly. Historical FIFO data is not imported; an operator must reconcile each opening quantity/value against a cutover reference. See [inventory contracts](../INVENTORY.md).

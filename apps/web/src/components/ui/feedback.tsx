@@ -11,6 +11,7 @@ export function Modal({
   onOpenChange,
   drawer = false,
   onOpenAutoFocus,
+  onCloseAutoFocus,
 }: {
   title: string;
   description: string;
@@ -20,6 +21,7 @@ export function Modal({
   onOpenChange?: (value: boolean) => void;
   drawer?: boolean;
   onOpenAutoFocus?: (event: Event) => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -28,6 +30,7 @@ export function Modal({
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content
           onOpenAutoFocus={onOpenAutoFocus}
+          onCloseAutoFocus={onCloseAutoFocus}
           className={drawer ? 'dialog-panel drawer-panel' : 'dialog-panel'}
         >
           <div className="flex items-start justify-between gap-4">

@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 03 — Design System and Application Shell: implemented and verified on 2026-09-17. GitHub Actions repeats acceptance checks on each push; remote results are attached to the commit. Phase 04 has not started.
+Phase 04 — Catalog, LPG, Cylinders, Spare Parts and Inventory Ledger: implemented and locally verified on 2026-09-18; final phase acceptance awaits the costing-policy choice below. Phase 03 checkpoint 5f4c1f9 passed GitHub Actions. Phase 05 has not started.
 
 ## Completed acceptance criteria
 
@@ -28,18 +28,27 @@ Phase 03 — Design System and Application Shell: implemented and verified on 20
 
 React/TypeScript SPA/PWA; ASP.NET Core modular monolith; PostgreSQL. Initial hosting uses an application service and separate database; provider choice is open. Same-origin cookie authentication is implemented with PostgreSQL session revocation, eight-hour absolute and 30-minute idle expiry. Email links expire after one hour. Weighted-average costing applies to new transactions with immutable COGS. Posted records use reversal and replacement. Source business files remain ignored. Neutral project wording and configured contributor identity apply to commits.
 
+## Phase 04 acceptance checkpoint
+
+- Catalog, configurable units, LPG/cylinder definitions, spare-part categories and branch-restricted warehouses.
+- Ledger-derived stock, atomic transfers, idempotency, optimistic concurrency and immutable cost snapshots.
+- Optional serial assets and full reversal with dependency checks.
+- Directory/detail/ledger UI, real PostgreSQL tenant/concurrency tests, migration upgrade, browser journeys and CI.
+
+The owner selected current-date posting only, full reversals only without later affected stock movements, optional serial tracking per cylinder item, and deposits deferred to sales. Proposed costing defaults (product/warehouse pool, quantity up to 3 decimals, cost 6 decimals, PKR 2 decimals, midpoint away from zero) are awaiting the outstanding choice. Opening quantities/values must be reconciled by the operator; historical FIFO records are not imported or recosted.
+
 ## Open decisions
 
-See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; costing bucket, rounding, backdating, returns and cutover; cylinder ownership/deposits/serial policy; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase. Tenant locale configuration beyond browser locale remains open; dates use the existing tenant time zone. Branch selection is navigation context until branch-owned operational modules are implemented.
+See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; costing bucket/scales/rounding confirmation, future return valuation and real-data cutover; cylinder customer/deposit relationships; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase. Tenant locale configuration beyond browser locale remains open; dates use the existing tenant time zone. Inventory uses branch context and separately authorizes both source and destination branches.
 
 ## Verification and limitations
 
-See [Phase 03 report](docs/PHASE_03_REPORT.md) and [interface patterns](docs/DESIGN_SYSTEM.md). Frontend lint, types, build and 11 component tests passed. Backend Release build, 2 unit, 4 architecture and 26 PostgreSQL/API tests passed. Fourteen desktop/mobile browser tests passed (57 tests across all suites). OpenAPI and dependency audits passed. Compose starts PostgreSQL, Mailpit, API and web after a successful migration job. Migration application, upgrade, repeatability and model-drift checks passed.
+See [Phase 04 report](docs/PHASE_04_REPORT.md) and [inventory contracts](docs/INVENTORY.md). Frontend lint, types, build and 13 component tests passed. Backend Release build, 4 unit, 4 architecture and 36 PostgreSQL/API tests passed. Sixteen desktop/mobile browser tests passed (73 tests across all suites). OpenAPI and dependency audits passed. Compose starts PostgreSQL, Mailpit, API and web after a successful migration job. Migration application, upgrade, repeatability and model-drift checks passed.
 
-Identity/workspace tables and tenant-owned administrative endpoints now exist. Inventory and financial modules have not started. The platform remains local development infrastructure, not a production deployment. Private source inputs remain ignored. Production email, encrypted shared keys, coordinated rate limits and optional MFA remain explicit gates.
+Identity/workspace tables and tenant-owned administrative endpoints now exist. Inventory implementation and technical verification are complete; purchasing, sales and payment modules have not started. The platform remains local development infrastructure, not a production deployment. Private source inputs remain ignored. Production email, encrypted shared keys, coordinated rate limits and optional MFA remain explicit gates.
 
-Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and PostgreSQL 18.4. Local database port is 55432 because 5432 was unavailable on this machine. Bootstrap creates a random password in ignored `.env`; API startup never applies migrations automatically.
+Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and PostgreSQL 18.4. Local database port is now 54320 because Windows reserved the previous 55432 port. The template default remains configurable at 55432. Bootstrap creates a random password in ignored `.env`; API startup never applies migrations automatically.
 
 ## Exact next prompt
 
-Run **Prompt 04 — Catalog, LPG, Cylinders, Spare Parts and Inventory Ledger** from [prompts/PHASE_PROMPTS.md](prompts/PHASE_PROMPTS.md), only when requested. Do not start it automatically.
+Resolve the outstanding Phase 04 costing choice first. Then the next prompt is **Prompt 05 — Suppliers and Purchasing** from [prompts/PHASE_PROMPTS.md](prompts/PHASE_PROMPTS.md), only when requested. Do not start it automatically.

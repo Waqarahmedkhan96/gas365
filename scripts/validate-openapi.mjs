@@ -18,6 +18,11 @@ for (const [path, method] of [
   ['/api/workspace/roles', 'post'],
   ['/api/workspace/members', 'post'],
   ['/api/workspace/audit', 'get'],
+  ['/api/workspace/inventory/items', 'get'],
+  ['/api/workspace/inventory/items', 'post'],
+  ['/api/workspace/inventory/items/{id}/ledger', 'get'],
+  ['/api/workspace/inventory/documents', 'post'],
+  ['/api/workspace/inventory/documents/{id}/reverse', 'post'],
 ]) {
   if (!schema.paths[path]?.[method])
     throw new Error(`Missing access contract: ${method} ${path}`);

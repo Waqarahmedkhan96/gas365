@@ -7,7 +7,11 @@ public static class Permissions
     public const string TeamManage = "users.manage";
     public const string RoleManage = "roles.manage";
     public const string AuditView = "audit.view";
-    public static readonly string[] All = [TenantManage, BranchManage, TeamManage, RoleManage, AuditView];
+    public const string CatalogManage = "catalog.manage";
+    public const string InventoryView = "inventory.view";
+    public const string InventoryPost = "inventory.post";
+    public const string InventoryReverse = "inventory.reverse";
+    public static readonly string[] All = [TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse];
 }
 
 public interface ITenantOwned { Guid TenantId { get; set; } }

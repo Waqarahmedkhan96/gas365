@@ -2,6 +2,13 @@ import type { Me } from './access-api';
 
 export const pages = [
   {
+    id: 'inventory',
+    label: 'Inventory',
+    description: 'Catalog, stock balances and movement history.',
+    permission: 'inventory.view',
+    icon: 'branches',
+  },
+  {
     id: 'overview',
     label: 'Overview',
     description: 'Your business, branches and team at a glance.',

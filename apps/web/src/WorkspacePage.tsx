@@ -19,6 +19,11 @@ import {
   type Audit,
 } from './access-api';
 
+const InventoryPage = lazy(() =>
+  import('./InventoryPage').then((module) => ({
+    default: module.InventoryPage,
+  })),
+);
 const ShowcasePage = lazy(() =>
   import('./ShowcasePage').then((module) => ({ default: module.ShowcasePage })),
 );
@@ -29,8 +34,16 @@ const permissions = [
   'users.manage',
   'roles.manage',
   'audit.view',
+  'inventory.view',
+  'catalog.manage',
+  'inventory.post',
+  'inventory.reverse',
 ];
 const permissionLabels: Record<string, string> = {
+  'inventory.view': 'View inventory',
+  'catalog.manage': 'Manage catalog and warehouses',
+  'inventory.post': 'Post stock movements',
+  'inventory.reverse': 'Reverse stock movements',
   'tenant.manage': 'Manage business settings',
   'branches.manage': 'Manage all branches',
   'users.manage': 'Manage team members',
@@ -180,6 +193,15 @@ export function WorkspacePage() {
         />
       ) : (
         <>
+          {tab === 'inventory' && (
+            <Suspense fallback={<p role="status">Loading inventory…</p>}>
+              <InventoryPage
+                user={user}
+                branches={branches}
+                timeZone={tenant.timeZone}
+              />
+            </Suspense>
+          )}
           {error && <p role="alert">{error}</p>}
           {notice && <Notification key={noticeId} message={notice} />}
           {(tab === 'overview' || tab === 'settings') && (

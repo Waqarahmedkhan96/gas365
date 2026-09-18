@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Gas365.Api;
+using Gas365.Application;
+using Gas365.Domain;
+using Gas365.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -27,8 +30,23 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
         await using var context = database.CreateContext();
         await context.GetService<IMigrator>().MigrateAsync("20260916104311_InitialBaseline");
         Assert.Single(await context.Database.GetAppliedMigrationsAsync());
+        await context.GetService<IMigrator>().MigrateAsync("20260916153300_IdentityAndTenancy");
+        var tenantId = Guid.NewGuid();
+        var options = new DbContextOptionsBuilder<Gas365DbContext>().UseNpgsql(database.ConnectionString).Options;
+        await using (var prior = new Gas365DbContext(options, new TenantScope { TenantId = tenantId }))
+        {
+            prior.Tenants.Add(new Tenant { TenantId = tenantId, Name = "Upgrade tenant" });
+            prior.TenantRoles.Add(new TenantRole { TenantId = tenantId, Name = "Owner", IsOwner = true, Permissions = [Permissions.TenantManage] });
+            await prior.SaveChangesAsync();
+        }
         await context.Database.MigrateAsync();
-        Assert.Equal(2, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        await using (var upgraded = new Gas365DbContext(options, new TenantScope { TenantId = tenantId }))
+        {
+            Assert.Equal("Upgrade tenant", (await upgraded.Tenants.SingleAsync()).Name);
+            Assert.Contains(Permissions.InventoryPost, (await upgraded.TenantRoles.SingleAsync()).Permissions);
+            Assert.Contains(Permissions.TenantManage, (await upgraded.TenantRoles.SingleAsync()).Permissions);
+        }
+        Assert.Equal(4, (await context.Database.GetAppliedMigrationsAsync()).Count());
         await context.Database.MigrateAsync();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());

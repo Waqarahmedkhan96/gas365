@@ -61,6 +61,29 @@ export class ApiError extends Error {
   }
 }
 
+// A CSRF request token is tied to the current cookie identity, not a bearer credential.
+// Reuse it in memory; authentication transitions and rejected requests invalidate it.
+let csrfToken: Promise<string> | undefined;
+function requestToken(): Promise<string> {
+  csrfToken ??= fetch('/api/auth/csrf', {
+    credentials: 'same-origin',
+    cache: 'no-store',
+  })
+    .then(async (response) => {
+      if (!response.ok)
+        throw new ApiError(
+          response.status,
+          'Please wait a moment and try again.',
+        );
+      return String((await response.json()).token);
+    })
+    .catch((error) => {
+      csrfToken = undefined;
+      throw error;
+    });
+  return csrfToken;
+}
+
 export async function api<T>(
   path: string,
   method = 'GET',
@@ -70,13 +93,7 @@ export async function api<T>(
   const headers: Record<string, string> = {};
   if (workspace) headers['X-Workspace'] = workspace;
   if (method !== 'GET') {
-    const csrf = await fetch('/api/auth/csrf', {
-      credentials: 'same-origin',
-      cache: 'no-store',
-    });
-    if (!csrf.ok)
-      throw new ApiError(csrf.status, 'Please wait a moment and try again.');
-    headers['X-CSRF-TOKEN'] = (await csrf.json()).token;
+    headers['X-CSRF-TOKEN'] = await requestToken();
     headers['Content-Type'] = 'application/json';
   }
   const response = await fetch(path, {
@@ -86,6 +103,12 @@ export async function api<T>(
     cache: 'no-store',
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  if (
+    (path.startsWith('/api/auth/') && method !== 'GET') ||
+    response.status === 400 ||
+    response.status === 401
+  )
+    csrfToken = undefined;
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));
     throw new ApiError(

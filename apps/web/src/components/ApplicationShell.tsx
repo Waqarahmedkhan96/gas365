@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import type { Branch, Me, Tenant } from '../access-api';
 import { canVisit, pages, pagePath } from '../navigation';
 import { Button } from './ui/button';
+import { BranchContext } from './branch-context';
 import { Input } from './ui/form';
 import { Modal, ConfirmButton } from './ui/feedback';
 
@@ -155,8 +156,6 @@ export function ApplicationShell({
                 'Dashboard',
                 'Sales',
                 'Purchases',
-                'Inventory · LPG, cylinders & spare parts',
-                'Transfers & adjustments',
                 'Customers',
                 'Suppliers',
                 'Credit / Udhaar',
@@ -359,11 +358,13 @@ export function ApplicationShell({
           tabIndex={-1}
           className="shell-main"
         >
-          {children}
+          <BranchContext.Provider value={selectedBranch}>
+            {children}
+          </BranchContext.Provider>
         </main>
         <footer className="shell-footer">
           <span id="branch-context-note">
-            Branch selection is for navigation. Business settings apply to the
+            Inventory follows the active branch. Business settings apply to the
             whole workspace.
           </span>
           <span>{tenant.timeZone} · PKR</span>

@@ -15,3 +15,7 @@ Editing a posted row is simpler but destroys an audit trail and can alter prior 
 ## Verification
 
 Test duplicate reversal requests, unauthorized reversal, concurrent reversal/posting, linked replacement and net reconciliation. Verify the original remains unchanged and user-visible document status is independent of payment status.
+
+## Phase 04 inventory correction rule
+
+The owner selected full reversal only where affected stock has no later movements. Inventory records and audit events are append-only; database triggers additionally reject posted inventory updates/deletes. A reversal copies exact opposite quantity/value and preserves the original snapshot. Later product/warehouse or serial movements block reversal, including later movements that have themselves been reversed. Use a documented adjustment when automatic reversal is blocked. Partial and backdated corrections remain outside this phase.

@@ -17,6 +17,9 @@ public static class AccessSetup
         builder.Services.AddScoped<TenantScope>();
         builder.Services.AddScoped<IIdentityAccess, IdentityAccess>();
         builder.Services.AddScoped<IWorkspaceAccess, WorkspaceAccess>();
+        builder.Services.AddScoped<ICatalogAccess, CatalogAccess>();
+        builder.Services.AddScoped<IInventoryAccess, InventoryAccess>();
+        builder.Services.AddSingleton<Gas365.Domain.IInventoryCosting, Gas365.Domain.WeightedAverageCosting>();
         builder.Services.AddScoped<IAccountMessages, AccountMessages>();
         builder.Services.AddScoped<SessionEvents>();
         builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -94,5 +97,6 @@ public static class AccessSetup
             await next(context);
         });
         app.MapAccessEndpoints();
+        app.MapInventoryEndpoints();
     }
 }

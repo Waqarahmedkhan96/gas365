@@ -20,4 +20,4 @@ Priority P0 blocks a safe foundation or financial workflow; P1 completes the fun
 
 Each phase delivers tests and documentation with its vertical slice. Audit, reversal, tenant isolation and export authorization begin with the first affected module; later explorer and hardening phases do not postpone those controls.
 
-Only Phase 00 has been performed. The next authorized development unit is Phase 01 when requested.
+Phases 00–03 are complete. Phase 04 is authorized and in progress; its costing choice and final acceptance are tracked in PROJECT_STATE.md. Do not begin Phase 05 automatically.

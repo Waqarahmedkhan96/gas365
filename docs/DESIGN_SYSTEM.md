@@ -6,9 +6,9 @@ The Phase 03 shell follows [the UI specification](../reference/UI_SYSTEM.md). It
 
 Sign in as an owner and open **Component showcase** from the sidebar, or use **Search pages** (`Ctrl+K` / `Cmd+K`). Its address is `/workspace/showcase`. Search currently navigates accessible pages; it does not search business records. The showcase demonstrates synthetic rows and never posts business data.
 
-Available pages are Overview, Branches, Team, Roles, Business settings, Sessions and Activity. Each has a stable URL and browser history. Navigation and direct-route checks share the same permission map in `navigation.ts`; the API remains the authorization boundary. The showcase is owner-only. Future operational modules are listed in a collapsed owner reference section, without actionable routes.
+Available pages are Inventory, Overview, Branches, Team, Roles, Business settings, Sessions and Activity. Inventory requires its own view permission. Each has a stable URL and browser history. Navigation and direct-route checks share the same permission map in `navigation.ts`; the API remains the authorization boundary. The showcase is owner-only. Future operational modules are listed in a collapsed owner reference section, without actionable routes.
 
-The header lists active branches returned by the API. A selection is remembered in session storage under its tenant ID, and is revalidated against the current branch list. A stale or foreign ID cannot remain selected. No credentials are stored there. Selection is navigation context only at this stage; workspace settings still apply to the whole tenant. Future branch-owned APIs must separately authorize every selected branch.
+The header lists active branches returned by the API. A selection is remembered in session storage under its tenant ID, and is revalidated against the current branch list. A stale or foreign ID cannot remain selected. No credentials are stored there. Inventory now consumes this branch context for balances and source warehouses; workspace settings still apply to the whole tenant. Inventory APIs separately authorize each affected branch.
 
 ## Tokens and components
 
