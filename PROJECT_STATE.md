@@ -2,7 +2,13 @@
 
 ## Current phase
 
-Phase 04 — Catalog, LPG, Cylinders, Spare Parts and Inventory Ledger: implemented and locally verified on 2026-09-18; final phase acceptance awaits the costing-policy choice below. Phase 03 checkpoint 5f4c1f9 passed GitHub Actions. Phase 05 has not started.
+Phase 04 — Catalog, LPG, Cylinders, Spare Parts and Inventory Ledger: implemented and locally verified on 2026-09-18; accepted on 2026-09-19 after the owner confirmed the implemented costing policy. Phase 03 checkpoint 5f4c1f9 passed GitHub Actions. Phase 05 has not started.
+
+## Cross-chat handoff
+
+Use [combined phase history](docs/PHASE_HISTORY.md) for the cumulative record of Phases 00–04 and the reusable new-chat prompt. Work on one numbered phase per chat according to [repository rules](AGENTS.md). Update this state, the combined history and the detailed phase report at every checkpoint.
+
+On 2026-09-19, repository reports, Git checkpoints, source layout, costing implementation, migrations and CI configuration were reviewed to consolidate the history. This was a documentation-only handoff update; application suites and remote CI were not rerun. The owner subsequently confirmed the costing policy on 2026-09-19, closing Phase 04 acceptance; no Phase 05 work was started.
 
 ## Completed acceptance criteria
 
@@ -35,11 +41,11 @@ React/TypeScript SPA/PWA; ASP.NET Core modular monolith; PostgreSQL. Initial hos
 - Optional serial assets and full reversal with dependency checks.
 - Directory/detail/ledger UI, real PostgreSQL tenant/concurrency tests, migration upgrade, browser journeys and CI.
 
-The owner selected current-date posting only, full reversals only without later affected stock movements, optional serial tracking per cylinder item, and deposits deferred to sales. Proposed costing defaults (product/warehouse pool, quantity up to 3 decimals, cost 6 decimals, PKR 2 decimals, midpoint away from zero) are awaiting the outstanding choice. Opening quantities/values must be reconciled by the operator; historical FIFO records are not imported or recosted.
+The owner selected current-date posting only, full reversals only without later affected stock movements, optional serial tracking per cylinder item, and deposits deferred to sales. On 2026-09-19 the owner approved the existing costing rules for current use: separate tenant/product/warehouse weighted-average pools across stock states, configured quantity precision up to 3 decimals (whole cylinders), cost precision of 6 decimals, PKR values of 2 decimals, midpoint rounding away from zero and full depletion consuming the remaining value. The owner may request changes in a later phase; any change must preserve posted history and document its effective scope and migration impact. Opening quantities/values must be reconciled by the operator; historical FIFO records are not imported or recosted.
 
 ## Open decisions
 
-See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; costing bucket/scales/rounding confirmation, future return valuation and real-data cutover; cylinder customer/deposit relationships; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase. Tenant locale configuration beyond browser locale remains open; dates use the existing tenant time zone. Inventory uses branch context and separately authorizes both source and destination branches.
+See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; future return valuation and real-data cutover; cylinder customer/deposit relationships; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase. Tenant locale configuration beyond browser locale remains open; dates use the existing tenant time zone. Inventory uses branch context and separately authorizes both source and destination branches.
 
 ## Verification and limitations
 
@@ -51,4 +57,4 @@ Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and 
 
 ## Exact next prompt
 
-Resolve the outstanding Phase 04 costing choice first. Then the next prompt is **Prompt 05 — Suppliers and Purchasing** from [prompts/PHASE_PROMPTS.md](prompts/PHASE_PROMPTS.md), only when requested. Do not start it automatically.
+Phase 04 is accepted. The next prompt is **Prompt 05 — Suppliers and Purchasing** from [prompts/PHASE_PROMPTS.md](prompts/PHASE_PROMPTS.md), only when requested. Do not start it automatically.

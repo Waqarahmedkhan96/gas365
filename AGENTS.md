@@ -16,6 +16,16 @@ Build Gas365 as a secure, auditable, multi-tenant LPG ERP for Pakistan. The sour
 - Never weaken a test merely to make CI green.
 - Never invent business rules silently. Record unresolved choices in `PROJECT_STATE.md` under `Open Decisions`.
 
+## One phase per chat and durable handoff
+
+- Use a new chat in this repository for each numbered phase. Continue unfinished work under its existing phase; do not treat a new chat as approval to advance.
+- At chat start, read `AGENTS.md`, `PROJECT_STATE.md`, `docs/PHASE_HISTORY.md`, the requested entry in `prompts/PHASE_PROMPTS.md`, the previous phase report and the active phase's referenced files. Inspect Git status and the implementation before editing.
+- Treat repository records as durable context across chats. `PROJECT_STATE.md` owns current status, open decisions and the next action; `docs/PHASE_HISTORY.md` is the combined phase history; `docs/PHASE_XX_REPORT.md` holds detailed evidence for each phase.
+- Before implementation, state the phase scope and a short plan with acceptance criteria. Resolve any blocking prior-phase decision before dependent work; never infer business approval from passing tests.
+- At each phase checkpoint, update the combined history, detailed phase report and project state together. Record delivered scope, decisions, actual checks/results, migration impact, limitations, acceptance status and an exact next-chat prompt. Label historical verification separately from checks run in the current chat.
+- Include a verified checkpoint commit when available; otherwise say the checkpoint is uncommitted. Do not invent commit IDs, test results or CI status. Preserve historical reports and identify later corrections explicitly.
+- End with a concise checkpoint and stop. Do not create a new chat or start the next phase unless the user requests it.
+
 ## Architecture
 
 - Modular monolith, not microservices.

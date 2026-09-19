@@ -1,6 +1,6 @@
 # ADR 004: Initial inventory costing
 
-Status: accepted from product specification; migration reconciliation requires owner review. Date: 2026-09-16.
+Status: accepted from product specification; detailed Phase 04 policy approved by the owner on 2026-09-19. Original date: 2026-09-16. Real-data cutover reconciliation still requires operator review.
 
 ## Context
 
@@ -20,8 +20,8 @@ FIFO would align more closely with workbook history but is outside the initial w
 
 Decide costing bucket (tenant/item/location), decimal scales, rounding residuals, backdating and return/reversal valuation before Phase 04 posting is accepted. Prevent zero-denominator and negative-stock cases by default. Test concurrent receipts/issues and reconciliation of stock quantity/value. Negative stock, if later enabled, needs its own defined costing policy.
 
-## Phase 04 implementation proposal
+## Phase 04 accepted policy
 
-The implementation uses a product/warehouse cost pool across stock states, configurable unit precision up to 3 places, 6-place cost snapshots and 2-place PKR movement values, midpoint away from zero. Full depletion consumes the remaining value. This numeric/cost-pool choice is awaiting owner confirmation.
+The implementation uses a product/warehouse cost pool across stock states, configurable unit precision up to 3 places, 6-place cost snapshots and 2-place PKR movement values, midpoint away from zero. Full depletion consumes the remaining value. The owner explicitly approved this numeric/cost-pool policy on 2026-09-19 for current use, with changes to be requested later if needed. This closes the Phase 04 costing acceptance gate. Future policy changes require a documented effective scope, tests and migration/reconciliation assessment; they must not silently recalculate posted costs. Future return valuation and real-data cutover remain separate decisions.
 
 The owner selected current-date posting only and full reversals only where no later affected stock movement exists. Reversals preserve original values exactly. Historical FIFO data is not imported; an operator must reconcile each opening quantity/value against a cutover reference. See [inventory contracts](../INVENTORY.md).

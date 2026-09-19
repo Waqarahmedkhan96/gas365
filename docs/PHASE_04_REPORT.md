@@ -1,6 +1,6 @@
 # Phase 04 checkpoint
 
-Status on 2026-09-18: implementation complete and locally verified; final phase acceptance remains pending the costing-policy choice. Phase 05 has not started.
+Status: accepted on 2026-09-19 following explicit owner approval of the implemented costing policy. Implementation and local verification were completed on 2026-09-18, when costing acceptance was still pending. Phase 05 has not started.
 
 ## Outcome
 
@@ -19,11 +19,13 @@ See [inventory rules and contracts](INVENTORY.md) for the exact behaviors, opera
 
 ## Decisions and limits
 
-Owner-selected rules: current-date posting only; full reversals only without later affected movements; optional item-level cylinder serial tracking; deposits deferred to sales. The proposed product/warehouse cost pool, numeric scales and rounding are awaiting confirmation. Opening quantity/value must be independently reconciled by the operator; no source history or business data was imported.
+Owner-selected rules: current-date posting only; full reversals only without later affected movements; optional item-level cylinder serial tracking; deposits deferred to sales. On 2026-09-19 the owner approved separate tenant/product/warehouse weighted-average pools across stock states, configured quantities up to 3 decimals (whole cylinders), 6-place costs, 2-place PKR amounts, midpoint rounding away from zero and exact remaining-value consumption on full depletion. These rules apply for current use; later requested changes must preserve posted history and document their effective scope and migration impact. Opening quantity/value must be independently reconciled by the operator; no source history or business data was imported.
 
 No purchasing, sales, payment/deposit accounting, bulk import, arbitrary backdating, negative stock or partial reversal was introduced. Tenant-wide stock locks favor correctness over maximum within-tenant write throughput. Production gates from prior phases remain applicable.
 
 ## Verification record
+
+The application checks below are the recorded 2026-09-18 results for implementation checkpoint `7d58917`. The 2026-09-19 acceptance update records owner approval only: no application or schema changes, no new migrations, and no application test or remote CI rerun. The acceptance documentation is recorded separately from implementation checkpoint `7d58917`. Later policy changes are separate requested work.
 
 - Backend Release build passed: **4 unit, 4 architecture and 36 PostgreSQL/API tests**.
 - Ten inventory integration cases verify receipt/issue values, cross-branch transfers, reversal identity and dependencies, concurrent issues and retries, serial custody, every route's workspace boundary, forbidden branches, catalog versions, composite constraints and database immutability.
@@ -39,4 +41,4 @@ Tenant filters, tenant-qualified foreign keys, branch authorization and permissi
 
 Apply `InventoryLedger` and `InventoryGuards` before starting the updated API. No inventory is seeded. Fresh and prior-schema upgrades are tested; downgrade is destructive to inventory data and is not a recovery plan.
 
-Resolve the remaining costing decision before accepting Phase 04. The subsequent prompt is **Prompt 05 — Suppliers and Purchasing**, only when requested.
+Phase 04 is accepted. The subsequent prompt is **Prompt 05 — Suppliers and Purchasing**, only when requested.

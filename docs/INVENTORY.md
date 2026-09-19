@@ -12,7 +12,7 @@ SKU, kind, unit and serial policy are immutable after creation. Correct those id
 
 ## Quantities, states and valuation
 
-The proposed valuation policy is a separate perpetual weighted-average pool for each tenant/product/warehouse. The costing choice remains pending owner confirmation in `PROJECT_STATE.md` until explicitly resolved. Quantities use the configured unit precision, up to 3 places. Receipt unit costs allow 6 places, PKR values use 2, and midpoint rounding is away from zero. Negative stock is prohibited.
+The valuation policy, approved by the owner on 2026-09-19, is a separate perpetual weighted-average pool for each tenant/product/warehouse. This is the accepted policy for current use; later requested changes require a documented decision and impact review that preserves posted history. Quantities use the configured unit precision, up to 3 places. Receipt unit costs allow 6 places, PKR values use 2, and midpoint rounding is away from zero. Negative stock is prohibited.
 
 Stock quantity in each warehouse/state is the sum of signed ledger quantities. Warehouse value is the sum of signed ledger values across all states for that product. Average cost is warehouse value divided by warehouse quantity, displayed to 6 places. Issues use the unrounded ratio to calculate the 2-place amount; the final issue consumes the remaining value exactly. A receipt's amount is quantity multiplied by entered unit cost, rounded to 2 places. The server accepts authorized receipt cost inputs, validates them and calculates the amounts; an issue or transfer cannot supply its own cost.
 

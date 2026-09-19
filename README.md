@@ -2,7 +2,7 @@
 
 Gas365 is a planned multi-tenant LPG operations platform for retailers and distributors in Pakistan. It covers LPG, cylinders, spare parts, purchasing, sales, credit, cash and profitability.
 
-The repository includes the local platform, identity/workspace foundation and Phase 03 design system: verified email sign-in, tenants, branches, team permissions, session management, audit activity and a responsive, accessible application shell. Phase 04 adds catalog and inventory implementation; its checkpoint and outstanding costing decision are recorded below. Purchasing, sales and payments remain later phases.
+The repository includes the local platform, identity/workspace foundation and Phase 03 design system: verified email sign-in, tenants, branches, team permissions, session management, audit activity and a responsive, accessible application shell. Phase 04 adds catalog and inventory implementation; its checkpoint and costing policy were accepted on 2026-09-19 and are recorded below. Purchasing, sales and payments remain later phases.
 
 ## Run locally
 
@@ -11,6 +11,7 @@ With Docker's Linux engine and Node installed, run `node scripts/bootstrap.mjs`,
 ## Project documentation
 
 - [Project state and next step](PROJECT_STATE.md)
+- [Combined phase history and new-chat handoff](docs/PHASE_HISTORY.md)
 - [Source inventory and workflow gaps](docs/SOURCE_INVENTORY.md)
 - [Requirement traceability](docs/REQUIREMENTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
