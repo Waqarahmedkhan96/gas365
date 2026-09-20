@@ -11,7 +11,13 @@ public static class Permissions
     public const string InventoryView = "inventory.view";
     public const string InventoryPost = "inventory.post";
     public const string InventoryReverse = "inventory.reverse";
-    public static readonly string[] All = [TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse];
+    public const string PurchaseView = "purchases.view_cost";
+    public const string PurchaseDraft = "purchases.create";
+    public const string PurchasePost = "purchases.post";
+    public const string PurchasePay = "purchases.pay";
+    public const string PurchaseReverse = "purchases.reverse";
+    public const string SupplierManage = "suppliers.manage";
+    public static readonly string[] All = [TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage];
 }
 
 public interface ITenantOwned { Guid TenantId { get; set; } }

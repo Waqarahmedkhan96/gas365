@@ -29,7 +29,7 @@ public sealed class InventoryAccess(Gas365DbContext db, TenantScope scope, IInve
     private static AssetDto Dto(CylinderAsset x) => new(x.Id, x.ItemId, x.Serial, x.Owner, x.InspectionReference, x.InspectionDue, x.Version);
     private static string Hash(object request) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request))));
     private static string Key(string key) => CatalogAccess.Text(key, 80);
-    private static string Bucket(StockItem item, string bucket)
+    internal static string Bucket(StockItem item, string bucket)
     {
         var allowed = item.Kind == "Cylinder" ? new[] { "Full", "Empty", "InTransit", "CustomerHeld", "Inspection", "Damaged", "Lost", "Retired" } : ["Available", "Damaged"];
         if (!allowed.Contains(bucket)) throw new AccessException(400, "Choose a supported stock state for this item.");
@@ -91,7 +91,7 @@ public sealed class InventoryAccess(Gas365DbContext db, TenantScope scope, IInve
         if (!id.HasValue) db.CylinderAssets.Add(asset);
         Audit(id.HasValue ? "asset.updated" : "asset.created", asset.Id); await db.SaveChangesAsync(ct); return Dto(asset);
     }
-    private async Task ValidateSerialsAsync(StockItem item, string[] serials, decimal quantity, Guid warehouseId, string bucket, bool outgoing, CancellationToken ct)
+    internal async Task ValidateSerialsAsync(StockItem item, string[] serials, decimal quantity, Guid warehouseId, string bucket, bool outgoing, CancellationToken ct)
     {
         if (!item.SerialTracked) { if (serials.Length != 0) throw new AccessException(400, "This item does not track serials."); return; }
         if (serials.Length != quantity || serials.Distinct().Count() != serials.Length) throw new AccessException(400, "Provide one distinct serial per cylinder.");
@@ -194,6 +194,7 @@ public sealed class InventoryAccess(Gas365DbContext db, TenantScope scope, IInve
         await using var transaction = await db.Database.BeginTransactionAsync(ct); await LockAsync(ct);
         var replay = await ReplayAsync(key, hash, ct); if (replay is not null) return await DocumentAsync(replay.Id, ct);
         var original = await DocumentAsync(id, ct);
+        if (original.Kind == "PurchaseReceipt") throw new AccessException(409, "Reverse this receipt through its purchase to preserve the supplier ledger.");
         if (original.ReversesId.HasValue || original.ReversedById.HasValue) throw new AccessException(409, "This document cannot be reversed again.");
         foreach (var pool in original.Movements.GroupBy(x => new { x.ItemId, x.WarehouseId }))
         {
