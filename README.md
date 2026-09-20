@@ -2,7 +2,7 @@
 
 Gas365 is a planned multi-tenant LPG operations platform for retailers and distributors in Pakistan. It covers LPG, cylinders, spare parts, purchasing, sales, credit, cash and profitability.
 
-The repository includes the local platform, identity/workspace foundation and Phase 03 design system: verified email sign-in, tenants, branches, team permissions, session management, audit activity and a responsive, accessible application shell. Phase 04 adds catalog and inventory implementation; its checkpoint and outstanding costing decision are recorded below. Purchasing, sales and payments remain later phases.
+The repository includes the local platform, identity/workspace foundation and Phase 03 design system: verified email sign-in, tenants, branches, team permissions, session management, audit activity and a responsive, accessible application shell. Phase 04 adds catalog and inventory implementation; its checkpoint and costing policy were accepted on 2026-09-19 and are recorded below. Phase 05 adds suppliers, purchasing, partial cash allocations and PDF vouchers; its operating choices await owner acceptance. Sales and wider payment/cash management remain later phases.
 
 ## Run locally
 
@@ -11,6 +11,7 @@ With Docker's Linux engine and Node installed, run `node scripts/bootstrap.mjs`,
 ## Project documentation
 
 - [Project state and next step](PROJECT_STATE.md)
+- [Combined phase history and new-chat handoff](docs/PHASE_HISTORY.md)
 - [Source inventory and workflow gaps](docs/SOURCE_INVENTORY.md)
 - [Requirement traceability](docs/REQUIREMENTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
@@ -24,6 +25,8 @@ With Docker's Linux engine and Node installed, run `node scripts/bootstrap.mjs`,
 - [Phase 02 verification](docs/PHASE_02_REPORT.md)
 - [Phase 03 verification](docs/PHASE_03_REPORT.md)
 - [Phase 04 checkpoint](docs/PHASE_04_REPORT.md)
+- [Phase 05 checkpoint](docs/PHASE_05_REPORT.md)
+- [Purchasing and supplier contracts](docs/PURCHASING.md)
 - [Inventory rules and API contracts](docs/INVENTORY.md)
 - [Design system and application shell](docs/DESIGN_SYSTEM.md)
 - [Controlled phase prompts](prompts/PHASE_PROMPTS.md)

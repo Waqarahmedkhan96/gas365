@@ -69,6 +69,10 @@ If Docker reports a Windows port reservation, select an available port in ignore
 
 ## Migrations and environments
 
+Phase 05 adds `/workspace/purchases` and `/workspace/suppliers`. Create a supplier, then save a multi-line purchase draft and review its server-calculated allocation before posting. Purchases support cash payments, full reversal and PDF vouchers; see [purchasing contracts](PURCHASING.md). Apply `20260919072004_Purchasing` through the migration job before the new API starts. Existing owner roles gain purchasing permissions; no business data is seeded.
+
+On Windows, if the pnpm `exec` wrapper cannot locate an installed executable, the equivalent local commands are `node node_modules/@playwright/test/cli.js test` and `node node_modules/prettier/bin/prettier.cjs --check .`. Use the pinned pnpm version in CI/containers. The desktop bundled pnpm used for Phase 05 host checks reports 11.19.0; the container uses the project's pinned 12.4.2 with the frozen lockfile.
+
 Phase 03 requires no new database migration or API contract change. Rebuild the web image through bootstrap to install the shell and matching HTML/CSP configuration.
 
 `InventoryLedger` adds catalog, locations, cylinder assets and immutable stock documents/movements. `InventoryGuards` adds database mutation guards and existing owner permissions. Both run before the updated API starts. No opening stock is seeded.

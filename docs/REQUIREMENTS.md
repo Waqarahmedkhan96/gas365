@@ -1,6 +1,6 @@
 # Requirement traceability
 
-Sources: [business rules](../reference/BUSINESS_RULES.md), [architecture/security](../reference/ARCHITECTURE_AND_SECURITY.md), [UI](../reference/UI_SYSTEM.md), [operations/reporting](../reference/DEVOPS_TESTING_REPORTING_AI.md), [product blueprint](../reference/PRODUCT_BLUEPRINT.md), and [inspected source inventory](SOURCE_INVENTORY.md). W denotes workbook sheet; S denotes screenshot range from that inventory. The table defines acceptance targets; completed evidence for R01, R02 and R03 is in the [Phase 01](PHASE_01_REPORT.md), [Phase 02](PHASE_02_REPORT.md) and [Phase 03](PHASE_03_REPORT.md) reports. Phase 04 implementation evidence for R04–R06 and inventory corrections is in the [Phase 04 checkpoint](PHASE_04_REPORT.md); final costing-policy acceptance remains pending. R18 currently includes server-enforced user/admin/branch limits only; billing and support administration remain Phase 10.
+Sources: [business rules](../reference/BUSINESS_RULES.md), [architecture/security](../reference/ARCHITECTURE_AND_SECURITY.md), [UI](../reference/UI_SYSTEM.md), [operations/reporting](../reference/DEVOPS_TESTING_REPORTING_AI.md), [product blueprint](../reference/PRODUCT_BLUEPRINT.md), and [inspected source inventory](SOURCE_INVENTORY.md). W denotes workbook sheet; S denotes screenshot range from that inventory. The table defines acceptance targets; completed evidence for R01, R02 and R03 is in the [Phase 01](PHASE_01_REPORT.md), [Phase 02](PHASE_02_REPORT.md) and [Phase 03](PHASE_03_REPORT.md) reports. Phase 04 implementation evidence for R04–R06 and inventory corrections is in the [Phase 04 checkpoint](PHASE_04_REPORT.md); the owner approved the costing policy and closed Phase 04 acceptance on 2026-09-19. R18 currently includes server-enforced user/admin/branch limits only; billing and support administration remain Phase 10.
 
 | ID  | Requirement and evidence                                                                  | Phase      | Acceptance evidence                                                              |
 | --- | ----------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------- |
@@ -27,6 +27,8 @@ Sources: [business rules](../reference/BUSINESS_RULES.md), [architecture/securit
 | R21 | Delivery workflow; blueprint only, no dedicated source flow                               | Unassigned | Owner-approved dispatch/custody scope before scheduling                          |
 
 ## Required reporting coverage
+
+Phase 05 implementation evidence for R07 and the purchasing portions of R14/R15 is recorded in the [Phase 05 checkpoint](PHASE_05_REPORT.md). Invoice-specific supplier allocations begin here; aging, unapplied balances, bank accounts and controlled cash closing remain R10/R12 in Phase 07.
 
 R13 includes daily sales, purchases, stock on hand, stock movement, inventory valuation, LPG profit, spare-parts profit, expenses, gross/net profit, customer aging, supplier payable, cash reconciliation, cylinder custody, branch comparison and user activity. Each report needs date/time-zone and reversal semantics, permission and filter contracts, and reconciliation fixtures. Charts use server aggregates and have a table or text alternative.
 
