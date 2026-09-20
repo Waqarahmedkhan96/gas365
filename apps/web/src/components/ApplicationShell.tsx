@@ -210,12 +210,12 @@ export function ApplicationShell({
         </div>
       </aside>
       <div className="shell-body">
-        <div className="mobile-topline">
+        <section className="mobile-topline" aria-label="Business identity">
           <Link to="/workspace">
             Gas<span>365</span>
           </Link>
           <strong>{tenant.name}</strong>
-        </div>
+        </section>
         <header className="shell-header">
           <div className="mobile-menu">
             <Modal

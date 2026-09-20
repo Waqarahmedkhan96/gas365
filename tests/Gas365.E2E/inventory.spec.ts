@@ -1,17 +1,27 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+// CSRF tokens are reusable within an identity; refresh after login (tenant changes).
+const csrfTokens = new WeakMap<APIRequestContext, Map<string, string>>();
+
 async function post(
   request: APIRequestContext,
   path: string,
   body: unknown,
   tenant?: string,
 ) {
-  const csrf = await (await request.get('/api/auth/csrf')).json();
+  const tokens = csrfTokens.get(request) ?? new Map<string, string>();
+  csrfTokens.set(request, tokens);
+  const identity = tenant ?? 'anonymous';
+  if (!tokens.has(identity)) {
+    const csrfResponse = await request.get('/api/auth/csrf');
+    expect(csrfResponse.ok(), await csrfResponse.text()).toBeTruthy();
+    tokens.set(identity, (await csrfResponse.json()).token);
+  }
   const response = await request.post(path, {
     data: body,
     headers: {
-      'X-CSRF-TOKEN': csrf.token,
+      'X-CSRF-TOKEN': tokens.get(identity)!,
       ...(tenant ? { 'X-Workspace': tenant } : {}),
     },
   });
