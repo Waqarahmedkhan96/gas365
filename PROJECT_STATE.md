@@ -61,6 +61,8 @@ Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and 
 
 ## Exact next prompt
 
+Local-access follow-up (2026-09-21): the Phase 05 report now includes registration and Mailpit email-verification instructions. The owner reached the verification message; successful verification/sign-in was not independently confirmed. This documentation-only addition does not change purchasing acceptance or migration status. Prior documentation checkpoint: `4f0aaa6`.
+
 Final documentation checks on 2026-09-21: backend/frontend formatting, 84 local Markdown links and Git whitespace checks passed. Implementation checkpoint verified in Git: `a3b75a0`.
 
 Review the Phase 05 checkpoint only. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PURCHASING.md and Prompt 05. Inspect Git status and preserve existing changes. Confirm or revise supplier-paid landed charges and separate payment reversal before purchase reversal; retain the approved Phase 04 costing policy. Apply only requested Phase 05 corrections, rerun affected checks, and update all three checkpoint records with acceptance and commit status. Do not start Phase 06.

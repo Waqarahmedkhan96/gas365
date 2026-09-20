@@ -33,6 +33,18 @@ Evidence is in ignored `artifacts/test-results/`, `artifacts/pdf-qa/`, `artifact
 - A mobile accessibility scan found the shared shell's business identity outside a landmark. Phase 05 corrects it to a named region. This is a later correction to Phase 03, not a rewrite of its historical verification.
 - The browser's PKR default omitted fractional digits. Purchasing now explicitly displays the currency code and two decimal places. A repeated full run also hit the unchanged authentication limiter (429 on `/api/auth/me`); no authentication or CSRF protection was weakened. Live setup helpers now reuse CSRF tokens within each identity and refresh after login; the browser suite uses one worker because all live journeys share one client IP. The final complete run passed 18/18 without retries.
 
+## Local access walkthrough — 2026-09-21
+
+The owner opened the local application and needed help finding registration and verifying email. The login page labels sign-up **Create a workspace**. The initial registration screenshot showed a password without a symbol; the subsequent screenshot showed the verification message in Mailpit. Successful email verification and sign-in were not independently confirmed during this walkthrough.
+
+1. Open [Gas365](http://localhost:8080) or go directly to [Create a workspace](http://localhost:8080/register). There is no seeded default administrator account.
+2. Enter your name, business name, unique email and a password of at least 12 characters containing uppercase and lowercase letters, a number and a symbol.
+3. Open [local Mailpit](http://localhost:8025) and find **Verify your Gas365 account**. Local development email is captured here rather than delivered to the external inbox.
+4. Open the complete link beginning `http://localhost:8080/confirm?`, including its email and token parameters. If the plain-text link is not clickable, copy the entire URL into the browser address bar; it may extend beyond the visible area. Use it within one hour, or request a new message through [Resend verification](http://localhost:8080/resend).
+5. Click **Verify email**, then [Sign in](http://localhost:8080/login) with the credentials you created. Open **Suppliers** or **Purchases** to review Phase 05.
+
+No passwords, verification tokens or personal account details are retained in this log. This follow-up documents the existing identity workflow; it adds no application or schema changes and does not close the two purchasing business decisions. The application returned HTTP 200 during the earlier local-access check. Application suites were not rerun for this documentation-only follow-up; the 90-test evidence above remains from the implementation verification. Documentation checkpoint before this addendum: `4f0aaa6`.
+
 ## Historical evidence
 
 Phase 04's 73 passing checks belong to the 2026-09-18 implementation checkpoint `7d58917`; they are not current Phase 05 verification. Existing Phase 04 acceptance/handoff edits were already uncommitted when this task started and are preserved.

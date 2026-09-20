@@ -127,6 +127,8 @@ Open a new chat attached to the Gas365 repository and paste the appropriate prom
 
 ## Maintenance record
 
+- 2026-09-21 local-access follow-up: added registration, password requirements, Mailpit verification and sign-in instructions to the Phase 05 report. The owner reached the verification email; successful verification/login was not independently confirmed. Documentation only, no migration or application-test rerun. Prior documentation checkpoint: `4f0aaa6`; purchasing acceptance remains unchanged.
+
 - 2026-09-21 Phase 05 checkpoint: implementation and local verification complete, 90 tests passed across suites. Backend/frontend formatting, 84 local Markdown links and Git whitespace checks passed. Migration and PDF evidence are recorded in the Phase 05 report. Owner acceptance of the two operating choices remains open. Implementation committed as `8e2d9f8` and `a3b75a0`; no remote CI run or production deployment occurred.
 
 - 2026-09-19 acceptance addendum: the owner explicitly approved the existing costing policy for current use and will request any later changes. Phase 04 is accepted; Phase 05 remains unstarted. Updated state, report, contracts, ADR and planning references. No application/schema changes or new migrations; the 73-test result remains historical evidence from 2026-09-18. No application tests or remote CI rerun. Acceptance documentation is uncommitted.
