@@ -22,7 +22,7 @@ The owner has now clarified:
 - Keep separate reasoned payment reversal before purchase reversal.
 - Include borrowed cylinders and refundable deposits in Phase 06.
 
-Two follow-up questions remain: stock capitalization versus immediate expense for purchase-related outlays, and deposit/waiver/return/damage/loss terms. No response has yet been recorded. Detailed gas and returned-shell valuation rules also need explicit documentation before posting implementation.
+At the earlier checkpoint, two follow-up questions were pending. The owner has now approved the deposit/return recommendations, with a variable usage fee entered by workers on return. Stock capitalization versus immediate expense for purchase-related outlays remains unanswered. Detailed gas and returned-shell valuation rules also need explicit documentation before posting implementation.
 
 Acceptance now also requires customer-specific cylinder custody reconciliation, deposit liability separate from sales revenue, controlled deposit collection/refund, and stock/payment effects that reverse together without modifying original history. The purchasing correction must separate the goods supplier balance from separately paid transport/loading costs and retain historical document semantics.
 
@@ -58,3 +58,17 @@ Current implementation verification on 2026-09-21:
 Corrections during verification: moved price ordering/filtering before response projection for database translation; corrected a test's owner-role lookup; restored stopped local services without deleting volumes; separated the sale-mode label from its select; mapped nested PostgreSQL serialization/deadlock conflicts to 409. The competing edit remains rejected; no assertions or authorization controls were weakened.
 
 Migration impact: `20260921002027_CustomersAndPriceLists` and `20260921070611_SalesDrafts` add four tables, tenant-qualified constraints, indexes and owner permissions. Upgrade verification retains prior inventory values and supplier records; no posted purchases are rewritten and no stock is recosted. Fresh and repeated application/model drift are checked by the integration suite. Downgrade would destroy the new records; use backup/restore for recovery. Implementation checkpoint verified in Git: `51b340a` on `feature/phase-06-sales`. It is intentionally not merged into main because the phase is incomplete.
+
+## Approved cylinder deposit and usage policy
+
+The owner accepted the recommendations in this task and clarified that workers enter the usage charge manually on return. It may differ each time; PKR 2,000 was an example, not a fixed or monthly rate. No automatic duration-based charge is authorized.
+
+- Configure a suggested deposit per cylinder type, but permit manual non-negative deposit amounts, including zero, subject to permissions. Reductions/waivers require authorized staff; admin/store-manager-approved zero-deposit customer arrangements support hotels and tandoors.
+- Borrowed cylinders remain business-owned and are tracked against the customer even when no deposit is collected. Return moves the cylinder to empty stock or inspection according to condition, without treating the shell as a new purchase.
+- A worker with return/usage-entry permission can enter the variable usage fee when processing the return. Do not require manager entry or approval of an ordinary usage fee merely because damage/loss charges need approval. Record actor, amount and return reference; show fee terms to the customer when issuing the cylinder.
+- Damage or loss charges require admin/store-manager approval; ordinary workers cannot approve them. Permission is checked by the API, not inferred from a client role label.
+- Deposit collection increases cash and refundable deposit liability, not sales income. The earned usage fee is separate income; applying it against the deposit reduces the liability. Refundable deposits are shown in cash received, separate from revenue/profit.
+- Return settlement displays original deposit, usage fee, approved damage/loss charges and refund due. Only actual payment records a cash refund; an unpaid refund remains owed. Approved charges beyond a deposit, including a zero-deposit loan, must be collected separately rather than producing a negative refund.
+- All cash, fee, custody and refund effects need atomic/idempotent posting and auditable reversal. This is an approved policy, not a claim that the workflows are implemented.
+
+This clarification changes documentation only. No code/schema changes or application tests were run for it; the 105-test implementation result above remains historical evidence for `51b340a`.

@@ -157,3 +157,9 @@ Customer contacts, versioned selling-price lists and branch-scoped multi-line sa
 Current Phase 06 verification (2026-09-21): 105 tests passed across suites/runs (17 unit, 4 architecture, 51 PostgreSQL/API, 13 frontend, 20 browser). The browser evidence is 18 existing journeys plus two corrected new journeys, not a single final 20/20 invocation. Frontend lint/types/build, OpenAPI, migration/model checks, Compose health and documentation checks passed. No remote CI/push. This is a partial feature checkpoint, not full Phase 06 acceptance; remaining scope and policy decisions are in the detailed report and project state.
 
 Verified Phase 06 partial implementation checkpoint: `51b340a` on `feature/phase-06-sales`. Working tree was clean after that commit. No main merge, branch deletion or remote push occurred for the incomplete phase.
+
+## Phase 06 deposit-policy acceptance addendum
+
+The owner accepted separating refundable deposits from sales income, flexible non-negative deposits including approved zero-deposit arrangements, customer-specific custody, condition-based return, actual-cash refunds and admin/store-manager approval for damage/loss charges. The owner clarified that ordinary authorized workers enter the usage fee on return and it can differ every time; no fixed PKR 2,000 or monthly charge is authorized. This supersedes the earlier pending deposit-policy question. The detailed approved policy is in project state, [sales contracts](SALES.md) and the [Phase 06 report](PHASE_06_REPORT.md).
+
+Documentation only: no code/schema changes or application test rerun. Purchase-cost capitalization versus expense remains open; full Phase 06 implementation is still incomplete. Historical 105-test evidence and checkpoint `51b340a` are unchanged.

@@ -33,3 +33,15 @@ Routes are under `/api/workspace/sales`: `customers`, `price-lists`, `price-list
 ## Migrations and historical data
 
 Apply `20260921002027_CustomersAndPriceLists` and `20260921070611_SalesDrafts` before the API. They add Customers, PriceLists, SalePrices and SaleDrafts, tenant-qualified constraints/indexes and owner permissions. Other roles need explicit grants. No business records are seeded, existing purchases remain unchanged, and inventory is not recosted. Downgrade drops these new records and is not a recovery procedure for valuable data. Both migrations form an incomplete Phase 06 checkpoint; do not describe them as full sales support.
+
+## Approved cylinder deposit and usage policy
+
+The owner accepted the recommendations in this task and clarified that workers enter the usage charge manually on return. It may differ each time; PKR 2,000 was an example, not a fixed or monthly rate. No automatic duration-based charge is authorized.
+
+- Configure a suggested deposit per cylinder type, but permit manual non-negative deposit amounts, including zero, subject to permissions. Reductions/waivers require authorized staff; admin/store-manager-approved zero-deposit customer arrangements support hotels and tandoors.
+- Borrowed cylinders remain business-owned and are tracked against the customer even when no deposit is collected. Return moves the cylinder to empty stock or inspection according to condition, without treating the shell as a new purchase.
+- A worker with return/usage-entry permission can enter the variable usage fee when processing the return. Do not require manager entry or approval of an ordinary usage fee merely because damage/loss charges need approval. Record actor, amount and return reference; show fee terms to the customer when issuing the cylinder.
+- Damage or loss charges require admin/store-manager approval; ordinary workers cannot approve them. Permission is checked by the API, not inferred from a client role label.
+- Deposit collection increases cash and refundable deposit liability, not sales income. The earned usage fee is separate income; applying it against the deposit reduces the liability. Refundable deposits are shown in cash received, separate from revenue/profit.
+- Return settlement displays original deposit, usage fee, approved damage/loss charges and refund due. Only actual payment records a cash refund; an unpaid refund remains owed. Approved charges beyond a deposit, including a zero-deposit loan, must be collected separately rather than producing a negative refund.
+- All cash, fee, custody and refund effects need atomic/idempotent posting and auditable reversal. This is an approved policy, not a claim that the workflows are implemented.

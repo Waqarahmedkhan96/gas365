@@ -47,11 +47,23 @@ React/TypeScript SPA/PWA; ASP.NET Core modular monolith; PostgreSQL. Initial hos
 
 The owner selected current-date posting only, full reversals only without later affected stock movements, optional serial tracking per cylinder item, and deposits deferred to sales. On 2026-09-19 the owner approved the existing costing rules for current use: separate tenant/product/warehouse weighted-average pools across stock states, configured quantity precision up to 3 decimals (whole cylinders), cost precision of 6 decimals, PKR values of 2 decimals, midpoint rounding away from zero and full depletion consuming the remaining value. The owner may request changes in a later phase; any change must preserve posted history and document its effective scope and migration impact. Opening quantities/values must be reconciled by the operator; historical FIFO records are not imported or recosted.
 
+## Approved cylinder deposit and usage policy
+
+The owner accepted the recommendations in this task and clarified that workers enter the usage charge manually on return. It may differ each time; PKR 2,000 was an example, not a fixed or monthly rate. No automatic duration-based charge is authorized.
+
+- Configure a suggested deposit per cylinder type, but permit manual non-negative deposit amounts, including zero, subject to permissions. Reductions/waivers require authorized staff; admin/store-manager-approved zero-deposit customer arrangements support hotels and tandoors.
+- Borrowed cylinders remain business-owned and are tracked against the customer even when no deposit is collected. Return moves the cylinder to empty stock or inspection according to condition, without treating the shell as a new purchase.
+- A worker with return/usage-entry permission can enter the variable usage fee when processing the return. Do not require manager entry or approval of an ordinary usage fee merely because damage/loss charges need approval. Record actor, amount and return reference; show fee terms to the customer when issuing the cylinder.
+- Damage or loss charges require admin/store-manager approval; ordinary workers cannot approve them. Permission is checked by the API, not inferred from a client role label.
+- Deposit collection increases cash and refundable deposit liability, not sales income. The earned usage fee is separate income; applying it against the deposit reduces the liability. Refundable deposits are shown in cash received, separate from revenue/profit.
+- Return settlement displays original deposit, usage fee, approved damage/loss charges and refund due. Only actual payment records a cash refund; an unpaid refund remains owed. Approved charges beyond a deposit, including a zero-deposit loan, must be collected separately rather than producing a negative refund.
+- All cash, fee, custody and refund effects need atomic/idempotent posting and auditable reversal. This is an approved policy, not a claim that the workflows are implemented.
+
 ## Open decisions
 
 Owner decisions recorded during Phase 06: petrol, tolls, loading and unloading are paid separately from the goods supplier, including costs of the business's own vehicle. The previous supplier-paid landed-charge assumption is rejected and requires a purchasing correction. Separate reasoned payment reversal before purchase reversal is approved. Borrowed cylinders and refundable deposits are explicitly included in Phase 06, not deferred.
 
-Remaining questions: whether separately paid purchase-related costs are capitalized into stock or expensed immediately; deposit rates, permission to reduce/waive deposits, acceptable-return refunds and damage/loss settlement. Proposed deposit rules have been presented but are not approved. Gas consumption, returned-cylinder valuation and custody must be explicit before dependent posting rules are implemented. Existing posted purchasing history must remain unchanged; do not silently remove charges from historical supplier balances or recost inventory.
+Remaining question: whether separately paid purchase-related costs are capitalized into stock or expensed immediately. Cylinder deposit and usage policy is now approved below; do not ask again whether the usage fee is fixed or monthly. Workers enter a variable fee on return. Gas consumption, returned-cylinder valuation and custody must be explicit before dependent posting rules are implemented. Existing posted purchasing history must remain unchanged; do not silently remove charges from historical supplier balances or recost inventory.
 
 Cash-only allocations, no advances, and English PDF vouchers are existing boundaries; bank accounts/cash closing and full Urdu voucher typography remain later work. See [purchasing contracts](docs/PURCHASING.md).
 
@@ -69,7 +81,7 @@ Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and 
 
 ## Exact next prompt
 
-Continue Phase 06 in the existing task on `feature/phase-06-sales`. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PHASE_06_REPORT.md, docs/PURCHASING.md, docs/INVENTORY.md and Prompt 06. Resolve the pending purchasing and cylinder policy questions without inferring business acceptance. Implement and verify Phase 06 only. Update the three checkpoint records; when complete and verified, merge into main and delete the feature branch. Do not start Phase 07.
+Continue Phase 06 in the existing task on `feature/phase-06-sales`. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PHASE_06_REPORT.md, docs/PURCHASING.md, docs/INVENTORY.md and Prompt 06. Implement the approved cylinder deposit/return policy, including worker-entered variable usage fees and manager-approved damage/loss charges. Resolve the remaining purchase-cost treatment and document gas/exchange valuation before dependent work. Implement and verify Phase 06 only. Update the three checkpoint records; when complete and verified, merge into main and delete the feature branch. Do not start Phase 07.
 
 Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. This was historical kickoff verification; see the Phase 06 report for later implementation checks.
 
