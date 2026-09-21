@@ -2,7 +2,7 @@
 
 Gas365 is a planned multi-tenant LPG operations platform for retailers and distributors in Pakistan. It covers LPG, cylinders, spare parts, purchasing, sales, credit, cash and profitability.
 
-The repository includes the local platform, identity/workspace foundation and Phase 03 design system: verified email sign-in, tenants, branches, team permissions, session management, audit activity and a responsive, accessible application shell. Phase 04 adds catalog and inventory implementation; its checkpoint and costing policy were accepted on 2026-09-19 and are recorded below. Phase 05 adds suppliers, purchasing, partial cash allocations and PDF vouchers; its operating choices await owner acceptance. Sales and wider payment/cash management remain later phases.
+The repository includes the local platform, identity/workspace foundation and Phase 03 design system: verified email sign-in, tenants, branches, team permissions, session management, audit activity and a responsive, accessible application shell. Phase 04 adds catalog and inventory implementation; its checkpoint and costing policy were accepted on 2026-09-19 and are recorded below. Phase 05 adds suppliers, purchasing, partial cash allocations and PDF vouchers; its operating choices await owner acceptance. Phase 06 is in progress: customer records, selling-price lists and multi-line sales drafts are available, while sales posting, receipts, exchanges, custody and deposits remain incomplete. See [sales contracts](docs/SALES.md).
 
 ## Run locally
 

@@ -2,6 +2,27 @@ import type { Me } from './access-api';
 
 export const pages = [
   {
+    id: 'sales',
+    label: 'Sales drafts',
+    description: 'Prepare multi-line sales for review.',
+    permission: 'sales.view',
+    icon: 'branches',
+  },
+  {
+    id: 'customers',
+    label: 'Customers',
+    description: 'Customer contact details and status.',
+    permission: 'customers.view',
+    icon: 'team',
+  },
+  {
+    id: 'prices',
+    label: 'Price lists',
+    description: 'Selling prices by item and sale mode.',
+    permission: 'customers.view',
+    icon: 'branches',
+  },
+  {
     id: 'purchases',
     label: 'Purchases',
     description: 'Purchase drafts, receipts and payments.',

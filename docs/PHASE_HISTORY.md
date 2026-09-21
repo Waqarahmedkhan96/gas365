@@ -2,7 +2,7 @@
 
 Last consolidated: 2026-09-21.
 
-This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 05. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 has not started.
+This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 05. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 is now in progress; its incomplete implementation checkpoint is recorded below.
 
 [Project state](../PROJECT_STATE.md) owns current status and unresolved decisions. [Controlled phase prompts](../prompts/PHASE_PROMPTS.md) define scope. The linked individual reports retain detailed historical evidence. Results for Phases 00–04 are historical report evidence. Phase 05 records checks run in the current implementation task. Commit IDs were checked against local Git history; remote CI was not checked in this review.
 
@@ -142,6 +142,16 @@ Future phase entries must preserve historical facts and distinguish implementati
 
 The owner requested Phase 06 and a feature-branch workflow. Purchasing was merged into local `main` as `a97fe9b`, preserving both histories and resolving documentation conflicts. The clean purchasing worktree was detached without deleting its files, its merged branch was deleted, and `feature/phase-06-sales` was created from `main`. Nothing was pushed.
 
-Phase 06 is in preparation; implementation and acceptance are incomplete. The two pending purchasing policies and cylinder ownership/exchange/deposit scope have been presented to the owner. See [Phase 06 report](PHASE_06_REPORT.md). Historical Phase 05 verification remains separate from current baseline checks.
+At kickoff, Phase 06 was in preparation; later implementation progress is recorded below. The two pending purchasing policies and cylinder ownership/exchange/deposit scope have been presented to the owner. See [Phase 06 report](PHASE_06_REPORT.md). Historical Phase 05 verification remains separate from current baseline checks.
 
 Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. Business-rule answers remain pending.
+
+## Owner clarification during Phase 06
+
+The owner rejected treating petrol, tolls, loading and unloading as payable to the goods supplier: these are paid separately, including costs for the business's own vehicle. The implemented Phase 05 behavior described above is historical and requires correction during Phase 06; it has not yet been changed. Separate reasoned payment reversal before purchase reversal is approved. Existing posted history must remain intact. The capitalization-versus-expense treatment of separate costs is awaiting clarification. Borrowed cylinders and refundable deposits are included in Phase 06; their operating terms are being clarified in the [Phase 06 report](PHASE_06_REPORT.md).
+
+## Phase 06 implementation checkpoint in progress
+
+Customer contacts, versioned selling-price lists and branch-scoped multi-line sales drafts now exist. The backend calculates draft totals from saved prices and checks price/draft versions, permissions and tenant/branch references. Drafts have no stock or financial effects. Two additive migrations create configuration/draft tables and owner permissions while preserving prior data. See the [Phase 06 report](PHASE_06_REPORT.md) for current verification. Posting, receipts, payments, cylinder exchanges/custody/deposits and the purchasing-cost correction are still outstanding. The phase remains on its feature branch and is not accepted.
+
+Current Phase 06 verification (2026-09-21): 105 tests passed across suites/runs (17 unit, 4 architecture, 51 PostgreSQL/API, 13 frontend, 20 browser). The browser evidence is 18 existing journeys plus two corrected new journeys, not a single final 20/20 invocation. Frontend lint/types/build, OpenAPI, migration/model checks, Compose health and documentation checks passed. No remote CI/push. This is a partial feature checkpoint, not full Phase 06 acceptance; remaining scope and policy decisions are in the detailed report and project state.

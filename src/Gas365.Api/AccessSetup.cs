@@ -20,6 +20,8 @@ public static class AccessSetup
         builder.Services.AddScoped<ICatalogAccess, CatalogAccess>();
         builder.Services.AddScoped<IInventoryAccess, InventoryAccess>();
         builder.Services.AddScoped<IPurchasingAccess, PurchasingAccess>();
+        builder.Services.AddScoped<ICustomerAccess, CustomerAccess>();
+        builder.Services.AddScoped<ISalesDraftAccess, SalesDraftAccess>();
         builder.Services.AddSingleton<Gas365.Domain.IInventoryCosting, Gas365.Domain.WeightedAverageCosting>();
         builder.Services.AddScoped<IAccountMessages, AccountMessages>();
         builder.Services.AddScoped<SessionEvents>();
@@ -63,6 +65,13 @@ public static class AccessSetup
         });
     }
 
+    private static bool IsTransactionConflict(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+            if (current is PostgresException { SqlState: "40001" or "40P01" }) return true;
+        return false;
+    }
+
     public static void UseAccess(this WebApplication app)
     {
         app.Use(async (context, next) =>
@@ -70,8 +79,10 @@ public static class AccessSetup
             try { await next(context); }
             catch (AccessException exception) { await Results.Problem(statusCode: exception.StatusCode, title: exception.Message).ExecuteAsync(context); }
             catch (DbUpdateConcurrencyException) { await Results.Problem(statusCode: 409, title: "The record changed. Refresh and try again.").ExecuteAsync(context); }
-            catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23505" or "23503" or "23514" })
+            catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23505" or "23503" or "23514" or "40001" or "40P01" })
             { await Results.Problem(statusCode: 409, title: "This change conflicts with an existing record or limit.").ExecuteAsync(context); }
+            catch (Exception exception) when (IsTransactionConflict(exception))
+            { await Results.Problem(statusCode: 409, title: "A concurrent change occurred. Refresh before trying again.").ExecuteAsync(context); }
             catch (System.Net.Mail.SmtpException) { await Results.Problem(statusCode: 503, title: "Account email delivery is unavailable. Try again later.").ExecuteAsync(context); }
         });
         app.UseAuthentication();
@@ -100,5 +111,6 @@ public static class AccessSetup
         app.MapAccessEndpoints();
         app.MapInventoryEndpoints();
         app.MapPurchasingEndpoints();
+        app.MapCustomerEndpoints();
     }
 }

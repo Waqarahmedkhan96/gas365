@@ -19,6 +19,16 @@ import {
   type Audit,
 } from './access-api';
 
+const SalesDraftPage = lazy(() =>
+  import('./SalesDraftPage').then((module) => ({
+    default: module.SalesDraftPage,
+  })),
+);
+const CustomersPage = lazy(() =>
+  import('./CustomersPage').then((module) => ({
+    default: module.CustomersPage,
+  })),
+);
 const InventoryPage = lazy(() =>
   import('./InventoryPage').then((module) => ({
     default: module.InventoryPage,
@@ -34,6 +44,12 @@ const ShowcasePage = lazy(() =>
 );
 
 const permissions = [
+  'sales.view',
+  'sales.create',
+  'sales.discount',
+  'customers.view',
+  'customers.manage',
+  'prices.manage',
   'purchases.view_cost',
   'purchases.create',
   'purchases.post',
@@ -51,6 +67,12 @@ const permissions = [
   'inventory.reverse',
 ];
 const permissionLabels: Record<string, string> = {
+  'sales.view': 'View sales drafts',
+  'sales.create': 'Create and edit sales drafts',
+  'sales.discount': 'Apply sales discounts',
+  'customers.view': 'View customers and selling prices',
+  'customers.manage': 'Manage customers',
+  'prices.manage': 'Manage selling prices',
   'purchases.view_cost': 'View purchases and supplier costs',
   'purchases.create': 'Create and edit purchase drafts',
   'purchases.post': 'Post purchases',
@@ -210,6 +232,22 @@ export function WorkspacePage() {
         />
       ) : (
         <>
+          {tab === 'sales' && (
+            <Suspense fallback={<p role="status">Loading sales drafts...</p>}>
+              <SalesDraftPage user={user} />
+            </Suspense>
+          )}
+          {(tab === 'customers' || tab === 'prices') && (
+            <Suspense
+              fallback={<p role="status">Loading customers and prices...</p>}
+            >
+              <CustomersPage
+                key={`${user.tenantId}:${tab}`}
+                user={user}
+                pricesOnly={tab === 'prices'}
+              />
+            </Suspense>
+          )}
           {(tab === 'purchases' || tab === 'suppliers') && (
             <Suspense fallback={<p role="status">Loading purchasing…</p>}>
               <PurchasingPage user={user} suppliersOnly={tab === 'suppliers'} />

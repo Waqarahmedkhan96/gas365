@@ -2,11 +2,11 @@
 
 ## Current phase
 
-Phase 06 — Customers, Sales, Exchanges and Receipts: preparation started on 2026-09-21 at the owner's request, on `feature/phase-06-sales`. Purchasing was merged into local `main` at `a97fe9b` and its merged branch deleted. No Phase 06 application code or migration exists yet. Pending policy questions below must be resolved before dependent implementation. See [Phase 06 report](docs/PHASE_06_REPORT.md).
+Phase 06 — Customers, Sales, Exchanges and Receipts: implementation started on 2026-09-21 at the owner's request, on `feature/phase-06-sales`. Purchasing was merged into local `main` at `a97fe9b` and its merged branch deleted. Customer records, selling-price lists and versioned multi-line sales drafts are implemented as an incomplete checkpoint. The server validates price versions, decimal totals, discounts and branch access. Two additive migrations exist. Posting, payment capture, PDF receipts, exchanges, borrowed-cylinder custody, deposits and the purchasing-cost correction remain outstanding; pending business policies must be resolved before dependent implementation. See [Phase 06 report](docs/PHASE_06_REPORT.md).
 
 ## Previous phase checkpoint
 
-Phase 05 — Suppliers and Purchasing: implemented and locally verified on 2026-09-21. Business acceptance of the two operating choices below remains open. See [Phase 05 report](docs/PHASE_05_REPORT.md). Phase 04 was accepted on 2026-09-19; its approved costing policy is unchanged. This records the prior Phase 05 checkpoint. Implementation checkpoint: `a3b75a0`, including backend commit `8e2d9f8`, on `feature/phase-05-purchasing`.
+Phase 05 — Suppliers and Purchasing: implemented and locally verified on 2026-09-21. Historical checkpoint: business acceptance was pending. The owner later retained separate payment reversal and rejected supplier-paid transport charges; see Open Decisions. See [Phase 05 report](docs/PHASE_05_REPORT.md). Phase 04 was accepted on 2026-09-19; its approved costing policy is unchanged. This records the prior Phase 05 checkpoint. Implementation checkpoint: `a3b75a0`, including backend commit `8e2d9f8`, on `feature/phase-05-purchasing`.
 
 ## Cross-chat handoff
 
@@ -49,9 +49,11 @@ The owner selected current-date posting only, full reversals only without later 
 
 ## Open decisions
 
-Phase 06 question pending: should full-cylinder sales transfer ownership, with compatible one-for-one empty/full exchanges and no deposit, while deposits and customer cylinder loans remain deferred? Inventory currently tracks cylinder shells separately from LPG and has no fill conversion or customer custody accounting. Gas consumption, returned-cylinder valuation and custody must be explicit before dependent posting rules are implemented.
+Owner decisions recorded during Phase 06: petrol, tolls, loading and unloading are paid separately from the goods supplier, including costs of the business's own vehicle. The previous supplier-paid landed-charge assumption is rejected and requires a purchasing correction. Separate reasoned payment reversal before purchase reversal is approved. Borrowed cylinders and refundable deposits are explicitly included in Phase 06, not deferred.
 
-Phase 05 implementation choices awaiting confirmation: transport/loading charges form part of the purchase supplier's payable, with separate freight-provider bills deferred; payments require separate reasoned reversal before full purchase reversal. Cash-only allocations, no advances, and English PDF vouchers are implemented boundaries; bank accounts/cash closing and full Urdu voucher typography remain later work. These choices are documented in [purchasing contracts](docs/PURCHASING.md), not silently treated as owner approval.
+Remaining questions: whether separately paid purchase-related costs are capitalized into stock or expensed immediately; deposit rates, permission to reduce/waive deposits, acceptable-return refunds and damage/loss settlement. Proposed deposit rules have been presented but are not approved. Gas consumption, returned-cylinder valuation and custody must be explicit before dependent posting rules are implemented. Existing posted purchasing history must remain unchanged; do not silently remove charges from historical supplier balances or recost inventory.
+
+Cash-only allocations, no advances, and English PDF vouchers are existing boundaries; bank accounts/cash closing and full Urdu voucher typography remain later work. See [purchasing contracts](docs/PURCHASING.md).
 
 See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; future return valuation and real-data cutover; cylinder customer/deposit relationships; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase. Tenant locale configuration beyond browser locale remains open; dates use the existing tenant time zone. Inventory uses branch context and separately authorizes both source and destination branches.
 
@@ -69,4 +71,8 @@ Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and 
 
 Continue Phase 06 in the existing task on `feature/phase-06-sales`. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PHASE_06_REPORT.md, docs/PURCHASING.md, docs/INVENTORY.md and Prompt 06. Resolve the pending purchasing and cylinder policy questions without inferring business acceptance. Implement and verify Phase 06 only. Update the three checkpoint records; when complete and verified, merge into main and delete the feature branch. Do not start Phase 07.
 
-Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. Business-rule answers remain pending.
+Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. This was historical kickoff verification; see the Phase 06 report for later implementation checks.
+
+## Phase 06 implementation verification
+
+Current incomplete checkpoint: 17 unit, 4 architecture, 51 PostgreSQL/API, 13 frontend and 20 desktop/mobile browser cases passed across the runs detailed in [the Phase 06 report](docs/PHASE_06_REPORT.md), 105 total. Frontend lint/types/build, OpenAPI, fresh/upgrade/repeat migrations, model drift, Compose health, formatting, links and whitespace passed. The feature is not complete and is not merged; no remote CI or push is claimed. Customers, prices and draft preparation are usable locally. Posting/receipts/payments, custody/deposits/exchanges and the purchase-cost correction remain outstanding. Historical kickoff verification above is separate.

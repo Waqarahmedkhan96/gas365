@@ -84,3 +84,7 @@ Development, Staging and Production settings contain no credentials. Set `Connec
 Provisioning limits default to 3 active branches, 10 active users and 3 active administrators including the owner. Override `Provisioning__MaxBranches`, `Provisioning__MaxUsers` and `Provisioning__MaxAdmins` before creating a tenant; existing tenants retain their stored limits. These are development defaults pending commercial plan decisions in Phase 10. The browser cannot change limits. Local Data Protection keys persist in the `identity-keys` volume; this local volume is not encrypted at rest. Removing it invalidates cookies and outstanding account links.
 
 CI builds SHA-tagged images, starts Compose, runs the same checks, validates OpenAPI and browser journeys, audits dependencies and retains evidence. No production deployment is configured. Production approval, backup/restore, full security scanning and launch gates remain scheduled work.
+
+## Phase 06 work in progress
+
+After applying `CustomersAndPriceLists` and `SalesDrafts`, owners can use `/workspace/customers`, `/workspace/prices` and `/workspace/sales`. Add a customer and a named price list, configure prices for catalog items, then prepare a branch sales draft and review its server totals. Drafts do not post stock or money. See [sales contracts](SALES.md) for permissions, migration notes and remaining scope. The Phase 06 feature branch is not a completed release.
