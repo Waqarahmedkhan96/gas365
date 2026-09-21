@@ -28,6 +28,8 @@ Sources: [business rules](../reference/BUSINESS_RULES.md), [architecture/securit
 
 ## Required reporting coverage
 
+Phase 05 implementation evidence for R07 and the purchasing portions of R14/R15 is recorded in the [Phase 05 checkpoint](PHASE_05_REPORT.md). Invoice-specific supplier allocations begin here; aging, unapplied balances, bank accounts and controlled cash closing remain R10/R12 in Phase 07.
+
 R13 includes daily sales, purchases, stock on hand, stock movement, inventory valuation, LPG profit, spare-parts profit, expenses, gross/net profit, customer aging, supplier payable, cash reconciliation, cylinder custody, branch comparison and user activity. Each report needs date/time-zone and reversal semantics, permission and filter contracts, and reconciliation fixtures. Charts use server aggregates and have a table or text alternative.
 
 ## Cross-cutting invariants

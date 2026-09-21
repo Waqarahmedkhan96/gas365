@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="PDFsharp" />
+    <EmbeddedResource Include="Fonts/Vera.ttf" />
+    <None Update="Fonts/LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <ProjectReference Include="../Gas365.Application/Gas365.Application.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

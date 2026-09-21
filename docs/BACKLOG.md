@@ -20,4 +20,4 @@ Priority P0 blocks a safe foundation or financial workflow; P1 completes the fun
 
 Each phase delivers tests and documentation with its vertical slice. Audit, reversal, tenant isolation and export authorization begin with the first affected module; later explorer and hardening phases do not postpone those controls.
 
-Phases 00–04 are complete; the owner approved Phase 04 costing and final acceptance on 2026-09-19, recorded in PROJECT_STATE.md. Do not begin Phase 05 automatically.
+Phases 00–04 are complete; the owner approved Phase 04 costing and final acceptance on 2026-09-19, recorded in PROJECT_STATE.md. Phase 05 is implemented; see its report for current verification and the two operating choices awaiting acceptance. Do not begin Phase 06 automatically.

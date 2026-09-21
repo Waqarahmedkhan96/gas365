@@ -1,10 +1,10 @@
 # Gas365 Combined Phase History and Chat Handoff
 
-Last consolidated: 2026-09-19.
+Last consolidated: 2026-09-21.
 
-This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning plus four implementation phases, 01–04. Phase 04 is implemented, locally verified and accepted following owner approval of the costing policy on 2026-09-19. Phase 05 has not started.
+This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 05. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 has not started.
 
-[Project state](../PROJECT_STATE.md) owns current status and unresolved decisions. [Controlled phase prompts](../prompts/PHASE_PROMPTS.md) define scope. The linked individual reports retain detailed historical evidence. The test results below are recorded results from those reports, not new test runs from the consolidation chat. Commit IDs were checked against local Git history; remote CI was not checked in this review.
+[Project state](../PROJECT_STATE.md) owns current status and unresolved decisions. [Controlled phase prompts](../prompts/PHASE_PROMPTS.md) define scope. The linked individual reports retain detailed historical evidence. Results for Phases 00–04 are historical report evidence. Phase 05 records checks run in the current implementation task. Commit IDs were checked against local Git history; remote CI was not checked in this review.
 
 ## Phase overview
 
@@ -15,7 +15,7 @@ This is the cumulative record to read when starting a new phase chat. The projec
 | 02    | Identity, tenancy, branches and permissions | Complete, locally verified                                      | `fd77996`                 |
 | 03    | Design system and application shell         | Complete, locally verified                                      | `5f4c1f9`                 |
 | 04    | Catalog and inventory ledger                | Accepted 2026-09-19; implementation locally verified 2026-09-18 | `7d58917`                 |
-| 05    | Suppliers and purchasing                    | Not started; next implementation phase                          | —                         |
+| 05    | Suppliers and purchasing                    | Locally verified 2026-09-21; business acceptance pending        | `a3b75a0`                 |
 
 ## Phase 00 — Repository Bootstrap and Source Inventory
 
@@ -93,11 +93,25 @@ Recorded implementation verification date: 2026-09-18. **Accepted on 2026-09-19 
 
 **Evidence:** [Phase 04 report](PHASE_04_REPORT.md), [inventory contracts](INVENTORY.md), [costing ADR](adr/004-costing.md).
 
+## Phase 05 — Suppliers and Purchasing
+
+Implemented 2026-09-19–21; implementation checkpoint `a3b75a0` (backend `8e2d9f8`). Business acceptance remains open for the two operating choices below.
+
+**Delivered:** Supplier profiles and branch ledgers, versioned multi-line drafts, decimal landed allocation by quantity/weight/value, atomic and idempotent stock/payable posting, partial cash payments, immutable payment/purchase reversals, linked replacements, responsive purchasing screens and authenticated PDF vouchers. Approved Phase 04 costing is unchanged.
+
+**Decisions awaiting review:** Landed charges belong to the purchase supplier's payable; separate freight bills are deferred. Reverse payments separately with a reason before reversing a purchase. Passing tests does not approve these assumptions.
+
+**Current verification:** On 2026-09-20, 11 unit, 4 architecture, 44 PostgreSQL/API and 13 frontend tests passed. Release build/publish, lint/types, production images, fresh/upgrade/repeat migrations, model drift, OpenAPI and dependency audits passed. One-page and 17-page PDF fixtures were rendered and visually checked. Compose health was rechecked on 2026-09-21. All 18 desktop/mobile browser tests passed on 2026-09-21: 90 tests across suites. See the report for exact run details and limitations; no remote CI result is claimed.
+
+**Migration impact:** Apply `20260919072004_Purchasing` before API startup. It adds purchasing schema, tenant-qualified constraints, immutable-history guards and owner permissions. Existing stock is preserved without recosting. Downgrade is destructive; use backup/restore for recovery.
+
+**Limitations:** Cash allocations to individual purchases only; no advances, bank/cash closing, taxes or Urdu PDF shaping. Later affected stock blocks purchase reversal. Production infrastructure remains future work. The shared mobile shell's business identity was corrected to a named landmark after an accessibility finding; historical Phase 03 evidence is retained.
+
+**Evidence:** [Phase 05 report](PHASE_05_REPORT.md), [purchasing contracts](PURCHASING.md).
+
 ## Next action
 
-Phase 04 is accepted. The costing decision is recorded in project state, this history, the Phase 04 report, inventory contracts and costing ADR. No code or migration changes were needed to record approval.
-
-The next implementation phase is **Prompt 05 — Suppliers and Purchasing**: suppliers, purchase drafts and multi-line items, landed-cost allocation, atomic/idempotent posting, supplier payable/cash and partial payments, corrections, supplier ledgers, purchasing screens and PDF vouchers, with calculation/concurrency/permission/browser tests. Start in a new chat only when requested. Later prompts 06–12 remain future scope.
+Review the two Phase 05 operating choices and record owner acceptance or requested corrections. Do not start Phase 06 automatically. The implementation checkpoint is `a3b75a0`; existing Phase 04 acceptance and handoff edits are preserved.
 
 ## New-chat workflow
 
@@ -105,7 +119,7 @@ Open a new chat attached to the Gas365 repository and paste the appropriate prom
 
 **Immediate handoff prompt:**
 
-> Work on Phase 05 — Suppliers and Purchasing only. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_04_REPORT.md, docs/INVENTORY.md, docs/adr/004-costing.md and Prompt 05 in prompts/PHASE_PROMPTS.md, plus relevant requirements and referenced files. Phase 04 costing was approved on 2026-09-19; retain that policy unless I request a change. Inspect the current repository and Git status, preserve unrelated changes, and state a short plan with acceptance criteria. Implement Phase 05 and run its required checks. Update docs/PHASE_05_REPORT.md, docs/PHASE_HISTORY.md and PROJECT_STATE.md with actual evidence, decisions, migration notes and the next-chat prompt. Stop without starting Phase 06.
+> Review the Phase 05 checkpoint only. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PURCHASING.md and Prompt 05. Inspect Git status and preserve existing changes. Confirm or revise supplier-paid landed charges and separate payment reversal before purchase reversal; retain the approved Phase 04 costing policy. Apply only requested Phase 05 corrections, rerun affected checks, and update all three checkpoint records with acceptance and commit status. Do not start Phase 06.
 
 **Reusable prompt for a requested phase (replace NN):**
 
@@ -113,9 +127,13 @@ Open a new chat attached to the Gas365 repository and paste the appropriate prom
 
 ## Maintenance record
 
-- 2026-09-19 acceptance addendum: the owner explicitly approved the existing costing policy for current use and will request any later changes. Phase 04 is accepted; Phase 05 remains unstarted. Updated state, report, contracts, ADR and planning references. No application/schema changes or new migrations; the 73-test result remains historical evidence from 2026-09-18. No application tests or remote CI rerun. The acceptance documentation is recorded separately from implementation checkpoint `7d58917`.
+- 2026-09-21 local-access follow-up: added registration, password requirements, Mailpit verification and sign-in instructions to the Phase 05 report. The owner reached the verification email; successful verification/login was not independently confirmed. Documentation only, no migration or application-test rerun. Prior documentation checkpoint: `4f0aaa6`; purchasing acceptance remains unchanged.
 
-- 2026-09-19: Consolidated existing Phase 00–04 reports and verified their checkpoint commits against local history. Inspected source structure, costing code, migration files and CI configuration. Added durable handoff instructions to AGENTS.md and links from README/project state. Documentation-only change; no application/schema changes, application test reruns or remote CI verification. This handoff update accompanies the acceptance documentation.
-- Documentation validation: all relative Markdown links in the four changed documents resolve; `git diff --check` passed. The initial pnpm formatting command could not resolve Prettier. Before commit, formatting was completed and verified using the installed Prettier executable directly.
+- 2026-09-21 Phase 05 checkpoint: implementation and local verification complete, 90 tests passed across suites. Backend/frontend formatting, 84 local Markdown links and Git whitespace checks passed. Migration and PDF evidence are recorded in the Phase 05 report. Owner acceptance of the two operating choices remains open. Implementation committed as `8e2d9f8` and `a3b75a0`; no remote CI run or production deployment occurred.
+
+- 2026-09-19 acceptance addendum: the owner explicitly approved the existing costing policy for current use and will request any later changes. Phase 04 is accepted; Phase 05 remains unstarted. Updated state, report, contracts, ADR and planning references. No application/schema changes or new migrations; the 73-test result remains historical evidence from 2026-09-18. No application tests or remote CI rerun. Acceptance documentation was committed as `4304318`.
+
+- 2026-09-19: Consolidated existing Phase 00–04 reports and verified their checkpoint commits against local history. Inspected source structure, costing code, migration files and CI configuration. Added durable handoff instructions to AGENTS.md and links from README/project state. Documentation-only change; no application/schema changes, application test reruns or remote CI verification. This handoff update is uncommitted at creation.
+- Documentation validation: all relative Markdown links in the four changed documents resolve; `git diff --check` passed. The Prettier command could not run because its executable is unavailable in the local dependency installation; formatting verification remains outstanding.
 
 Future phase entries must preserve historical facts and distinguish implementation completion from acceptance. Add actual verification evidence and migration notes even when the result is “not run” or “no schema changes”; never present a previous phase's tests as a fresh run.

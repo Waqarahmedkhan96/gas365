@@ -1,6 +1,6 @@
 # Inventory implementation and operating rules
 
-Phase 04 adds tenant-owned catalog and inventory data under `/api/workspace/inventory`. PostgreSQL is authoritative. No sales, purchasing, payment, deposit or tax module is included.
+Phase 04 adds tenant-owned catalog and inventory data under `/api/workspace/inventory`. PostgreSQL is authoritative. The Phase 04 checkpoint excluded sales, purchasing, payments, deposits and taxes. Phase 05 now integrates purchase receipts with this ledger; see [purchasing contracts](PURCHASING.md). Purchase receipts must be reversed through purchasing so stock and payable corrections stay atomic.
 
 ## Catalog and locations
 

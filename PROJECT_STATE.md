@@ -2,13 +2,13 @@
 
 ## Current phase
 
-Phase 04 — Catalog, LPG, Cylinders, Spare Parts and Inventory Ledger: implemented and locally verified on 2026-09-18; accepted on 2026-09-19 after the owner confirmed the implemented costing policy. Phase 03 checkpoint 5f4c1f9 passed GitHub Actions. Phase 05 has not started.
+Phase 05 — Suppliers and Purchasing: implemented and locally verified on 2026-09-21. Business acceptance of the two operating choices below remains open. See [Phase 05 report](docs/PHASE_05_REPORT.md). Phase 04 was accepted on 2026-09-19; its approved costing policy is unchanged. Phase 06 has not started. Implementation checkpoint: `a3b75a0`, including backend commit `8e2d9f8`, on `feature/phase-05-purchasing`.
 
 ## Cross-chat handoff
 
-Use [combined phase history](docs/PHASE_HISTORY.md) for the cumulative record of Phases 00–04 and the reusable new-chat prompt. Work on one numbered phase per chat according to [repository rules](AGENTS.md). Update this state, the combined history and the detailed phase report at every checkpoint.
+Use [combined phase history](docs/PHASE_HISTORY.md) for the cumulative record of Phases 00–05 and the reusable new-chat prompt. Work on one numbered phase per chat according to [repository rules](AGENTS.md). Update this state, the combined history and the detailed phase report at every checkpoint.
 
-On 2026-09-19, repository reports, Git checkpoints, source layout, costing implementation, migrations and CI configuration were reviewed to consolidate the history. This was a documentation-only handoff update; application suites and remote CI were not rerun. The owner subsequently confirmed the costing policy on 2026-09-19, closing Phase 04 acceptance; no Phase 05 work was started.
+On 2026-09-19, repository reports, Git checkpoints, source layout, costing implementation, migrations and CI configuration were reviewed to consolidate the history. This was a documentation-only handoff update; application suites and remote CI were not rerun. The owner subsequently confirmed the costing policy on 2026-09-19, closing Phase 04 acceptance; Phase 05 had not started at that historical checkpoint.
 
 ## Completed acceptance criteria
 
@@ -45,16 +45,24 @@ The owner selected current-date posting only, full reversals only without later 
 
 ## Open decisions
 
+Phase 05 implementation choices awaiting confirmation: transport/loading charges form part of the purchase supplier's payable, with separate freight-provider bills deferred; payments require separate reasoned reversal before full purchase reversal. Cash-only allocations, no advances, and English PDF vouchers are implemented boundaries; bank accounts/cash closing and full Urdu voucher typography remain later work. These choices are documented in [purchasing contracts](docs/PURCHASING.md), not silently treated as owner approval.
+
 See [risk register](docs/RISKS.md): legal entity/name/domain; tax/invoice/FBR applicability; production hosting, protected keys, SMTP and optional MFA/phone recovery; future return valuation and real-data cutover; cylinder customer/deposit relationships; payment advances and closed-period corrections; delivery scope; subscription provider; recovery objectives and production infrastructure. Provisioning defaults of 3 active branches, 10 users and 3 administrators are local development limits pending commercial plan decisions. Keep at least one active branch; owner transfer/removal is not exposed in this phase. Tenant locale configuration beyond browser locale remains open; dates use the existing tenant time zone. Inventory uses branch context and separately authorizes both source and destination branches.
 
 ## Verification and limitations
 
-See [Phase 04 report](docs/PHASE_04_REPORT.md) and [inventory contracts](docs/INVENTORY.md). Frontend lint, types, build and 13 component tests passed. Backend Release build, 4 unit, 4 architecture and 36 PostgreSQL/API tests passed. Sixteen desktop/mobile browser tests passed (73 tests across all suites). OpenAPI and dependency audits passed. Compose starts PostgreSQL, Mailpit, API and web after a successful migration job. Migration application, upgrade, repeatability and model-drift checks passed.
+Historical Phase 04 verification: see [Phase 04 report](docs/PHASE_04_REPORT.md) and [inventory contracts](docs/INVENTORY.md). Its 73-test result belongs to 2026-09-18 and is not the current Phase 05 result.
 
-Identity/workspace tables and tenant-owned administrative endpoints now exist. Inventory implementation and technical verification are complete; purchasing, sales and payment modules have not started. The platform remains local development infrastructure, not a production deployment. Private source inputs remain ignored. Production email, encrypted shared keys, coordinated rate limits and optional MFA remain explicit gates.
+Current Phase 05 verification (2026-09-20–21): backend Release build/publish, 11 unit, 4 architecture, 44 PostgreSQL/API and 13 frontend tests passed. Frontend lint/types/build, fresh and Phase 04 upgrade migrations, repeat application, model drift, OpenAPI, dependency audits and Compose health passed. PDF fixtures with 2 and 100 lines were rendered and visually checked across all pages. All 18 desktop/mobile browser tests passed on 2026-09-21 (90 tests across suites); see the detailed report for actual run dates and evidence. No remote CI run or production deployment is claimed.
+
+Phase 05 delivers supplier profiles and branch ledgers, versioned multi-line drafts, exact landed allocation, atomic/idempotent receipts and payable posting, partial cash allocations, payment/purchase reversals, linked replacements and authenticated PDF vouchers. Migration `20260919072004_Purchasing` must run before the updated API; it adds tables, constraints, immutable-history guards and owner permissions without recosting stock. Sales and the wider Phase 07 payments/cash module remain future work. The platform remains local development infrastructure. Private source inputs remain ignored. Production email, encrypted shared keys, coordinated rate limits and optional MFA remain explicit gates.
 
 Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and PostgreSQL 18.4. Local database port is now 54320 because Windows reserved the previous 55432 port. The template default remains configurable at 55432. Bootstrap creates a random password in ignored `.env`; API startup never applies migrations automatically.
 
 ## Exact next prompt
 
-Phase 04 is accepted. The next prompt is **Prompt 05 — Suppliers and Purchasing** from [prompts/PHASE_PROMPTS.md](prompts/PHASE_PROMPTS.md), only when requested. Do not start it automatically.
+Local-access follow-up (2026-09-21): the Phase 05 report now includes registration and Mailpit email-verification instructions. The owner reached the verification message; successful verification/sign-in was not independently confirmed. This documentation-only addition does not change purchasing acceptance or migration status. Prior documentation checkpoint: `4f0aaa6`.
+
+Final documentation checks on 2026-09-21: backend/frontend formatting, 84 local Markdown links and Git whitespace checks passed. Implementation checkpoint verified in Git: `a3b75a0`.
+
+Review the Phase 05 checkpoint only. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PURCHASING.md and Prompt 05. Inspect Git status and preserve existing changes. Confirm or revise supplier-paid landed charges and separate payment reversal before purchase reversal; retain the approved Phase 04 costing policy. Apply only requested Phase 05 corrections, rerun affected checks, and update all three checkpoint records with acceptance and commit status. Do not start Phase 06.

@@ -24,11 +24,22 @@ const InventoryPage = lazy(() =>
     default: module.InventoryPage,
   })),
 );
+const PurchasingPage = lazy(() =>
+  import('./PurchasingPage').then((module) => ({
+    default: module.PurchasingPage,
+  })),
+);
 const ShowcasePage = lazy(() =>
   import('./ShowcasePage').then((module) => ({ default: module.ShowcasePage })),
 );
 
 const permissions = [
+  'purchases.view_cost',
+  'purchases.create',
+  'purchases.post',
+  'purchases.pay',
+  'purchases.reverse',
+  'suppliers.manage',
   'tenant.manage',
   'branches.manage',
   'users.manage',
@@ -40,6 +51,12 @@ const permissions = [
   'inventory.reverse',
 ];
 const permissionLabels: Record<string, string> = {
+  'purchases.view_cost': 'View purchases and supplier costs',
+  'purchases.create': 'Create and edit purchase drafts',
+  'purchases.post': 'Post purchases',
+  'purchases.pay': 'Record supplier cash payments',
+  'purchases.reverse': 'Reverse purchases and payments',
+  'suppliers.manage': 'Manage suppliers',
   'inventory.view': 'View inventory',
   'catalog.manage': 'Manage catalog and warehouses',
   'inventory.post': 'Post stock movements',
@@ -193,6 +210,11 @@ export function WorkspacePage() {
         />
       ) : (
         <>
+          {(tab === 'purchases' || tab === 'suppliers') && (
+            <Suspense fallback={<p role="status">Loading purchasing…</p>}>
+              <PurchasingPage user={user} suppliersOnly={tab === 'suppliers'} />
+            </Suspense>
+          )}
           {tab === 'inventory' && (
             <Suspense fallback={<p role="status">Loading inventory…</p>}>
               <InventoryPage

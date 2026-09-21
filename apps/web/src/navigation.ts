@@ -2,6 +2,20 @@ import type { Me } from './access-api';
 
 export const pages = [
   {
+    id: 'purchases',
+    label: 'Purchases',
+    description: 'Purchase drafts, receipts and payments.',
+    permission: 'purchases.view_cost',
+    icon: 'branches',
+  },
+  {
+    id: 'suppliers',
+    label: 'Suppliers',
+    description: 'Supplier profiles and branch ledgers.',
+    permission: 'purchases.view_cost',
+    icon: 'team',
+  },
+  {
     id: 'inventory',
     label: 'Inventory',
     description: 'Catalog, stock balances and movement history.',

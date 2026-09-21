@@ -39,14 +39,31 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
             prior.TenantRoles.Add(new TenantRole { TenantId = tenantId, Name = "Owner", IsOwner = true, Permissions = [Permissions.TenantManage] });
             await prior.SaveChangesAsync();
         }
+        await context.GetService<IMigrator>().MigrateAsync("20260917201414_InventoryGuards");
+        Guid stockId;
+        await using (var phase04 = new Gas365DbContext(options, new TenantScope { TenantId = tenantId }))
+        {
+            var branch = new Branch { TenantId = tenantId, Name = "Existing branch" };
+            var unit = new StockUnit { TenantId = tenantId, Code = "KG", DecimalPlaces = 3 };
+            var item = new StockItem { TenantId = tenantId, Sku = "OLD", Name = "Existing stock", UnitId = unit.Id, Kind = "Lpg" };
+            var warehouse = new Warehouse { TenantId = tenantId, BranchId = branch.Id, Name = "Existing warehouse" };
+            var document = new StockDocument { TenantId = tenantId, BranchId = branch.Id, Kind = "Opening", Reason = "Historical reconciliation", IdempotencyKey = "prior-phase-opening", RequestHash = "original", PostedAt = DateTimeOffset.UtcNow, BusinessDate = new DateOnly(2026, 9, 18) };
+            var movement = new StockMovement { TenantId = tenantId, BranchId = branch.Id, WarehouseId = warehouse.Id, ItemId = item.Id, DocumentId = document.Id, Quantity = 10, Value = 1234.56m, UnitCost = 123.456m };
+            stockId = movement.Id;
+            phase04.AddRange(branch, unit, item, warehouse, document, movement); await phase04.SaveChangesAsync();
+        }
         await context.Database.MigrateAsync();
         await using (var upgraded = new Gas365DbContext(options, new TenantScope { TenantId = tenantId }))
         {
             Assert.Equal("Upgrade tenant", (await upgraded.Tenants.SingleAsync()).Name);
             Assert.Contains(Permissions.InventoryPost, (await upgraded.TenantRoles.SingleAsync()).Permissions);
+            Assert.Contains(Permissions.PurchasePost, (await upgraded.TenantRoles.SingleAsync()).Permissions);
             Assert.Contains(Permissions.TenantManage, (await upgraded.TenantRoles.SingleAsync()).Permissions);
+            var movement = await upgraded.StockMovements.SingleAsync(x => x.Id == stockId);
+            Assert.Equal(10, movement.Quantity); Assert.Equal(1234.56m, movement.Value); Assert.Equal(123.456m, movement.UnitCost);
+            Assert.Empty(await upgraded.PurchaseDocuments.ToArrayAsync());
         }
-        Assert.Equal(4, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(5, (await context.Database.GetAppliedMigrationsAsync()).Count());
         await context.Database.MigrateAsync();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());
