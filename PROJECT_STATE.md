@@ -76,3 +76,5 @@ Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 
 ## Phase 06 implementation verification
 
 Current incomplete checkpoint: 17 unit, 4 architecture, 51 PostgreSQL/API, 13 frontend and 20 desktop/mobile browser cases passed across the runs detailed in [the Phase 06 report](docs/PHASE_06_REPORT.md), 105 total. Frontend lint/types/build, OpenAPI, fresh/upgrade/repeat migrations, model drift, Compose health, formatting, links and whitespace passed. The feature is not complete and is not merged; no remote CI or push is claimed. Customers, prices and draft preparation are usable locally. Posting/receipts/payments, custody/deposits/exchanges and the purchase-cost correction remain outstanding. Historical kickoff verification above is separate.
+
+Verified Phase 06 partial implementation checkpoint: `51b340a` on `feature/phase-06-sales`. Working tree was clean after that commit. No main merge, branch deletion or remote push occurred for the incomplete phase.
