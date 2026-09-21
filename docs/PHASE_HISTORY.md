@@ -133,7 +133,15 @@ Open a new chat attached to the Gas365 repository and paste the appropriate prom
 
 - 2026-09-19 acceptance addendum: the owner explicitly approved the existing costing policy for current use and will request any later changes. Phase 04 is accepted; Phase 05 remains unstarted. Updated state, report, contracts, ADR and planning references. No application/schema changes or new migrations; the 73-test result remains historical evidence from 2026-09-18. No application tests or remote CI rerun. Acceptance documentation was committed as `4304318`.
 
-- 2026-09-19: Consolidated existing Phase 00–04 reports and verified their checkpoint commits against local history. Inspected source structure, costing code, migration files and CI configuration. Added durable handoff instructions to AGENTS.md and links from README/project state. Documentation-only change; no application/schema changes, application test reruns or remote CI verification. This handoff update is uncommitted at creation.
-- Documentation validation: all relative Markdown links in the four changed documents resolve; `git diff --check` passed. The Prettier command could not run because its executable is unavailable in the local dependency installation; formatting verification remains outstanding.
+- 2026-09-19: Consolidated existing Phase 00–04 reports and verified their checkpoint commits against local history. Inspected source structure, costing code, migration files and CI configuration. Added durable handoff instructions to AGENTS.md and links from README/project state. Documentation-only change; no application/schema changes, application test reruns or remote CI verification. This handoff update was committed as `4304318`.
+- Documentation validation: all relative Markdown links in the four changed documents resolve; `git diff --check` passed. The initial pnpm formatting command could not resolve Prettier. Before commit, formatting was completed and verified using the installed Prettier executable directly.
 
 Future phase entries must preserve historical facts and distinguish implementation completion from acceptance. Add actual verification evidence and migration notes even when the result is “not run” or “no schema changes”; never present a previous phase's tests as a fresh run.
+
+## Phase 06 kickoff — 2026-09-21
+
+The owner requested Phase 06 and a feature-branch workflow. Purchasing was merged into local `main` as `a97fe9b`, preserving both histories and resolving documentation conflicts. The clean purchasing worktree was detached without deleting its files, its merged branch was deleted, and `feature/phase-06-sales` was created from `main`. Nothing was pushed.
+
+Phase 06 is in preparation; implementation and acceptance are incomplete. The two pending purchasing policies and cylinder ownership/exchange/deposit scope have been presented to the owner. See [Phase 06 report](PHASE_06_REPORT.md). Historical Phase 05 verification remains separate from current baseline checks.
+
+Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. Business-rule answers remain pending.

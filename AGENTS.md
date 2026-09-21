@@ -26,6 +26,14 @@ Build Gas365 as a secure, auditable, multi-tenant LPG ERP for Pakistan. The sour
 - Include a verified checkpoint commit when available; otherwise say the checkpoint is uncommitted. Do not invent commit IDs, test results or CI status. Preserve historical reports and identify later corrections explicitly.
 - End with a concise checkpoint and stop. Do not create a new chat or start the next phase unless the user requests it.
 
+## Branch workflow
+
+- Use neutral `feature/` branch names, commit messages and documentation wording.
+- Implement each requested phase on its own feature branch from `main`.
+- After the feature is complete and required checks pass, merge it into `main` and delete the merged feature branch. The owner authorized this workflow on 2026-09-21.
+- Preserve worktree files and unrelated changes; detach a clean secondary worktree when necessary to release a merged branch.
+- Never merge incomplete work as a completed feature. Record pending business decisions explicitly.
+
 ## Architecture
 
 - Modular monolith, not microservices.
