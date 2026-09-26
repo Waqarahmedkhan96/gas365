@@ -33,6 +33,7 @@ public sealed class PurchaseDocument : ITenantOwned
     public string SupplierName { get; set; } = "";
     public string Content { get; set; } = "";
     public decimal Total { get; set; }
+    public bool SeparateCosts { get; set; }
 }
 // Payable credit is positive; a payment is negative. Cash outflow is negative.
 // Each payment is allocated to exactly one purchase in Phase 05.

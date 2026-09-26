@@ -525,6 +525,50 @@ function PurchasingWorkspace({
                     <Button disabled={busy}>Record payment</Button>
                   </form>
                 )}
+              {p.separateCosts && (
+                <div className="grid gap-3">
+                  <h3>Separately paid purchase costs</h3>
+                  <p>
+                    Petrol, tolls, loading and unloading increase stock cost.
+                    They are paid separately from the goods supplier.
+                  </p>
+                  <p>
+                    Costs paid: {money(p.costsPaid)} · Costs unpaid:{' '}
+                    {money(p.costsOutstanding)}
+                  </p>
+                  {p.status !== 'Reversed' &&
+                    p.costsOutstanding > 0 &&
+                    has('purchases.pay') && (
+                      <form
+                        className="grid gap-3"
+                        onSubmit={(e) => {
+                          const d = form(e);
+                          void run(() =>
+                            command(`/purchases/${p.id}/cost-payments`, {
+                              amount: str(d, 'amount'),
+                              reason: str(d, 'reason'),
+                              expectedLastEntryId: p.entries.at(-1)!.id,
+                            }),
+                          );
+                        }}
+                      >
+                        <Field
+                          label="Purchase cost payment (PKR)"
+                          name="amount"
+                          required
+                          inputMode="decimal"
+                        />
+                        <Field
+                          label="Cost type, recipient and reference"
+                          name="reason"
+                          required
+                          maxLength={300}
+                        />
+                        <Button disabled={busy}>Record cost payment</Button>
+                      </form>
+                    )}
+                </div>
+              )}
               <h3>Payment and correction history</h3>
               {p.entries.map((entry) => (
                 <div key={entry.id} className="border-b py-3">
@@ -533,7 +577,7 @@ function PurchasingWorkspace({
                     {money(entry.payable)} · Cash {money(entry.cash)}
                   </p>
                   <p>{entry.reason}</p>
-                  {entry.kind === 'Payment' &&
+                  {(entry.kind === 'Payment' || entry.kind === 'CostPayment') &&
                     p.status !== 'Reversed' &&
                     !p.entries.some((x) => x.reversesId === entry.id) &&
                     has('purchases.reverse') &&
@@ -779,9 +823,9 @@ function DraftEditor({
         defaultValue={initial?.snapshot.landedCharges || '0'}
       />
       <p>
-        Charges are included in this supplier's payable. Weight uses each line's
-        total received kilograms. Save the draft to see server-calculated
-        amounts.
+        Charges increase stock cost and are paid separately from the goods
+        supplier. Weight uses each line's total received kilograms. Save the
+        draft to see server-calculated amounts.
       </p>
       <Field
         label="Find catalog item"

@@ -62,3 +62,7 @@ Engineering verification does not imply approval of business assumptions. Owner 
 ## Exact next-chat prompt
 
 Review the Phase 05 checkpoint only. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PURCHASING.md and Prompt 05. Inspect Git status and preserve existing changes. Confirm or revise supplier-paid landed charges and separate payment reversal before purchase reversal; retain the approved Phase 04 costing policy. Apply only requested Phase 05 corrections, rerun affected checks, and update all three checkpoint records with acceptance and commit status. Do not start Phase 06.
+
+## Owner clarification during Phase 06
+
+The owner rejected treating petrol, tolls, loading and unloading as payable to the goods supplier: these are paid separately, including costs for the business's own vehicle. The implemented Phase 05 behavior described above is historical and requires correction during Phase 06; it has not yet been changed. Separate reasoned payment reversal before purchase reversal is approved. Existing posted history must remain intact. The capitalization-versus-expense treatment of separate costs is awaiting clarification. Borrowed cylinders and refundable deposits are included in Phase 06; their operating terms are being clarified in the [Phase 06 report](PHASE_06_REPORT.md).

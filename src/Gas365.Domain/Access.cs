@@ -17,7 +17,21 @@ public static class Permissions
     public const string PurchasePay = "purchases.pay";
     public const string PurchaseReverse = "purchases.reverse";
     public const string SupplierManage = "suppliers.manage";
-    public static readonly string[] All = [TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage];
+    public const string CustomerView = "customers.view";
+    public const string CustomerManage = "customers.manage";
+    public const string PriceManage = "prices.manage";
+    public const string SalesView = "sales.view";
+    public const string SalesDraft = "sales.create";
+    public const string SalesDiscount = "sales.discount";
+    public const string SalesPost = "sales.post";
+    public const string SalesPay = "sales.pay";
+    public const string SalesReverse = "sales.reverse";
+    public const string SalesProfit = "sales.view_profit";
+    public const string CylinderManage = "cylinders.configure";
+    public const string CylinderWaive = "cylinders.waive_deposit";
+    public const string CylinderReturn = "cylinders.return";
+    public const string CylinderApprove = "cylinders.approve_damage_loss";
+    public static readonly string[] All = [TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage, CustomerView, CustomerManage, PriceManage, SalesView, SalesDraft, SalesDiscount, SalesPost, SalesPay, SalesReverse, SalesProfit, CylinderManage, CylinderWaive, CylinderReturn, CylinderApprove];
 }
 
 public interface ITenantOwned { Guid TenantId { get; set; } }

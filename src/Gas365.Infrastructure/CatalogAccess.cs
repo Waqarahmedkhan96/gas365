@@ -8,7 +8,7 @@ public sealed class CatalogAccess(Gas365DbContext db, TenantScope scope) : ICata
 {
     private void Require(string permission)
     { if (!scope.Has(permission)) throw new AccessException(403, "You do not have permission for this action."); }
-    private void Read() { if (!scope.Has(Permissions.PurchaseView)) Require(Permissions.InventoryView); }
+    private void Read() { if (!scope.Has(Permissions.PurchaseView) && !scope.Has(Permissions.PriceManage) && !scope.Has(Permissions.SalesDraft) && !scope.Has(Permissions.CylinderManage)) Require(Permissions.InventoryView); }
     private void Audit(string action, Guid id) => db.AuditEvents.Add(new AuditEvent
     { TenantId = scope.TenantId, ActorId = scope.UserId, Action = action, SubjectId = id });
     internal static string Text(string? value, int length = 120) => IdentityAccess.Text(value!, length);

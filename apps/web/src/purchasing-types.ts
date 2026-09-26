@@ -44,6 +44,9 @@ export type Purchase = {
   total: number;
   paid: number;
   outstanding: number;
+  separateCosts: boolean;
+  costsPaid: number;
+  costsOutstanding: number;
   snapshot: {
     reference: string;
     notes: string;

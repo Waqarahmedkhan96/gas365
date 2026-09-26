@@ -99,6 +99,81 @@ namespace Gas365.Infrastructure.Migrations
                     b.ToTable("BranchAccess");
                 });
 
+            modelBuilder.Entity("Gas365.Domain.Customer", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "Name");
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CustomerDepositArrangement", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<bool>("ZeroDepositApproved")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "CustomerId")
+                        .IsUnique();
+
+                    b.ToTable("CustomerDepositArrangements");
+                });
+
             modelBuilder.Entity("Gas365.Domain.CylinderAsset", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -142,6 +217,216 @@ namespace Gas365.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CylinderAssets");
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CylinderLoan", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Deposit")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SaleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Serial")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("UsageTerms")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "CustomerId");
+
+                    b.HasIndex("TenantId", "ItemId");
+
+                    b.HasIndex("TenantId", "BranchId", "SaleId");
+
+                    b.HasIndex("TenantId", "BranchId", "WarehouseId");
+
+                    b.ToTable("CylinderLoans", t =>
+                        {
+                            t.HasCheckConstraint("CK_CylinderLoan_Deposit", "\"Deposit\" >= 0 AND \"Deposit\" <= 1000000000");
+                        });
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CylinderLoanEntry", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApprovalId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("Cash")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<decimal>("DamageOrLossCharge")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<decimal>("Liability")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<Guid>("LoanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("PostedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<decimal>("Receivable")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<decimal>("Revenue")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<Guid?>("ReversesId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Sequence")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Sequence"));
+
+                    b.Property<Guid?>("StockDocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UsageFee")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "ApprovalId");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "ReversesId")
+                        .IsUnique()
+                        .HasFilter("\"ReversesId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Sequence")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "StockDocumentId");
+
+                    b.HasIndex("TenantId", "BranchId", "LoanId");
+
+                    b.ToTable("CylinderLoanEntries", t =>
+                        {
+                            t.HasCheckConstraint("CK_CylinderLoanEntry_Reconcile", "\"Cash\" + \"Receivable\" = \"Revenue\" + \"Liability\"");
+                        });
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CylinderPolicy", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GasItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("GasQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("SuggestedDeposit")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<string>("UsageTerms")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "GasItemId");
+
+                    b.HasIndex("TenantId", "ItemId")
+                        .IsUnique();
+
+                    b.ToTable("CylinderPolicies", t =>
+                        {
+                            t.HasCheckConstraint("CK_CylinderPolicy_Amounts", "\"GasQuantity\" > 0 AND \"GasQuantity\" <= 1000000 AND \"SuggestedDeposit\" >= 0 AND \"SuggestedDeposit\" <= 1000000000");
+                        });
                 });
 
             modelBuilder.Entity("Gas365.Domain.LoginSession", b =>
@@ -217,6 +502,36 @@ namespace Gas365.Infrastructure.Migrations
                     b.ToTable("Memberships");
                 });
 
+            modelBuilder.Entity("Gas365.Domain.PriceList", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("PriceLists");
+                });
+
             modelBuilder.Entity("Gas365.Domain.PurchaseDocument", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -237,6 +552,9 @@ namespace Gas365.Infrastructure.Migrations
 
                     b.Property<Guid>("DraftId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("SeparateCosts")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("StockDocumentId")
                         .HasColumnType("uuid");
@@ -374,7 +692,240 @@ namespace Gas365.Infrastructure.Migrations
 
                     b.ToTable("PurchaseEntries", t =>
                         {
-                            t.HasCheckConstraint("CK_PurchaseEntry_Signs", "(\"Kind\" = 'Invoice' AND \"Payable\" >= 0 AND \"Cash\" = 0) OR (\"Kind\" = 'Payment' AND \"Payable\" < 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'PaymentReversal' AND \"Payable\" > 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'Reversal' AND \"Payable\" <= 0 AND \"Cash\" = 0)");
+                            t.HasCheckConstraint("CK_PurchaseEntry_Signs", "(\"Kind\" = 'Invoice' AND \"Payable\" >= 0 AND \"Cash\" = 0) OR (\"Kind\" = 'Payment' AND \"Payable\" < 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'PaymentReversal' AND \"Payable\" > 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'Reversal' AND \"Payable\" <= 0 AND \"Cash\" = 0) OR (\"Kind\" = 'CostPayment' AND \"Payable\" = 0 AND \"Cash\" < 0) OR (\"Kind\" = 'CostPaymentReversal' AND \"Payable\" = 0 AND \"Cash\" > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SaleDocument", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Cogs")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid>("StockDocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "CustomerId");
+
+                    b.HasIndex("TenantId", "DraftId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "StockDocumentId")
+                        .IsUnique();
+
+                    b.ToTable("SaleDocuments", t =>
+                        {
+                            t.HasCheckConstraint("CK_SaleDocument_Amounts", "\"Total\" >= 0 AND \"Cogs\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SaleDraft", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PriceListId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "CustomerId");
+
+                    b.HasIndex("TenantId", "PriceListId");
+
+                    b.HasIndex("TenantId", "BranchId", "Reference");
+
+                    b.ToTable("SaleDrafts");
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SaleEntry", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("Cash")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<decimal>("Cogs")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTimeOffset>("PostedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<decimal>("Receivable")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<decimal>("Revenue")
+                        .HasPrecision(20, 2)
+                        .HasColumnType("numeric(20,2)");
+
+                    b.Property<Guid?>("ReversesId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SaleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Sequence")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Sequence"));
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "ReversesId")
+                        .IsUnique()
+                        .HasFilter("\"ReversesId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Sequence")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "BranchId", "SaleId");
+
+                    b.ToTable("SaleEntries", t =>
+                        {
+                            t.HasCheckConstraint("CK_SaleEntry_Signs", "(\"Kind\" = 'Invoice' AND \"Receivable\" = \"Revenue\" AND \"Revenue\" >= 0 AND \"Cash\" = 0 AND \"Cogs\" >= 0) OR (\"Kind\" = 'Payment' AND \"Cash\" > 0 AND \"Receivable\" = -\"Cash\" AND \"Revenue\" = 0 AND \"Cogs\" = 0) OR (\"Kind\" = 'PaymentReversal' AND \"Cash\" < 0 AND \"Receivable\" = -\"Cash\" AND \"Revenue\" = 0 AND \"Cogs\" = 0) OR (\"Kind\" = 'Reversal' AND \"Receivable\" = \"Revenue\" AND \"Revenue\" <= 0 AND \"Cash\" = 0 AND \"Cogs\" <= 0)");
+                        });
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SalePrice", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("PriceListId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("TenantId", "ItemId");
+
+                    b.HasIndex("TenantId", "PriceListId", "ItemId", "Mode")
+                        .IsUnique();
+
+                    b.ToTable("SalePrices", t =>
+                        {
+                            t.HasCheckConstraint("CK_SalePrice_Range", "\"UnitPrice\" >= 0 AND \"UnitPrice\" <= 1000000");
                         });
                 });
 
@@ -1007,11 +1558,122 @@ namespace Gas365.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Gas365.Domain.Customer", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CustomerDepositArrangement", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Gas365.Domain.CylinderAsset", b =>
                 {
                     b.HasOne("Gas365.Domain.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.StockItem", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CylinderLoan", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.StockItem", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.SaleDocument", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BranchId", "SaleId")
+                        .HasPrincipalKey("TenantId", "BranchId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.Warehouse", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BranchId", "WarehouseId")
+                        .HasPrincipalKey("TenantId", "BranchId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CylinderLoanEntry", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.CylinderLoanEntry", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ApprovalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Gas365.Domain.CylinderLoanEntry", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ReversesId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Gas365.Domain.StockDocument", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "StockDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Gas365.Domain.CylinderLoan", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BranchId", "LoanId")
+                        .HasPrincipalKey("TenantId", "BranchId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.CylinderPolicy", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.StockItem", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "GasItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1042,6 +1704,15 @@ namespace Gas365.Infrastructure.Migrations
                     b.HasOne("Gas365.Domain.TenantRole", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.PriceList", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -1122,6 +1793,90 @@ namespace Gas365.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId", "BranchId", "PurchaseId")
                         .HasPrincipalKey("TenantId", "BranchId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SaleDocument", b =>
+                {
+                    b.HasOne("Gas365.Domain.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.SaleDraft", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "DraftId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.StockDocument", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "StockDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SaleDraft", b =>
+                {
+                    b.HasOne("Gas365.Domain.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.PriceList", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "PriceListId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SaleEntry", b =>
+                {
+                    b.HasOne("Gas365.Domain.SaleEntry", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ReversesId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Gas365.Domain.SaleDocument", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BranchId", "SaleId")
+                        .HasPrincipalKey("TenantId", "BranchId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SalePrice", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.StockItem", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Gas365.Domain.PriceList", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "PriceListId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

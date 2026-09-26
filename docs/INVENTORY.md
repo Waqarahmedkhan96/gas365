@@ -69,3 +69,7 @@ Run bootstrap, sign in as an owner, then open Inventory. Use Catalog setup to cr
 `InventoryLedger` creates catalog, location, serial, document and movement tables. `InventoryGuards` adds immutable-ledger triggers and updates existing owner permissions. Apply both with the one-shot migration job or the documented migration command before starting the new API. No seed inventory or guessed opening values are inserted. Upgrade tests retain prior tenant data and permissions. Down migrations remove inventory and its protections: use backup/restore for recovery rather than downgrading valuable data.
 
 On this Windows machine, port 55432 became reserved by the operating system; the ignored local `.env` now uses 54320. The default example remains 55432 and is configurable. No database volume or credentials were replaced.
+
+## Phase 06 sales and custody integration
+
+Sales posting deducts stock and records financial effects atomically; sales and cylinder-return documents must be reversed through their financial workflows. Generic stock reversal cannot bypass the linked receivable, deposit or refund. Cylinder shells and configured LPG are separate stock: full sales issue both, exchanges retain shell value and deduct LPG once, and borrowed shells move to CustomerHeld. Loan-managed CustomerHeld stock cannot be changed using general stock commands. Returns preserve shell value and move to the recorded condition; Lost is unavailable and does not automatically write off its value. See [sales contracts](SALES.md).

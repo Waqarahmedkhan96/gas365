@@ -1,8 +1,8 @@
 # Gas365 Combined Phase History and Chat Handoff
 
-Last consolidated: 2026-09-21.
+Last consolidated: 2026-09-25.
 
-This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 05. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 has not started.
+This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 06. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 implementation and final verification are recorded in the latest addendum; earlier partial checkpoints are historical.
 
 [Project state](../PROJECT_STATE.md) owns current status and unresolved decisions. [Controlled phase prompts](../prompts/PHASE_PROMPTS.md) define scope. The linked individual reports retain detailed historical evidence. Results for Phases 00–04 are historical report evidence. Phase 05 records checks run in the current implementation task. Commit IDs were checked against local Git history; remote CI was not checked in this review.
 
@@ -133,7 +133,47 @@ Open a new chat attached to the Gas365 repository and paste the appropriate prom
 
 - 2026-09-19 acceptance addendum: the owner explicitly approved the existing costing policy for current use and will request any later changes. Phase 04 is accepted; Phase 05 remains unstarted. Updated state, report, contracts, ADR and planning references. No application/schema changes or new migrations; the 73-test result remains historical evidence from 2026-09-18. No application tests or remote CI rerun. Acceptance documentation was committed as `4304318`.
 
-- 2026-09-19: Consolidated existing Phase 00–04 reports and verified their checkpoint commits against local history. Inspected source structure, costing code, migration files and CI configuration. Added durable handoff instructions to AGENTS.md and links from README/project state. Documentation-only change; no application/schema changes, application test reruns or remote CI verification. This handoff update is uncommitted at creation.
-- Documentation validation: all relative Markdown links in the four changed documents resolve; `git diff --check` passed. The Prettier command could not run because its executable is unavailable in the local dependency installation; formatting verification remains outstanding.
+- 2026-09-19: Consolidated existing Phase 00–04 reports and verified their checkpoint commits against local history. Inspected source structure, costing code, migration files and CI configuration. Added durable handoff instructions to AGENTS.md and links from README/project state. Documentation-only change; no application/schema changes, application test reruns or remote CI verification. This handoff update was committed as `4304318`.
+- Documentation validation: all relative Markdown links in the four changed documents resolve; `git diff --check` passed. The initial pnpm formatting command could not resolve Prettier. Before commit, formatting was completed and verified using the installed Prettier executable directly.
 
 Future phase entries must preserve historical facts and distinguish implementation completion from acceptance. Add actual verification evidence and migration notes even when the result is “not run” or “no schema changes”; never present a previous phase's tests as a fresh run.
+
+## Phase 06 kickoff — 2026-09-21
+
+The owner requested Phase 06 and a feature-branch workflow. Purchasing was merged into local `main` as `a97fe9b`, preserving both histories and resolving documentation conflicts. The clean purchasing worktree was detached without deleting its files, its merged branch was deleted, and `feature/phase-06-sales` was created from `main`. Nothing was pushed.
+
+At kickoff, Phase 06 was in preparation; later implementation progress is recorded below. The two pending purchasing policies and cylinder ownership/exchange/deposit scope have been presented to the owner. See [Phase 06 report](PHASE_06_REPORT.md). Historical Phase 05 verification remains separate from current baseline checks.
+
+Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. Business-rule answers remain pending.
+
+## Owner clarification during Phase 06
+
+The owner rejected treating petrol, tolls, loading and unloading as payable to the goods supplier: these are paid separately, including costs for the business's own vehicle. The implemented Phase 05 behavior described above is historical and requires correction during Phase 06; it has not yet been changed. Separate reasoned payment reversal before purchase reversal is approved. Existing posted history must remain intact. The capitalization-versus-expense treatment of separate costs is awaiting clarification. Borrowed cylinders and refundable deposits are included in Phase 06; their operating terms are being clarified in the [Phase 06 report](PHASE_06_REPORT.md).
+
+## Phase 06 implementation checkpoint in progress
+
+Customer contacts, versioned selling-price lists and branch-scoped multi-line sales drafts now exist. The backend calculates draft totals from saved prices and checks price/draft versions, permissions and tenant/branch references. Drafts have no stock or financial effects. Two additive migrations create configuration/draft tables and owner permissions while preserving prior data. See the [Phase 06 report](PHASE_06_REPORT.md) for current verification. Posting, receipts, payments, cylinder exchanges/custody/deposits and the purchasing-cost correction are still outstanding. The phase remains on its feature branch and is not accepted.
+
+Current Phase 06 verification (2026-09-21): 105 tests passed across suites/runs (17 unit, 4 architecture, 51 PostgreSQL/API, 13 frontend, 20 browser). The browser evidence is 18 existing journeys plus two corrected new journeys, not a single final 20/20 invocation. Frontend lint/types/build, OpenAPI, migration/model checks, Compose health and documentation checks passed. No remote CI/push. This is a partial feature checkpoint, not full Phase 06 acceptance; remaining scope and policy decisions are in the detailed report and project state.
+
+Verified Phase 06 partial implementation checkpoint: `51b340a` on `feature/phase-06-sales`. Working tree was clean after that commit. No main merge, branch deletion or remote push occurred for the incomplete phase.
+
+## Phase 06 deposit-policy acceptance addendum
+
+The owner accepted separating refundable deposits from sales income, flexible non-negative deposits including approved zero-deposit arrangements, customer-specific custody, condition-based return, actual-cash refunds and admin/store-manager approval for damage/loss charges. The owner clarified that ordinary authorized workers enter the usage fee on return and it can differ every time; no fixed PKR 2,000 or monthly charge is authorized. This supersedes the earlier pending deposit-policy question. The detailed approved policy is in project state, [sales contracts](SALES.md) and the [Phase 06 report](PHASE_06_REPORT.md).
+
+Documentation only: no code/schema changes or application test rerun. Purchase-cost capitalization versus expense remains open; full Phase 06 implementation is still incomplete. Historical 105-test evidence and checkpoint `51b340a` are unchanged.
+
+## Phase 06 final verification in progress — 2026-09-25
+
+Full sales posting, all sale modes, payments, receipts, cylinder custody/deposits/returns and separately paid capitalized purchase costs are implemented. Earlier outstanding-scope lists are historical. The owner approved the deposit policy and stock capitalization; optional source/customer filling references implement the stated fallback to the unanswered tracking question. A source-cylinder gas subledger remains outside this implementation.
+
+A complete backend run passed 30 unit, 4 architecture and 61 integration tests before the latest cylinder-policy empty-response fix. Final browser and endpoint verification is pending; changes remain uncommitted on feature/phase-06-sales. Five Phase 06 migrations bring the database to ten; historical stock and purchase treatment are preserved. Detailed evidence and limits are in [the Phase 06 report](PHASE_06_REPORT.md). Next: finish verification, commit, merge/push main and delete the merged branch. Do not start Phase 07.
+
+## Completion checkpoint — 2026-09-26
+
+Phase 06 implementation and required local checks are complete. Final browser report: 20/20 passed, no flaky or skipped cases. Verification covers 30 unit, 4 architecture, 61 PostgreSQL/API, 13 frontend and 20 browser tests (128 distinct cases across the recorded runs), with all 17 sales/cylinder integration cases rerun after the final endpoint correction. Formatting, lint, types, production builds, migration fresh/upgrade/repeat and model checks, OpenAPI, Compose health and PDF review evidence are detailed in the phase report. Historical results are distinguished from final reruns there.
+
+Approved scope includes variable worker-entered usage fees, controlled deposit waivers and damage/loss approval, separate deposit liability and actual refunds, filling loss per line, and separately paid purchase costs capitalized into stock. Source/customer cylinder references are supported; per-source physical gas balances remain a documented future decision. Existing posted history is preserved. Five additive Phase 06 migrations must precede API startup; no production deployment or remote CI success is claimed.
+
+Acceptance: implementation meets the recorded Phase 06 checks and approved operating rules. The owner authorized integration after verification; Git completion will be recorded below. Exact next-chat prompt: Review the completed Phase 06 checkpoint in PROJECT_STATE.md, docs/PHASE_HISTORY.md and docs/PHASE_06_REPORT.md. Address only requested Phase 06 follow-up work; do not begin Phase 07 unless explicitly requested.
