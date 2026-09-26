@@ -9,6 +9,7 @@ namespace Gas365.Infrastructure;
 public static class PurchaseVoucher
 {
     static PurchaseVoucher() => GlobalFontSettings.FontResolver = new VoucherFontResolver();
+    internal static void EnsureFonts() { }
     public static byte[] Render(PurchaseDto purchase)
     {
         using var pdf = new PdfDocument();
@@ -54,6 +55,11 @@ public static class PurchaseVoucher
             y += 8;
         }
         Text("Total: " + Money(purchase.Total)); Text("Net cash paid: " + Money(purchase.Paid)); Text("Outstanding: " + Money(purchase.Outstanding));
+        if (purchase.SeparateCosts)
+        {
+            Text("Purchase costs are paid separately from the goods supplier and included in stock value.");
+            Text("Separate costs paid: " + Money(purchase.CostsPaid) + " | Unpaid: " + Money(purchase.CostsOutstanding));
+        }
         Text("Payment and correction history");
         foreach (var entry in purchase.Entries)
             Text($"{entry.BusinessDate:yyyy-MM-dd} | {entry.Kind} | Payable {Money(entry.Payable)} | Cash {Money(entry.Cash)} | {entry.Reason}");

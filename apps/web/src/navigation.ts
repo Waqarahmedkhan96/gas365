@@ -3,8 +3,8 @@ import type { Me } from './access-api';
 export const pages = [
   {
     id: 'sales',
-    label: 'Sales drafts',
-    description: 'Prepare multi-line sales for review.',
+    label: 'Sales',
+    description: 'Sales, payments, cylinder exchanges and returns.',
     permission: 'sales.view',
     icon: 'branches',
   },

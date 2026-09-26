@@ -6,6 +6,8 @@ import { Button } from './components/ui/button';
 import { Field } from './components/ui/form';
 import { DataTable } from './components/DataTable';
 import type { Page, Warehouse } from './inventory-types';
+import { SalesRegister, PostSale } from './SalesRegister';
+import { CylinderWorkspace } from './CylinderWorkspace';
 
 type Party = { id: string; name: string; active: boolean };
 type Price = {
@@ -34,8 +36,15 @@ type Line = {
   gross: number;
   discount: number;
   net: number;
+  cylinderReference: string;
+  sourceCylinderReference: string;
+  lossQuantity: number;
+  lossReason: string;
+  gasQuantity: number;
+  suggestedDeposit: number;
+  usageTerms: string;
 };
-type Draft = {
+export type Draft = {
   id: string;
   branchId: string;
   customerId: string;
@@ -61,6 +70,10 @@ type InputLine = {
   warehouseId: string;
   quantity: string;
   discount: string;
+  cylinderReference: string;
+  sourceCylinderReference: string;
+  lossQuantity: string;
+  lossReason: string;
 };
 const root = '/api/workspace/sales';
 const money = (n: number) =>
@@ -182,6 +195,16 @@ function DraftWorkspace({ user, branch }: { user: Me; branch: string }) {
                 {line.quantity} × {money(line.unitPrice)}; discount{' '}
                 {money(line.discount)}; net {money(line.net)}
               </p>
+              {line.mode === 'Refill' && (
+                <p className="text-destructive">
+                  Cylinder {line.cylinderReference || `line ${i + 1}`}: Loss{' '}
+                  {line.lossQuantity ?? 0} {line.unit}
+                  {line.lossReason ? ` — ${line.lossReason}` : ''}
+                </p>
+              )}
+              {line.sourceCylinderReference && (
+                <p>Source cylinder: {line.sourceCylinderReference}</p>
+              )}
             </div>
           ))}
           <dl>
@@ -193,11 +216,25 @@ function DraftWorkspace({ user, branch }: { user: Me; branch: string }) {
             <dd>{money(detail.snapshot.net)}</dd>
           </dl>
           <p>{detail.snapshot.notes}</p>
+          {user.permissions.includes('sales.post') && (
+            <PostSale
+              user={user}
+              draft={detail}
+              done={async () => {
+                setDetail(null);
+                await cache.invalidateQueries({ queryKey: ['sales-drafts'] });
+                await cache.invalidateQueries({ queryKey: ['posted-sales'] });
+                await cache.invalidateQueries({ queryKey: ['cylinder-loans'] });
+              }}
+            />
+          )}
           <Button variant="outline" onClick={() => setDetail(null)}>
             Close draft
           </Button>
         </section>
       )}
+      <SalesRegister user={user} branch={branch} />
+      <CylinderWorkspace user={user} branch={branch} />
     </div>
   );
 }
@@ -312,6 +349,10 @@ function DraftEditor({
       warehouseId: x.warehouseId,
       quantity: String(x.quantity),
       discount: String(x.discount),
+      cylinderReference: x.cylinderReference ?? '',
+      sourceCylinderReference: x.sourceCylinderReference ?? '',
+      lossQuantity: String(x.lossQuantity ?? 0),
+      lossReason: x.lossReason ?? '',
     })) ?? [],
   );
   const [pricePage, setPricePage] = useState(1);
@@ -366,6 +407,10 @@ function DraftEditor({
             warehouseId: x.warehouseId,
             quantity: x.quantity,
             discount: x.discount,
+            cylinderReference: x.cylinderReference,
+            sourceCylinderReference: x.sourceCylinderReference,
+            lossQuantity: x.lossQuantity,
+            lossReason: x.lossReason,
           })),
         },
         user.tenantId,
@@ -447,6 +492,10 @@ function DraftEditor({
                         warehouseId: visibleWarehouses[0]?.id ?? '',
                         quantity: '1',
                         discount: '0',
+                        cylinderReference: '',
+                        sourceCylinderReference: '',
+                        lossQuantity: '0',
+                        lossReason: '',
                       },
                     ])
                   }
@@ -516,6 +565,56 @@ function DraftEditor({
             value={line.discount}
             onChange={(e) => change(line.key, { discount: e.target.value })}
           />
+          {line.mode === 'Refill' && (
+            <div className="grid gap-3">
+              <p>
+                Use one line per cylinder filled. With a kg price, enter 0.1 for
+                100 g, 1.6 for 1,600 g or 3.5 for 3,500 g.
+              </p>
+              <Field
+                label={`Cylinder reference for line ${i + 1}`}
+                maxLength={120}
+                value={line.cylinderReference}
+                onChange={(e) =>
+                  change(line.key, { cylinderReference: e.target.value })
+                }
+              />
+              <Field
+                label={`Source cylinder reference for line ${i + 1}`}
+                maxLength={120}
+                value={line.sourceCylinderReference}
+                onChange={(e) =>
+                  change(line.key, { sourceCylinderReference: e.target.value })
+                }
+              />
+              <div className="text-destructive">
+                <Field
+                  label={`Loss for line ${i + 1} (same unit as quantity)`}
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="0.001"
+                  required
+                  value={line.lossQuantity}
+                  onChange={(e) =>
+                    change(line.key, { lossQuantity: e.target.value })
+                  }
+                />
+              </div>
+              <Field
+                label={`Loss reason for line ${i + 1}`}
+                maxLength={300}
+                value={line.lossReason}
+                onChange={(e) =>
+                  change(line.key, { lossReason: e.target.value })
+                }
+              />
+              <p>
+                Loss is deducted from stock without charging the customer for
+                it.
+              </p>
+            </div>
+          )}
           <Button
             type="button"
             variant="outline"

@@ -1,47 +1,65 @@
-# Customers, prices and sales drafts
+# Sales, cylinder custody and receipts
 
-Phase 06 is in progress. This checkpoint provides customer records, price lists and editable sales drafts. It does not provide posting, receipts, sales payment capture, cylinder custody, exchanges or deposits. Those remain required Phase 06 work; a priced cylinder draft does not perform any cylinder movement.
+Phase 06 implements customers, price lists, multi-line drafts, posting, payment capture, receipts, exchanges and cylinder loans. PostgreSQL owns all totals, stock and money. The previous draft-only checkpoint remains documented in the phase report as historical evidence.
 
-## Customers and permissions
+## Prices and drafts
 
-Customers are tenant-wide contact records with name, phone, address and active status. Search and directories use server pagination. Edits require the last returned Version. Deactivate rather than delete; all material edits are audited without copying personal details into the audit event.
+Customer contacts and price lists are tenant-wide, searchable and paginated. Configuration edits require the last returned Version. Prices are per catalog unit and support up to six decimal places. LPG supports Refill; cylinders support FullCylinder, CylinderOnly, Exchange and LoanRefill; spare parts support SparePart. A price identity is immutable; deactivate it to replace the item/mode.
 
-`customers.view` permits customer and selling-price reads. `customers.manage` permits customer edits, and `prices.manage` permits price-list/price edits; both also require customer view. `sales.view` permits branch-scoped draft reads, `sales.create` permits draft edits, and `sales.discount` permits any nonzero line discount. Sales users need customer view for the selection screens. Price managers and sales-draft editors can read catalog metadata but do not gain inventory balances, cost ledgers or stock-posting permissions.
+Drafts contain 1–100 lines in one branch, customer and price list. The server reads price versions and calculates rounded gross, absolute discount and net. Nonzero discounts require sales.discount. Quantities follow the catalog unit precision, with whole cylinders and up to three decimal places for LPG. Drafts have no financial or stock effect. Posting rechecks active references and saved price/policy versions. A posted draft cannot be edited, including through direct SQL.
 
-Every endpoint uses the existing server session, CSRF protection and workspace header. Tenant query filters, guarded writes and tenant-qualified foreign keys prevent cross-tenant references. Draft operations also authorize the original and requested branches. Sales draft edits do not permit a user to move a draft out of an inaccessible branch.
+## Filling and cylinder stock
 
-## Selling prices
+Use a KG LPG item for kilogram sales: 100 g = 0.1 kg, 1,600 g = 1.6 kg and 3,500 g = 3.5 kg. Each customer cylinder filled gets its own line. Optional customer-cylinder and source-cylinder references provide traceability. A manual nonnegative loss uses the same unit as the sold quantity and requires a reason when positive. Loss is visibly labelled in red. Stock consumption is sold quantity plus loss; only sold quantity is charged. Immutable COGS includes consumed LPG, including filling loss.
 
-Named price lists contain one entry per item and sale mode. LPG supports Refill; cylinders support FullCylinder, CylinderOnly, Exchange and LoanRefill; spare parts support SparePart. Mode compatibility is validated on the server. This catalog configuration does not approve unresolved exchange, gas-conversion or deposit policies.
+References are operator-entered identifiers; they do not create a separate gas balance per physical source cylinder. The approved cost/quantity pool remains tenant, item and warehouse. Source-cylinder capacity reconciliation or automatic weighing is not implemented.
 
-An authorized price manager supplies a PKR unit price with up to six decimal places, matching the existing price/cost precision. The safety bound is PKR 1,000,000 per unit, not a commercial price limit. A price is per catalog unit for LPG/parts and per whole cylinder for cylinder modes. LoanRefill identifies the selling price of the gas service only; deposits are separate and not implemented here. No tax rate or deposit amount is invented or seeded.
+Configure each cylinder type with an LPG item using KG, kilograms per filled cylinder, suggested deposit and usage terms. Shell stock/value must exclude gas recorded separately as LPG stock. This is explicit in the configuration screen; no historical stock is automatically split or recosted. Configuration requires cylinders.configure and version checks.
 
-Price identity (item/mode) is immutable after creation; deactivate it and add a different price to change identity. Prices and lists use optimistic concurrency, and duplicate item/mode prices within a list are rejected. Inactive lists cannot accept price edits. Price changes do not silently refresh saved draft snapshots.
+- Refill consumes the entered LPG quantity and loss from Available stock.
+- CylinderOnly sells an Empty shell and snapshots its issue cost.
+- FullCylinder sells a Full shell plus its configured LPG quantity.
+- Exchange receives a matching empty cylinder and gives a Full cylinder. Shell quantity/value is preserved; configured LPG is consumed once. Tracked incoming/outgoing serials must differ, belong to that cylinder type and be in valid states.
+- LoanRefill sells the configured LPG and transfers the business-owned shell from Full to CustomerHeld. Each shell has a separate immutable customer loan record, including serial when tracked, deposit and terms. Partial returns are handled by selecting individual loans.
 
-## Sales drafts
+Negative stock and invalid serial locations are rejected. Multi-line movements are serialized by the tenant lock and committed atomically with financial entries. Failure on a later line rolls back all earlier effects.
 
-A draft has one branch, customer and price list, reference, optional notes and 1–100 lines. Each line references a saved price and its version, a warehouse within the selected branch, quantity and an absolute PKR line discount. The browser never submits authoritative unit prices, gross or net totals. The server reads saved prices, checks active references and quantity precision, calculates each line gross with midpoint-away-from-zero rounding to two PKR places, validates discount and sums rounded line amounts. Nonzero discounts require separate permission. Negative quantities, over-discounting and stale price versions are rejected.
+## Posting, cash and corrections
 
-Saving uses a consistent database snapshot and optimistic draft version. Concurrent edits produce one successful write and a conflict rather than lost changes. A draft records the server-calculated customer/price/item/warehouse description snapshot. Later price edits do not mutate it. Re-saving requires the current price versions, so the operator must review changed rates. No stock is reserved, no COGS or profit is claimed, and no customer receivable, cash entry or deposit liability is recorded. Posting must later revalidate all relevant state and provide immutable, atomic/idempotent effects.
+Sales post an immutable invoice, stock document, COGS snapshot and optional cash payment in one transaction. Cash can be partial; the remaining amount is a customer receivable. Later cash allocations require the last financial entry ID and cannot exceed the balance. Advances, bank accounts and cash closing remain Phase 07.
 
-A draft is not a receipt or completed sale. Customer sales history, posting/correction history, PDF receipts, full-cylinder gas component handling, empty/full exchange valuation, borrowed-cylinder custody, deposits and separately paid purchase costs remain incomplete.
+Every financial command requires an idempotency key of at most 80 characters. Retry an uncertain response with the same key and identical payload. Conflicting reuse returns 409. The internal: prefix is reserved. UI forms retain a command key for an unchanged request during the current page session. After reload, inspect history before submitting again.
 
-## API and screens
+Payment reversals require a reason and record an actual cash correction/return; they do not send money. Reverse sale payments separately before reversing a sale. Full sale reversal adds exact opposite stock, revenue, receivable and COGS entries. Later affected stock/serial activity blocks reversal. A loan sale can be reversed only before return/settlement history exists; the command also returns its shell and records its deposit cash handed back, requiring payment permission. The screen explains this cash effect. Original document totals remain historical snapshots; signed ledger entries show their cancellation. Inventory's generic reversal cannot bypass financial corrections.
 
-Routes are under `/api/workspace/sales`: `customers`, `price-lists`, `price-lists/{id}/prices` and `drafts`. POST creates configuration or a draft; PUT updates with Version; GET reads paginated directories/details. No hard-delete or financial-posting route is introduced. Screens are `/workspace/customers`, `/workspace/prices` and `/workspace/sales`.
+## Deposits, returns and approvals
 
-## Migrations and historical data
+The suggested deposit is editable manually at issue, including zero. Reductions below the suggestion require cylinders.waive_deposit, unless the customer has an approved zero-deposit arrangement. Such arrangements support hotels and tandoors and have a reason, approver, version and audit history. A positive issue deposit is recorded as cash actually collected and refundable liability, separate from the sale payment and revenue. At most 1,000 borrowed shells can be issued per sale.
 
-Apply `20260921002027_CustomersAndPriceLists` and `20260921070611_SalesDrafts` before the API. They add Customers, PriceLists, SalePrices and SaleDrafts, tenant-qualified constraints/indexes and owner permissions. Other roles need explicit grants. No business records are seeded, existing purchases remain unchanged, and inventory is not recosted. Downgrade drops these new records and is not a recovery procedure for valuable data. Both migrations form an incomplete Phase 06 checkpoint; do not describe them as full sales support.
+A worker with cylinders.return enters a variable usage fee when processing each return. PKR 2,000 is an example, not a fixed or monthly rate. No manager approval is required for an ordinary usage fee. Damage/loss approval is a separate server-enforced cylinders.approve_damage_loss permission assigned to an administrator or store manager. The approval records the loan, condition, amount, reason and actor. A return can use only a matching approval; workers cannot submit arbitrary damage charges.
 
-## Approved cylinder deposit and usage policy
+Acceptable returns move CustomerHeld stock to Empty or Inspection. Damaged and Lost outcomes require approval; Lost remains unavailable and is not a physical return to stock. Moving a shell to Lost preserves its existing cost pool value, consistent with the existing inventory state policy; it does not automatically write off its value.
 
-The owner accepted the recommendations in this task and clarified that workers enter the usage charge manually on return. It may differ each time; PKR 2,000 was an example, not a fixed or monthly rate. No automatic duration-based charge is authorized.
+Settlement earns usage plus approved damage/loss charges, applies at most the deposit, and separately exposes refund due or an additional receivable. For deposit 5,000 and usage 2,000, revenue is 2,000 and refund due is 3,000. Return itself creates no cash refund. A separate actual refund reduces cash and liability; partial refunds are allowed. Charges beyond the deposit are collected separately, never a negative refund. Zero-deposit custody is still tracked.
 
-- Configure a suggested deposit per cylinder type, but permit manual non-negative deposit amounts, including zero, subject to permissions. Reductions/waivers require authorized staff; admin/store-manager-approved zero-deposit customer arrangements support hotels and tandoors.
-- Borrowed cylinders remain business-owned and are tracked against the customer even when no deposit is collected. Return moves the cylinder to empty stock or inspection according to condition, without treating the shell as a new purchase.
-- A worker with return/usage-entry permission can enter the variable usage fee when processing the return. Do not require manager entry or approval of an ordinary usage fee merely because damage/loss charges need approval. Record actor, amount and return reference; show fee terms to the customer when issuing the cylinder.
-- Damage or loss charges require admin/store-manager approval; ordinary workers cannot approve them. Permission is checked by the API, not inferred from a client role label.
-- Deposit collection increases cash and refundable deposit liability, not sales income. The earned usage fee is separate income; applying it against the deposit reduces the liability. Refundable deposits are shown in cash received, separate from revenue/profit.
-- Return settlement displays original deposit, usage fee, approved damage/loss charges and refund due. Only actual payment records a cash refund; an unpaid refund remains owed. Approved charges beyond a deposit, including a zero-deposit loan, must be collected separately rather than producing a negative refund.
-- All cash, fee, custody and refund effects need atomic/idempotent posting and auditable reversal. This is an approved policy, not a claim that the workflows are implemented.
+Refund/payment reversal preserves the original entry. A return can be reversed only after later cash effects have been reversed and before later affected stock activity. Direct editing/deleting of loans, financial entries or stock history is blocked. Generic stock commands cannot manipulate CustomerHeld stock for items managed by loans.
+
+## Permissions and visibility
+
+All routes require the server session, CSRF for writes, the current workspace and current permissions. Every tenant-owned table has a central filter and tenant-qualified references. Branch financial reads/writes authorize branch access. Customer history and loans are filtered by the selected branch.
+
+customers.view/manage and prices.manage control profiles and prices. sales.view/create/discount/post/pay/reverse control their respective operations. sales.view_profit separately controls COGS and gross profit in responses. Cylinder configuration, deposit waiver, returns and damage/loss approval have separate permissions. Existing owners receive added permissions through migrations; other roles require explicit grants. Configuration metadata access does not grant stock-cost visibility.
+
+## Screens, API and receipts
+
+Sales provides drafts, posted register/detail, payments/reversals, cylinder policy setup and loan returns/refunds. Customers provides profiles, selected-branch sales/custody history and controlled zero-deposit arrangements. Price lists supplies server-owned selling rates.
+
+Routes under /api/workspace/sales include customers, price-lists, drafts, posted, cylinder-policies and loans. Posted sale actions expose payments, payment reversal, full reversal and receipt. Loan actions expose approvals, return, refunds, payments and entry reversal. OpenAPI describes their contracts.
+
+Receipts are authenticated, branch-authorized, generated in memory, audited and served no-store. They show original sale lines, cash/balance, payment/correction history and separate loan deposits/terms. Cost/profit is not printed on a customer receipt. English operational receipts are not tax invoices; Urdu shaping and tax/legal invoice configuration remain separate decisions.
+
+## Migrations and operating boundaries
+
+Apply CustomersAndPriceLists, SalesDrafts, PostedSales, SeparatePurchaseCosts and CylinderLoans before the API. Additive schema includes immutable-history triggers, constraints, indexes and owner grants. Prior stock is not recosted; prior purchases retain their original supplier-paid cost semantics. See purchasing contracts for separately paid costs on new documents. Downgrades destroy data; use backup/restore for recovery.
+
+Current-date posting and full dependency-checked reversals retain the approved inventory policy. There is no automatic production deployment, source-cylinder gas subledger, automatic monthly usage fee, payment advance or cash-register closing in this phase.

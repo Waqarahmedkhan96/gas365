@@ -153,6 +153,8 @@ public sealed class InventoryAccess(Gas365DbContext db, TenantScope scope, IInve
         var serials = (request.Serials ?? []).Select(s => CatalogAccess.Text(s, 80).ToUpperInvariant()).ToArray();
         if (serials.Length > 1000) throw new AccessException(400, "Post at most 1,000 serials per command.");
         var source = await WarehouseAsync(request.WarehouseId, ct); var bucket = Bucket(item, request.Bucket);
+        if ((bucket == "CustomerHeld" || request.DestinationBucket == "CustomerHeld") && await db.CylinderLoans.AnyAsync(x => x.ItemId == item.Id, ct))
+            throw new AccessException(409, "Manage customer-held cylinders through their loan records.");
         var rows = await db.StockMovements.Where(x => x.ItemId == item.Id && x.WarehouseId == source.Id)
             .GroupBy(x => x.Bucket).Select(g => new { Bucket = g.Key, Quantity = g.Sum(x => x.Quantity), Value = g.Sum(x => x.Value), Sequence = g.Max(x => x.Sequence) }).ToArrayAsync(ct);
         var sequence = rows.Select(x => x.Sequence).DefaultIfEmpty().Max();
@@ -195,6 +197,8 @@ public sealed class InventoryAccess(Gas365DbContext db, TenantScope scope, IInve
         var replay = await ReplayAsync(key, hash, ct); if (replay is not null) return await DocumentAsync(replay.Id, ct);
         var original = await DocumentAsync(id, ct);
         if (original.Kind == "PurchaseReceipt") throw new AccessException(409, "Reverse this receipt through its purchase to preserve the supplier ledger.");
+        if (original.Kind == "SaleIssue") throw new AccessException(409, "Reverse this issue through its sale to preserve the customer ledger.");
+        if (original.Kind is "CylinderReturn" or "CylinderReturnReversal") throw new AccessException(409, "Reverse this movement through its cylinder loan to preserve settlement history.");
         if (original.ReversesId.HasValue || original.ReversedById.HasValue) throw new AccessException(409, "This document cannot be reversed again.");
         foreach (var pool in original.Movements.GroupBy(x => new { x.ItemId, x.WarehouseId }))
         {

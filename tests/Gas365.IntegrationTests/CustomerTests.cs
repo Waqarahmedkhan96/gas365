@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Gas365.IntegrationTests;
 
-public sealed class CustomerTests(DatabaseFixture database) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public sealed partial class CustomerTests(DatabaseFixture database) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
     private const string Password = "Synthetic-Inventory-2026!";
     private readonly TestMessages messages = new();
@@ -62,6 +62,67 @@ public sealed class CustomerTests(DatabaseFixture database) : IClassFixture<Data
 
     private static Task<HttpResponseMessage> Sales((HttpClient Client, MeDto Me) owner, string path, object? body = null, HttpMethod? method = null) =>
         Send(owner.Client, "/api/workspace/sales/" + path, method ?? (body is null ? HttpMethod.Get : HttpMethod.Post), body, owner.Me.TenantId);
+
+    [Fact]
+    public async Task SalesPostingPaymentsFillingLossAndReversalReconcile()
+    {
+        var owner = await Owner(); using var client = owner.Client; var (item, warehouse) = await Setup(owner);
+        await Read<DocumentDto>(await Stock(owner, "documents", new PostStockRequest(Guid.NewGuid().ToString(), "Opening", item.Id, warehouse.Id, "Available", 10, 100, null, null, "Opening", 0, 0, [])));
+        var customer = await Read<CustomerDto>(await Sales(owner, "customers", new CustomerRequest("Cash customer", "", "")));
+        var list = await Read<PriceListDto>(await Sales(owner, "price-lists", new PriceListRequest("Retail")));
+        var price = await Read<SalePriceDto>(await Sales(owner, $"price-lists/{list.Id}/prices", new SalePriceRequest(item.Id, "Refill", 200)));
+        var request = new SaleDraftRequest(warehouse.BranchId, customer.Id, list.Id, "Filling 1", "", [new(price.Id, price.Version, warehouse.Id, 1.6m, 0, "Customer cylinder A", 0.1m, "Filling loss")]);
+        var draft = await Read<SaleDraftDto>(await Sales(owner, "drafts", request));
+        var post = new SalePostRequest(Guid.NewGuid().ToString(), draft.Version, 100, [[]]);
+        var sale = await Read<SaleDto>(await Sales(owner, $"drafts/{draft.Id}/post", post));
+        Assert.Equal(320, sale.Total); Assert.Equal(170, sale.Cogs); Assert.Equal(150, sale.GrossProfit); Assert.Equal(220, sale.Outstanding);
+        Assert.Equal(sale.Id, (await Read<SaleDto>(await Sales(owner, $"drafts/{draft.Id}/post", post))).Id);
+        Assert.Equal(HttpStatusCode.Conflict, (await Sales(owner, $"drafts/{draft.Id}/post", post with { CashPaid = 101 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Sales(owner, $"drafts/{draft.Id}", request with { Version = draft.Version }, HttpMethod.Put)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Stock(owner, $"documents/{sale.StockDocumentId}/reverse", new ReverseStockRequest(Guid.NewGuid().ToString(), "Wrong route"))).StatusCode);
+        var balances = await Read<StockBalanceDto[]>(await Stock(owner, $"items/{item.Id}/balances"));
+        Assert.Equal(8.3m, balances.Single().Quantity);
+        var payment = new SalePaymentRequest(Guid.NewGuid().ToString(), 220, "Balance received", sale.Entries[^1].Id);
+        sale = await Read<SaleDto>(await Sales(owner, $"posted/{sale.Id}/payments", payment));
+        Assert.Equal(0, sale.Outstanding); Assert.Equal(320, sale.Paid);
+        Assert.Equal(3, (await Read<SaleDto>(await Sales(owner, $"posted/{sale.Id}/payments", payment))).Entries.Length);
+        Assert.Equal(HttpStatusCode.Conflict, (await Sales(owner, $"posted/{sale.Id}/reverse", new SaleReverseRequest(Guid.NewGuid().ToString(), "Correction"))).StatusCode);
+        foreach (var entry in sale.Entries.Where(x => x.Kind == "Payment"))
+            await Read<SaleDto>(await Sales(owner, $"posted/{sale.Id}/payments/{entry.Id}/reverse", new SaleReverseRequest(Guid.NewGuid().ToString(), "Cash returned")));
+        sale = await Read<SaleDto>(await Sales(owner, $"posted/{sale.Id}/reverse", new SaleReverseRequest(Guid.NewGuid().ToString(), "Correct filling")));
+        Assert.Equal("Reversed", sale.Status); Assert.Equal(0, sale.Outstanding); Assert.Equal(0, sale.Entries.Sum(x => x.Cogs));
+        Assert.Equal(10, (await Read<StockBalanceDto[]>(await Stock(owner, $"items/{item.Id}/balances"))).Single().Quantity);
+        await using var db = database.CreateContext();
+        await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"SaleDocuments\" SET \"Total\" = 1 WHERE \"Id\" = {sale.Id}"));
+        await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM \"SaleEntries\" WHERE \"SaleId\" = {sale.Id}"));
+    }
+
+    [Fact]
+    public async Task SalesLateFailureRollsBackAndForeignRoutesAreHidden()
+    {
+        var a = await Owner(); var b = await Owner(); using var ca = a.Client; using var cb = b.Client;
+        var (item, warehouse) = await Setup(a);
+        await Read<DocumentDto>(await Stock(a, "documents", new PostStockRequest(Guid.NewGuid().ToString(), "Opening", item.Id, warehouse.Id, "Available", 2, 100, null, null, "Opening", 0, 0, [])));
+        var customer = await Read<CustomerDto>(await Sales(a, "customers", new CustomerRequest("Customer", "", "")));
+        var list = await Read<PriceListDto>(await Sales(a, "price-lists", new PriceListRequest("Retail")));
+        var price = await Read<SalePriceDto>(await Sales(a, $"price-lists/{list.Id}/prices", new SalePriceRequest(item.Id, "Refill", 200)));
+        var request = new SaleDraftRequest(warehouse.BranchId, customer.Id, list.Id, "Multi", "", [new(price.Id, price.Version, warehouse.Id, 1, 0), new(price.Id, price.Version, warehouse.Id, 2, 0)]);
+        var draft = await Read<SaleDraftDto>(await Sales(a, "drafts", request));
+        var post = new SalePostRequest(Guid.NewGuid().ToString(), draft.Version, 0, [[], []]);
+        Assert.Equal(HttpStatusCode.Conflict, (await Sales(a, $"drafts/{draft.Id}/post", post)).StatusCode);
+        Assert.Equal(2, (await Read<StockBalanceDto[]>(await Stock(a, $"items/{item.Id}/balances"))).Single().Quantity);
+        Assert.Empty((await Read<PageDto<SaleDto>>(await Sales(a, $"posted?branchId={warehouse.BranchId}"))).Items);
+        draft = await Read<SaleDraftDto>(await Sales(a, $"drafts/{draft.Id}", request with { Version = draft.Version, Lines = [request.Lines[0]] }, HttpMethod.Put));
+        post = post with { Version = draft.Version, Serials = [[]] };
+        var results = await Task.WhenAll(Sales(a, $"drafts/{draft.Id}/post", post), Sales(a, $"drafts/{draft.Id}/post", post));
+        var sale = await Read<SaleDto>(results[0]); Assert.Equal(sale.Id, (await Read<SaleDto>(results[1])).Id);
+        Assert.Equal(HttpStatusCode.NotFound, (await Sales(b, $"posted/{sale.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Sales(b, $"posted?branchId={warehouse.BranchId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Sales(b, $"drafts/{draft.Id}/post", post)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Sales(b, $"posted/{sale.Id}/payments", new SalePaymentRequest(Guid.NewGuid().ToString(), 1, "Payment", sale.Entries[^1].Id))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Sales(b, $"posted/{sale.Id}/reverse", new SaleReverseRequest(Guid.NewGuid().ToString(), "Reverse"))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Sales(b, $"posted/{sale.Id}/payments/{sale.Entries[0].Id}/reverse", new SaleReverseRequest(Guid.NewGuid().ToString(), "Reverse"))).StatusCode);
+    }
 
     [Fact]
     public async Task CustomersHaveValidatedSearchableProfilesAndConcurrencyProtection()

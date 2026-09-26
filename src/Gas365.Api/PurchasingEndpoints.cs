@@ -17,6 +17,7 @@ public static class PurchasingEndpoints
         g.MapPut("/purchases/{id:guid}", (Guid id, PurchaseDraftRequest r, IPurchasingAccess s, CancellationToken ct) => s.SaveDraftAsync(id, r, ct));
         g.MapPost("/purchases/{id:guid}/post", (Guid id, PurchasePostRequest r, IPurchasingAccess s, CancellationToken ct) => s.PostAsync(id, r, ct));
         g.MapPost("/purchases/{id:guid}/payments", (Guid id, PurchasePaymentRequest r, IPurchasingAccess s, CancellationToken ct) => s.PayAsync(id, r, ct));
+        g.MapPost("/purchases/{id:guid}/cost-payments", (Guid id, PurchasePaymentRequest r, IPurchasingAccess s, CancellationToken ct) => s.PayCostsAsync(id, r, ct));
         g.MapPost("/purchases/{id:guid}/payments/{entryId:guid}/reverse", (Guid id, Guid entryId, PurchaseReverseRequest r, IPurchasingAccess s, CancellationToken ct) => s.ReversePaymentAsync(id, entryId, r, ct));
         g.MapPost("/purchases/{id:guid}/reverse", (Guid id, PurchaseReverseRequest r, IPurchasingAccess s, CancellationToken ct) => s.ReverseAsync(id, r, ct));
         g.MapGet("/purchases/{id:guid}/voucher", async (Guid id, IPurchasingAccess s, CancellationToken ct) => Results.File(await s.VoucherAsync(id, ct), "application/pdf", $"Gas365-purchase-{id}.pdf"));

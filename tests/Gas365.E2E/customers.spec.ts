@@ -31,7 +31,7 @@ async function post(
 test('owner manages customer profiles and versioned selling prices', async ({
   page,
 }, info) => {
-  test.setTimeout(90000);
+  test.setTimeout(180000);
   const email = `purchase-browser-${info.project.name}-${Date.now()}@test.example`;
   const password = 'Synthetic-Inventory-2026!';
   const request = page.request;
@@ -69,7 +69,7 @@ test('owner manages customer profiles and versioned selling prices', async ({
   const branches = await (
     await request.get('/api/workspace/branches', { headers })
   ).json();
-  await post(
+  const warehouseResponse = await post(
     request,
     '/api/workspace/inventory/warehouses',
     { branchId: branches[0].id, name: 'Sales store', location: '' },
@@ -84,7 +84,7 @@ test('owner manages customer profiles and versioned selling prices', async ({
       me.tenantId,
     )
   ).json();
-  await post(
+  const itemResponse = await post(
     request,
     stock + '/items',
     {
@@ -99,6 +99,26 @@ test('owner manages customer profiles and versioned selling prices', async ({
       tareWeightKg: null,
       serialTracked: false,
       reorderLevel: 0,
+    },
+    me.tenantId,
+  );
+  const warehouse = await warehouseResponse.json();
+  const item = await itemResponse.json();
+  await post(
+    request,
+    stock + '/documents',
+    {
+      idempotencyKey: crypto.randomUUID(),
+      kind: 'Opening',
+      itemId: item.id,
+      warehouseId: warehouse.id,
+      bucket: 'Available',
+      quantity: 200,
+      unitCost: 100,
+      reason: 'Opening for sales journey',
+      expectedSequence: 0,
+      destinationExpectedSequence: 0,
+      serials: [],
     },
     me.tenantId,
   );
@@ -210,9 +230,206 @@ test('owner manages customer profiles and versioned selling prices', async ({
     .click();
   await page.getByLabel('Quantity for line 1').fill('3');
   await page
+    .getByLabel('Cylinder reference for line 1', { exact: true })
+    .fill('Cylinder A');
+  await page
+    .getByLabel('Source cylinder reference for line 1', { exact: true })
+    .fill('Source 45-A');
+  await page.getByLabel('Loss for line 1 (same unit as quantity)').fill('0.1');
+  await page.getByLabel('Loss reason for line 1').fill('Measured filling loss');
+  await page
     .getByRole('button', { name: 'Save sales draft', exact: true })
     .click();
   await expect(detail).toContainText('1,311.00');
+  await expect(detail).toContainText('Loss 0.1 KG');
+  await detail.getByLabel('Cash received on sale (PKR)').fill('1000');
+  await detail.getByRole('button', { name: 'Post sale', exact: true }).click();
+  await expect(detail).toHaveCount(0);
+  await page
+    .getByRole('region', { name: 'Sales register' })
+    .getByRole('button', { name: 'SALE-REVIEW-001', exact: true })
+    .filter({ visible: true })
+    .click();
+  const posted = page.getByRole('region', { name: 'Posted sale details' });
+  await expect(posted).toContainText('Partially Paid');
+  await expect(posted).toContainText('311.00');
+  await expect(posted).toContainText('410.00');
+  await expect(posted).toContainText('Source 45-A');
+  await posted.getByLabel('Payment amount (PKR)').fill('311');
+  await posted
+    .getByLabel('Payment reason (required)', { exact: true })
+    .fill('Balance received');
+  await posted
+    .getByRole('button', { name: 'Receive payment', exact: true })
+    .click();
+  await expect(posted.getByRole('heading', { level: 2 })).toContainText('Paid');
+  const download = page.waitForEvent('download');
+  await posted.getByRole('button', { name: 'Download sales receipt' }).click();
+  expect((await download).suggestedFilename()).toMatch(/Gas365-sale-.*\.pdf/);
+  const balances = await (
+    await request.get(`${stock}/items/${item.id}/balances`, { headers })
+  ).json();
+  expect(balances[0].quantity).toBe(195.9);
+  const shellUnit = await (
+    await post(
+      request,
+      stock + '/units',
+      { code: 'CYL', decimalPlaces: 0 },
+      me.tenantId,
+    )
+  ).json();
+  const shell = await (
+    await post(
+      request,
+      stock + '/items',
+      {
+        sku: 'SHELL-45',
+        name: '45 kg cylinder shell',
+        kind: 'Cylinder',
+        unitId: shellUnit.id,
+        categoryId: null,
+        brand: 'Gas365',
+        classification: 'Commercial',
+        capacityKg: 45,
+        tareWeightKg: 35,
+        serialTracked: false,
+        reorderLevel: 0,
+      },
+      me.tenantId,
+    )
+  ).json();
+  await post(
+    request,
+    stock + '/documents',
+    {
+      idempotencyKey: crypto.randomUUID(),
+      kind: 'Opening',
+      itemId: shell.id,
+      warehouseId: warehouse.id,
+      bucket: 'Full',
+      quantity: 2,
+      unitCost: 1000,
+      reason: 'Shell stock excludes LPG',
+      expectedSequence: 0,
+      destinationExpectedSequence: 0,
+      serials: [],
+    },
+    me.tenantId,
+  );
+  await page
+    .getByText('Configure cylinder LPG and deposit', { exact: true })
+    .click();
+  await page.getByLabel('Find cylinder type').fill('SHELL-45');
+  await page
+    .getByRole('button', {
+      name: 'SHELL-45 — 45 kg cylinder shell',
+      exact: true,
+    })
+    .click();
+  const policy = page.getByRole('form', { name: 'Cylinder policy' });
+  await policy.getByLabel('Find LPG item (KG unit)').fill('PRICE-LPG');
+  await policy
+    .getByRole('button', { name: 'PRICE-LPG — Price list LPG', exact: true })
+    .click();
+  await policy.getByLabel('LPG kg per filled cylinder').fill('45');
+  await policy.getByLabel('Suggested deposit per cylinder (PKR)').fill('5000');
+  await policy
+    .getByLabel('Usage fee terms shown to customer')
+    .fill(
+      'Usage fee entered on return; damage or loss requires manager approval.',
+    );
+  await policy
+    .getByRole('button', { name: 'Save cylinder policy', exact: true })
+    .click();
+  await expect
+    .poll(
+      async () =>
+        (
+          await (
+            await request.get(
+              `/api/workspace/sales/cylinder-policies/${shell.id}`,
+              { headers },
+            )
+          ).json()
+        )?.suggestedDeposit,
+    )
+    .toBe(5000);
+  const lists = await (
+    await request.get('/api/workspace/sales/price-lists', { headers })
+  ).json();
+  await post(
+    request,
+    `/api/workspace/sales/price-lists/${lists.items[0].id}/prices`,
+    { itemId: shell.id, mode: 'LoanRefill', unitPrice: 9000 },
+    me.tenantId,
+  );
+  await page
+    .getByRole('button', { name: 'New sales draft', exact: true })
+    .click();
+  await page.getByLabel('Sales reference').fill('LOAN-BROWSER-001');
+  await draftEditor
+    .getByRole('button', { name: 'Customer Beta', exact: true })
+    .click();
+  await draftEditor
+    .getByRole('button', { name: 'Retail', exact: true })
+    .click();
+  await draftEditor
+    .getByRole('button', { name: 'Add SHELL-45 (LoanRefill)', exact: true })
+    .click();
+  await draftEditor
+    .getByRole('button', { name: 'Save sales draft', exact: true })
+    .click();
+  await detail.getByLabel('Cash received on sale (PKR)').fill('9000');
+  await detail
+    .getByLabel('Deposit collected per cylinder for line 1 (PKR)')
+    .fill('5000');
+  await detail.getByRole('button', { name: 'Post sale', exact: true }).click();
+  await expect(detail).toHaveCount(0);
+  const loans = await (
+    await request.get(`/api/workspace/sales/loans?branchId=${branches[0].id}`, {
+      headers,
+    })
+  ).json();
+  expect(loans.items).toHaveLength(1);
+  await page
+    .getByRole('region', { name: 'Borrowed cylinders', exact: true })
+    .getByRole('button', {
+      name: `Loan ${loans.items[0].id.slice(0, 8)}`,
+      exact: true,
+    })
+    .filter({ visible: true })
+    .click();
+  const loanDetail = page.getByRole('region', {
+    name: 'Cylinder loan details',
+  });
+  await loanDetail.getByLabel('Usage fee for this return (PKR)').fill('2000');
+  await loanDetail
+    .getByLabel('Return reason (required)', { exact: true })
+    .fill('Cylinder returned empty');
+  await loanDetail
+    .getByRole('button', { name: 'Record cylinder return', exact: true })
+    .click();
+  await expect(loanDetail).toContainText('3,000.00');
+  await loanDetail.getByLabel('Refund amount (PKR)').fill('3000');
+  await loanDetail
+    .getByLabel('Refund reference (required)', { exact: true })
+    .fill('Cash handed back');
+  await loanDetail
+    .getByRole('button', { name: 'Record refund cash', exact: true })
+    .click();
+  await expect(loanDetail.getByLabel('Refund amount (PKR)')).toHaveCount(0);
+  const settled = await (
+    await request.get(`/api/workspace/sales/loans/${loans.items[0].id}`, {
+      headers,
+    })
+  ).json();
+  expect(settled.refundDue).toBe(0);
+  expect(
+    settled.entries.reduce(
+      (sum: number, e: { revenue: number }) => sum + e.revenue,
+      0,
+    ),
+  ).toBe(2000);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   expect(
     await page.evaluate(

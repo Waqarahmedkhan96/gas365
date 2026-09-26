@@ -9,7 +9,8 @@ public sealed record PurchaseLineDto(Guid ItemId, string Sku, string Name, strin
     decimal Quantity, decimal Price, decimal WeightKg, string[] Serials, decimal BaseValue, decimal LandedCost, decimal Value, decimal ReceiptUnitCost);
 public sealed record PurchaseSnapshot(string Reference, string Notes, string AllocationRule, decimal LandedCharges, PurchaseLineDto[] Lines);
 public sealed record PurchaseDto(Guid Id, Guid BranchId, Guid SupplierId, string SupplierName, string Status, uint Version, decimal Total, decimal Paid, decimal Outstanding,
-    PurchaseSnapshot Snapshot, Guid? StockDocumentId, Guid? CorrectsId, PurchaseEntryDto[] Entries);
+    PurchaseSnapshot Snapshot, Guid? StockDocumentId, Guid? CorrectsId, PurchaseEntryDto[] Entries,
+    bool SeparateCosts = false, decimal CostsPaid = 0, decimal CostsOutstanding = 0);
 public sealed record PurchaseEntryDto(Guid Id, string Kind, decimal Payable, decimal Cash, string Reason, Guid ActorId, DateTimeOffset PostedAt, DateOnly BusinessDate, Guid? ReversesId);
 public sealed record PurchasePostRequest(string IdempotencyKey, uint Version, decimal CashPaid);
 public sealed record PurchasePaymentRequest(string IdempotencyKey, decimal Amount, string Reason, Guid ExpectedLastEntryId);
@@ -26,6 +27,7 @@ public interface IPurchasingAccess
     Task<PurchaseDto> SaveDraftAsync(Guid? id, PurchaseDraftRequest request, CancellationToken ct);
     Task<PurchaseDto> PostAsync(Guid id, PurchasePostRequest request, CancellationToken ct);
     Task<PurchaseDto> PayAsync(Guid id, PurchasePaymentRequest request, CancellationToken ct);
+    Task<PurchaseDto> PayCostsAsync(Guid id, PurchasePaymentRequest request, CancellationToken ct);
     Task<PurchaseDto> ReversePaymentAsync(Guid id, Guid entryId, PurchaseReverseRequest request, CancellationToken ct);
     Task<PurchaseDto> ReverseAsync(Guid id, PurchaseReverseRequest request, CancellationToken ct);
     Task<byte[]> VoucherAsync(Guid id, CancellationToken ct);

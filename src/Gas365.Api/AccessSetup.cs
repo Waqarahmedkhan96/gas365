@@ -22,6 +22,8 @@ public static class AccessSetup
         builder.Services.AddScoped<IPurchasingAccess, PurchasingAccess>();
         builder.Services.AddScoped<ICustomerAccess, CustomerAccess>();
         builder.Services.AddScoped<ISalesDraftAccess, SalesDraftAccess>();
+        builder.Services.AddScoped<ISalesAccess, SalesAccess>();
+        builder.Services.AddScoped<ICylinderLoanAccess, CylinderLoanAccess>();
         builder.Services.AddSingleton<Gas365.Domain.IInventoryCosting, Gas365.Domain.WeightedAverageCosting>();
         builder.Services.AddScoped<IAccountMessages, AccountMessages>();
         builder.Services.AddScoped<SessionEvents>();

@@ -19,7 +19,7 @@ public sealed class SalesDraftAccess(Gas365DbContext db, TenantScope scope) : IS
     {
         Require(Permissions.SalesView); await BranchAsync(branchId, false, ct);
         if (page is < 1 or > 1000000) throw new AccessException(400, "Invalid page.");
-        var q = db.SaleDrafts.AsNoTracking().Where(x => x.BranchId == branchId); var count = await q.CountAsync(ct);
+        var q = db.SaleDrafts.AsNoTracking().Where(x => x.BranchId == branchId && !db.SaleDocuments.Any(d => d.DraftId == x.Id)); var count = await q.CountAsync(ct);
         var rows = await q.OrderBy(x => x.Reference).ThenBy(x => x.Id).Skip((page - 1) * 20).Take(20).ToArrayAsync(ct);
         return new(rows.Select(Dto).ToArray(), count, page, 20);
     }
@@ -36,10 +36,12 @@ public sealed class SalesDraftAccess(Gas365DbContext db, TenantScope scope) : IS
         if (r.Lines.Any(x => x.Discount != 0)) Require(Permissions.SalesDiscount);
         // One transaction gives the draft a consistent price snapshot; no stock is reserved.
         await using var tx = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, ct);
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Tenants\" WHERE \"TenantId\" = {scope.TenantId} FOR UPDATE", ct);
         var row = id.HasValue ? await db.SaleDrafts.SingleOrDefaultAsync(x => x.Id == id, ct) ?? throw new AccessException(404, "Sales draft not found.") : new SaleDraft { TenantId = scope.TenantId };
         if (id.HasValue)
         {
             await BranchAsync(row.BranchId, true, ct);
+            if (await db.SaleDocuments.AnyAsync(x => x.DraftId == row.Id, ct)) throw new AccessException(409, "Posted drafts cannot be edited.");
             if (row.Version != r.Version) throw new AccessException(409, "Sales draft changed. Refresh before saving.");
         }
         var customer = await db.Customers.SingleOrDefaultAsync(x => x.Id == r.CustomerId && x.Active, ct) ?? throw new AccessException(404, "Active customer not found.");
@@ -53,10 +55,21 @@ public sealed class SalesDraftAccess(Gas365DbContext db, TenantScope scope) : IS
             var unit = await db.StockUnits.SingleAsync(x => x.Id == item.UnitId, ct);
             var warehouse = await db.Warehouses.SingleOrDefaultAsync(x => x.Id == line.WarehouseId && x.BranchId == r.BranchId && x.Active, ct) ?? throw new AccessException(404, "Active warehouse in this branch not found.");
             CatalogAccess.Decimal(line.Quantity, unit.DecimalPlaces, 1000000m);
+            CatalogAccess.Decimal(line.LossQuantity, unit.DecimalPlaces, 1000000m);
+            var cylinderReference = CatalogAccess.OptionalText(line.CylinderReference, 120);
+            var sourceCylinderReference = CatalogAccess.OptionalText(line.SourceCylinderReference, 120);
+            var lossReason = CatalogAccess.OptionalText(line.LossReason, 300);
+            if (price.Mode != "Refill" && (line.LossQuantity != 0 || cylinderReference.Length != 0 || sourceCylinderReference.Length != 0 || lossReason.Length != 0))
+                throw new AccessException(400, "Cylinder filling references and loss apply only to refill lines.");
+            if (line.LossQuantity > 0 && lossReason.Length == 0) throw new AccessException(400, "Record a reason for filling loss.");
             SaleAmounts amounts;
             try { amounts = SaleCalculation.Calculate(line.Quantity, price.UnitPrice, line.Discount); }
             catch (ArgumentException e) { throw new AccessException(400, e.Message); }
-            lines.Add(new(price.Id, price.Version, item.Id, item.Sku, item.Name, price.Mode, unit.Code, warehouse.Id, warehouse.Name, line.Quantity, price.UnitPrice, amounts.Gross, amounts.Discount, amounts.Net));
+            CylinderPolicy? policy = null;
+            if (price.Mode is "FullCylinder" or "Exchange" or "LoanRefill")
+                policy = await db.CylinderPolicies.SingleOrDefaultAsync(x => x.ItemId == item.Id, ct) ?? throw new AccessException(409, "Configure the cylinder's LPG and deposit policy first.");
+            lines.Add(new(price.Id, price.Version, item.Id, item.Sku, item.Name, price.Mode, unit.Code, warehouse.Id, warehouse.Name, line.Quantity, price.UnitPrice, amounts.Gross, amounts.Discount, amounts.Net,
+                cylinderReference, line.LossQuantity, lossReason, policy?.Version ?? 0, policy?.GasItemId, policy?.GasQuantity ?? 0, policy?.SuggestedDeposit ?? 0, policy?.UsageTerms ?? "", sourceCylinderReference));
         }
         row.BranchId = r.BranchId; row.CustomerId = customer.Id; row.PriceListId = list.Id; row.Reference = CatalogAccess.Text(r.Reference, 120);
         row.Content = JsonSerializer.Serialize(r);

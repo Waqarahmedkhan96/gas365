@@ -176,6 +176,16 @@ test('owner purchases, retries posting, pays, reverses and exports a voucher', a
   await expect(
     detail.getByText('Second payment', { exact: true }),
   ).toBeVisible();
+  await detail.getByLabel('Purchase cost payment (PKR)').fill('60');
+  await detail
+    .getByLabel('Cost type, recipient and reference')
+    .fill('Petrol and loading paid separately');
+  await detail
+    .getByRole('button', { name: 'Record cost payment', exact: true })
+    .click();
+  await expect(
+    detail.getByText('Petrol and loading paid separately', { exact: true }),
+  ).toBeVisible();
   const downloadEvent = page.waitForEvent('download');
   await detail
     .getByRole('button', { name: 'Download PDF voucher', exact: true })
@@ -194,7 +204,7 @@ test('owner purchases, retries posting, pays, reverses and exports a voucher', a
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBeTruthy();
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     await detail
       .getByLabel('Reverse payment reason')
       .first()
@@ -206,7 +216,7 @@ test('owner purchases, retries posting, pays, reverses and exports a voucher', a
       .click();
     await expect(
       detail.getByRole('button', { name: 'Reverse payment', exact: true }),
-    ).toHaveCount(1 - i);
+    ).toHaveCount(2 - i);
   }
   await detail
     .getByLabel('Reverse purchase reason')

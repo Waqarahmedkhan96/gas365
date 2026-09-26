@@ -80,21 +80,28 @@ public sealed class PurchasingTests(DatabaseFixture database) : IClassFixture<Da
     public async Task PostingPaymentsReversalAndReplacementReconcileAllLedgers()
     {
         var owner = await Owner(); using var client = owner.Client; var (draft, request, item, warehouse) = await Draft(owner);
-        Assert.Equal(5060, draft.Total); Assert.Equal(12, draft.Snapshot.Lines[0].LandedCost);
+        Assert.Equal(5000, draft.Total); Assert.Equal(12, draft.Snapshot.Lines[0].LandedCost);
         var post = Post(draft, 1000); var purchase = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{draft.Id}/post", post));
-        Assert.Equal("Partially Paid", purchase.Status); Assert.Equal(4060, purchase.Outstanding);
+        Assert.Equal("Partially Paid", purchase.Status); Assert.Equal(4000, purchase.Outstanding);
         var replay = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{draft.Id}/post", post)); Assert.Equal(purchase.Id, replay.Id);
         Assert.Equal(HttpStatusCode.Conflict, (await Purchase(owner, $"purchases/{draft.Id}/post", post with { CashPaid = 0 })).StatusCode);
         var balances = await Balances(owner, item); Assert.Equal(30, balances.Sum(x => x.Quantity)); Assert.All(balances, x => Assert.Equal(5060, x.WarehouseValue));
         var payment = new PurchasePaymentRequest(Guid.NewGuid().ToString(), 60, "Partial cash", purchase.Entries[^1].Id);
-        purchase = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{purchase.Id}/payments", payment)); Assert.Equal(4000, purchase.Outstanding);
+        purchase = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{purchase.Id}/payments", payment)); Assert.Equal(3940, purchase.Outstanding);
         var retry = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{purchase.Id}/payments", payment)); Assert.Equal(3, retry.Entries.Length);
-        var profile = await Read<SupplierProfileDto>(await Purchase(owner, $"suppliers/{purchase.SupplierId}?branchId={warehouse.BranchId}")); Assert.Equal(4000, profile.Balance);
+        var costPayment = new PurchasePaymentRequest(Guid.NewGuid().ToString(), 60, "Petrol, tolls and loading paid separately", purchase.Entries[^1].Id);
+        purchase = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{purchase.Id}/cost-payments", costPayment));
+        Assert.True(purchase.SeparateCosts); Assert.Equal(60, purchase.CostsPaid); Assert.Equal(0, purchase.CostsOutstanding);
+        Assert.Equal(1060, purchase.Paid); Assert.Equal(3940, purchase.Outstanding);
+        Assert.Equal(4, (await Read<PurchaseDto>(await Purchase(owner, $"purchases/{purchase.Id}/cost-payments", costPayment))).Entries.Length);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Purchase(owner, $"purchases/{purchase.Id}/cost-payments", costPayment with { IdempotencyKey = Guid.NewGuid().ToString(), ExpectedLastEntryId = purchase.Entries[^1].Id })).StatusCode);
+        var profile = await Read<SupplierProfileDto>(await Purchase(owner, $"suppliers/{purchase.SupplierId}?branchId={warehouse.BranchId}")); Assert.Equal(3940, profile.Balance);
+        Assert.DoesNotContain(profile.Ledger.Items, x => x.Entry.Kind == "CostPayment");
         var voucher = await Purchase(owner, $"purchases/{purchase.Id}/voucher"); Assert.Equal("application/pdf", voucher.Content.Headers.ContentType!.MediaType); Assert.StartsWith("%PDF-", await voucher.Content.ReadAsStringAsync());
         Assert.Equal(HttpStatusCode.Conflict, (await Purchase(owner, $"purchases/{draft.Id}", request with { Version = draft.Version }, HttpMethod.Put)).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await Stock(owner, $"documents/{purchase.StockDocumentId}/reverse", new ReverseStockRequest(Guid.NewGuid().ToString(), "Bypass"))).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await Purchase(owner, $"purchases/{purchase.Id}/reverse", Reverse())).StatusCode);
-        foreach (var entry in purchase.Entries.Where(x => x.Kind == "Payment"))
+        foreach (var entry in purchase.Entries.Where(x => x.Kind is "Payment" or "CostPayment"))
         {
             var reversal = Reverse();
             await Read<PurchaseDto>(await Purchase(owner, $"purchases/{purchase.Id}/payments/{entry.Id}/reverse", reversal));
@@ -106,7 +113,7 @@ public sealed class PurchasingTests(DatabaseFixture database) : IClassFixture<Da
         Assert.All(await Balances(owner, item), x => { Assert.Equal(0, x.Quantity); Assert.Equal(0, x.WarehouseValue); });
         var replacement = await Read<PurchaseDto>(await Purchase(owner, "purchases", request with { CorrectsId = purchase.Id, Reference = "SUP-CORRECTION" }));
         replacement = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{replacement.Id}/post", Post(replacement)));
-        Assert.Equal(purchase.Id, replacement.CorrectsId); Assert.Equal(5060, replacement.Total);
+        Assert.Equal(purchase.Id, replacement.CorrectsId); Assert.Equal(5000, replacement.Total);
     }
     [Fact]
     public async Task ConcurrentPostRetriesAndPaymentsCannotDuplicateOrOverpay()
@@ -117,7 +124,7 @@ public sealed class PurchasingTests(DatabaseFixture database) : IClassFixture<Da
         var p = docs[0]; var payment = new PurchasePaymentRequest(Guid.NewGuid().ToString(), 4000, "Concurrent cash", p.Entries[^1].Id);
         var pays = await Task.WhenAll(Purchase(owner, $"purchases/{p.Id}/payments", payment), Purchase(owner, $"purchases/{p.Id}/payments", payment with { IdempotencyKey = Guid.NewGuid().ToString() }));
         Assert.Single(pays, x => x.IsSuccessStatusCode); Assert.Single(pays, x => x.StatusCode == HttpStatusCode.Conflict);
-        p = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{p.Id}")); Assert.Equal(1060, p.Outstanding);
+        p = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{p.Id}")); Assert.Equal(1000, p.Outstanding);
         Assert.Equal(HttpStatusCode.BadRequest, (await Purchase(owner, $"purchases/{p.Id}/payments", payment with { IdempotencyKey = Guid.NewGuid().ToString(), ExpectedLastEntryId = p.Entries[^1].Id })).StatusCode);
         Assert.Equal(30, (await Balances(owner, item)).Sum(x => x.Quantity));
     }
@@ -164,6 +171,7 @@ public sealed class PurchasingTests(DatabaseFixture database) : IClassFixture<Da
         Assert.Equal(HttpStatusCode.NotFound, (await Purchase(a, $"purchases/{db.Id}/post", Post(db))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await Purchase(a, $"purchases/{pb.Id}/reverse", Reverse())).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await Purchase(a, $"purchases/{pb.Id}/payments", new PurchasePaymentRequest(Guid.NewGuid().ToString(), 1, "Foreign", pb.Entries[^1].Id))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Purchase(a, $"purchases/{pb.Id}/cost-payments", new PurchasePaymentRequest(Guid.NewGuid().ToString(), 1, "Foreign", pb.Entries[^1].Id))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await Purchase(a, $"purchases/{pb.Id}/payments/{pb.Entries[^1].Id}/reverse", Reverse())).StatusCode);
         var supplier = (await Read<PageDto<SupplierDto>>(await Purchase(a, "suppliers"))).Items[0];
         var update = new SupplierRequest("Updated supplier", "", "", true, supplier.Version);
@@ -195,6 +203,7 @@ public sealed class PurchasingTests(DatabaseFixture database) : IClassFixture<Da
             ($"purchases/{p.Id}/voucher", HttpMethod.Get, null), ("purchases", HttpMethod.Post, request),
             ($"purchases/{draft.Id}", HttpMethod.Put, request), ($"purchases/{draft.Id}/post", HttpMethod.Post, Post(draft)),
             ($"purchases/{p.Id}/payments", HttpMethod.Post, new PurchasePaymentRequest(Guid.NewGuid().ToString(), 1, "Denied", p.Entries[^1].Id)),
+            ($"purchases/{p.Id}/cost-payments", HttpMethod.Post, new PurchasePaymentRequest(Guid.NewGuid().ToString(), 1, "Denied", p.Entries[^1].Id)),
             ($"purchases/{p.Id}/payments/{p.Entries[^1].Id}/reverse", HttpMethod.Post, Reverse()), ($"purchases/{p.Id}/reverse", HttpMethod.Post, Reverse()) };
         foreach (var route in routes)
         {
@@ -232,6 +241,7 @@ public sealed class PurchasingTests(DatabaseFixture database) : IClassFixture<Da
         var responses = await Task.WhenAll(Purchase(owner, $"purchases/{draft.Id}", request with { Version = draft.Version, LandedCharges = 90 }, HttpMethod.Put), Purchase(owner, $"purchases/{draft.Id}/post", Post(draft)));
         Assert.Single(responses, x => x.IsSuccessStatusCode); Assert.Single(responses, x => x.StatusCode == HttpStatusCode.Conflict);
         var result = await Read<PurchaseDto>(await Purchase(owner, $"purchases/{draft.Id}"));
-        Assert.Equal(result.Status == "Draft" ? 5090 : 5060, result.Total);
+        Assert.Equal(5000, result.Total);
+        Assert.Equal(result.Status == "Draft" ? 90 : 60, result.Snapshot.LandedCharges);
     }
 }

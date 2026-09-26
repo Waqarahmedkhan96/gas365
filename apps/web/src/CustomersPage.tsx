@@ -5,6 +5,9 @@ import { DataTable } from './components/DataTable';
 import { Button } from './components/ui/button';
 import { Field } from './components/ui/form';
 import type { Item, Page } from './inventory-types';
+import { useBranch } from './components/branch-context';
+import { SalesRegister } from './SalesRegister';
+import { CylinderWorkspace, DepositArrangement } from './CylinderWorkspace';
 
 type Customer = {
   id: string;
@@ -58,6 +61,7 @@ export function CustomersPage({
   pricesOnly: boolean;
 }) {
   const cache = useQueryClient();
+  const branch = useBranch();
   const [search, setSearch] = useState('');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [editor, setEditor] = useState<Customer | PriceList | 'new' | null>(
@@ -259,6 +263,29 @@ export function CustomersPage({
             <dt>Status</dt>
             <dd>{customer.active ? 'Active' : 'Inactive'}</dd>
           </dl>
+          {user.permissions.includes('sales.view') && (
+            <DepositArrangement
+              key={customer.id}
+              user={user}
+              customerId={customer.id}
+            />
+          )}
+          {branch && user.permissions.includes('sales.view') && (
+            <>
+              <SalesRegister
+                key={`sales-${branch}-${customer.id}`}
+                user={user}
+                branch={branch}
+                customerId={customer.id}
+              />
+              <CylinderWorkspace
+                key={`loans-${branch}-${customer.id}`}
+                user={user}
+                branch={branch}
+                customerId={customer.id}
+              />
+            </>
+          )}
           <Button variant="outline" onClick={() => setCustomer(null)}>
             Close profile
           </Button>

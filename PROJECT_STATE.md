@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 06 — Customers, Sales, Exchanges and Receipts: implementation started on 2026-09-21 at the owner's request, on `feature/phase-06-sales`. Purchasing was merged into local `main` at `a97fe9b` and its merged branch deleted. Customer records, selling-price lists and versioned multi-line sales drafts are implemented as an incomplete checkpoint. The server validates price versions, decimal totals, discounts and branch access. Two additive migrations exist. Posting, payment capture, PDF receipts, exchanges, borrowed-cylinder custody, deposits and the purchasing-cost correction remain outstanding; pending business policies must be resolved before dependent implementation. See [Phase 06 report](docs/PHASE_06_REPORT.md).
+Phase 06 — Customers, Sales, Exchanges and Receipts: implementation complete and locally verified; Git integration is the final step. Includes posted sales, all sale modes, payments, receipts, cylinder custody/deposits/returns and separately paid purchase costs. See [Phase 06 report](docs/PHASE_06_REPORT.md).
 
 ## Previous phase checkpoint
 
@@ -57,13 +57,13 @@ The owner accepted the recommendations in this task and clarified that workers e
 - Damage or loss charges require admin/store-manager approval; ordinary workers cannot approve them. Permission is checked by the API, not inferred from a client role label.
 - Deposit collection increases cash and refundable deposit liability, not sales income. The earned usage fee is separate income; applying it against the deposit reduces the liability. Refundable deposits are shown in cash received, separate from revenue/profit.
 - Return settlement displays original deposit, usage fee, approved damage/loss charges and refund due. Only actual payment records a cash refund; an unpaid refund remains owed. Approved charges beyond a deposit, including a zero-deposit loan, must be collected separately rather than producing a negative refund.
-- All cash, fee, custody and refund effects need atomic/idempotent posting and auditable reversal. This is an approved policy, not a claim that the workflows are implemented.
+- All cash, fee, custody and refund effects need atomic/idempotent posting and auditable reversal. This approved policy is implemented in Phase 06.
 
 ## Open decisions
 
 Owner decisions recorded during Phase 06: petrol, tolls, loading and unloading are paid separately from the goods supplier, including costs of the business's own vehicle. The previous supplier-paid landed-charge assumption is rejected and requires a purchasing correction. Separate reasoned payment reversal before purchase reversal is approved. Borrowed cylinders and refundable deposits are explicitly included in Phase 06, not deferred.
 
-Remaining question: whether separately paid purchase-related costs are capitalized into stock or expensed immediately. Cylinder deposit and usage policy is now approved below; do not ask again whether the usage fee is fixed or monthly. Workers enter a variable fee on return. Gas consumption, returned-cylinder valuation and custody must be explicit before dependent posting rules are implemented. Existing posted purchasing history must remain unchanged; do not silently remove charges from historical supplier balances or recost inventory.
+On 2026-09-21 the owner chose to capitalize separately paid purchase-related costs into stock. New purchasing code separates their cash payments from the goods supplier balance; historical posted purchases retain their original treatment. Cylinder deposit and usage policy is approved; workers enter a variable fee on return. Exchange means receiving an empty cylinder and giving a filled cylinder. Filling permits custom quantities such as 0.1, 1.5, 1.6, 3.5 and 30 kg, with manual LPG loss for each cylinder's filling, displayed in red with a text label. The unanswered tracking clarification is handled by optional source-cylinder and customer-cylinder references on each filling line, as stated during implementation. These are traceable references, not a physical source-cylinder gas balance. A dedicated source-cylinder gas subledger remains an open future decision. Existing posted purchasing history must remain unchanged.
 
 Cash-only allocations, no advances, and English PDF vouchers are existing boundaries; bank accounts/cash closing and full Urdu voucher typography remain later work. See [purchasing contracts](docs/PURCHASING.md).
 
@@ -81,12 +81,24 @@ Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and 
 
 ## Exact next prompt
 
-Continue Phase 06 in the existing task on `feature/phase-06-sales`. Read AGENTS.md, PROJECT_STATE.md, docs/PHASE_HISTORY.md, docs/PHASE_05_REPORT.md, docs/PHASE_06_REPORT.md, docs/PURCHASING.md, docs/INVENTORY.md and Prompt 06. Implement the approved cylinder deposit/return policy, including worker-entered variable usage fees and manager-approved damage/loss charges. Resolve the remaining purchase-cost treatment and document gas/exchange valuation before dependent work. Implement and verify Phase 06 only. Update the three checkpoint records; when complete and verified, merge into main and delete the feature branch. Do not start Phase 07.
+Finish Phase 06 verification and Git integration. Read the current Phase 06 report and preserve historical evidence. After required checks pass, merge to main, push and delete the merged feature branch. Do not start Phase 07.
 
 Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. This was historical kickoff verification; see the Phase 06 report for later implementation checks.
 
-## Phase 06 implementation verification
+## Historical Phase 06 draft checkpoint verification
 
 Current incomplete checkpoint: 17 unit, 4 architecture, 51 PostgreSQL/API, 13 frontend and 20 desktop/mobile browser cases passed across the runs detailed in [the Phase 06 report](docs/PHASE_06_REPORT.md), 105 total. Frontend lint/types/build, OpenAPI, fresh/upgrade/repeat migrations, model drift, Compose health, formatting, links and whitespace passed. The feature is not complete and is not merged; no remote CI or push is claimed. Customers, prices and draft preparation are usable locally. Posting/receipts/payments, custody/deposits/exchanges and the purchase-cost correction remain outstanding. Historical kickoff verification above is separate.
 
 Verified Phase 06 partial implementation checkpoint: `51b340a` on `feature/phase-06-sales`. Working tree was clean after that commit. No main merge, branch deletion or remote push occurred for the incomplete phase.
+
+## Phase 06 final verification in progress — 2026-09-25
+
+The full implementation now includes sales posting, all sale modes, receipts, payments, cylinder loans/deposits/returns and separate capitalized purchase-cost payments. The complete backend run passed 95 tests before the latest empty-policy JSON correction; final browser and correction checks are pending. Earlier incomplete-checkpoint paragraphs are historical. Five Phase 06 migrations preserve existing stock and posted purchasing treatment. See the detailed report for migration, verification and operating limits. Changes are currently uncommitted; merge/push/deletion have not occurred. Finish these checks and integration; do not start Phase 07.
+
+## Completion checkpoint — 2026-09-26
+
+Phase 06 implementation and required local checks are complete. Final browser report: 20/20 passed, no flaky or skipped cases. Verification covers 30 unit, 4 architecture, 61 PostgreSQL/API, 13 frontend and 20 browser tests (128 distinct cases across the recorded runs), with all 17 sales/cylinder integration cases rerun after the final endpoint correction. Formatting, lint, types, production builds, migration fresh/upgrade/repeat and model checks, OpenAPI, Compose health and PDF review evidence are detailed in the phase report. Historical results are distinguished from final reruns there.
+
+Approved scope includes variable worker-entered usage fees, controlled deposit waivers and damage/loss approval, separate deposit liability and actual refunds, filling loss per line, and separately paid purchase costs capitalized into stock. Source/customer cylinder references are supported; per-source physical gas balances remain a documented future decision. Existing posted history is preserved. Five additive Phase 06 migrations must precede API startup; no production deployment or remote CI success is claimed.
+
+Acceptance: implementation meets the recorded Phase 06 checks and approved operating rules. The owner authorized integration after verification; Git completion will be recorded below. Exact next-chat prompt: Review the completed Phase 06 checkpoint in PROJECT_STATE.md, docs/PHASE_HISTORY.md and docs/PHASE_06_REPORT.md. Address only requested Phase 06 follow-up work; do not begin Phase 07 unless explicitly requested.

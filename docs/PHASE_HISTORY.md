@@ -1,8 +1,8 @@
 # Gas365 Combined Phase History and Chat Handoff
 
-Last consolidated: 2026-09-21.
+Last consolidated: 2026-09-25.
 
-This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 05. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 is now in progress; its incomplete implementation checkpoint is recorded below.
+This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 06. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 implementation and final verification are recorded in the latest addendum; earlier partial checkpoints are historical.
 
 [Project state](../PROJECT_STATE.md) owns current status and unresolved decisions. [Controlled phase prompts](../prompts/PHASE_PROMPTS.md) define scope. The linked individual reports retain detailed historical evidence. Results for Phases 00–04 are historical report evidence. Phase 05 records checks run in the current implementation task. Commit IDs were checked against local Git history; remote CI was not checked in this review.
 
@@ -163,3 +163,17 @@ Verified Phase 06 partial implementation checkpoint: `51b340a` on `feature/phase
 The owner accepted separating refundable deposits from sales income, flexible non-negative deposits including approved zero-deposit arrangements, customer-specific custody, condition-based return, actual-cash refunds and admin/store-manager approval for damage/loss charges. The owner clarified that ordinary authorized workers enter the usage fee on return and it can differ every time; no fixed PKR 2,000 or monthly charge is authorized. This supersedes the earlier pending deposit-policy question. The detailed approved policy is in project state, [sales contracts](SALES.md) and the [Phase 06 report](PHASE_06_REPORT.md).
 
 Documentation only: no code/schema changes or application test rerun. Purchase-cost capitalization versus expense remains open; full Phase 06 implementation is still incomplete. Historical 105-test evidence and checkpoint `51b340a` are unchanged.
+
+## Phase 06 final verification in progress — 2026-09-25
+
+Full sales posting, all sale modes, payments, receipts, cylinder custody/deposits/returns and separately paid capitalized purchase costs are implemented. Earlier outstanding-scope lists are historical. The owner approved the deposit policy and stock capitalization; optional source/customer filling references implement the stated fallback to the unanswered tracking question. A source-cylinder gas subledger remains outside this implementation.
+
+A complete backend run passed 30 unit, 4 architecture and 61 integration tests before the latest cylinder-policy empty-response fix. Final browser and endpoint verification is pending; changes remain uncommitted on feature/phase-06-sales. Five Phase 06 migrations bring the database to ten; historical stock and purchase treatment are preserved. Detailed evidence and limits are in [the Phase 06 report](PHASE_06_REPORT.md). Next: finish verification, commit, merge/push main and delete the merged branch. Do not start Phase 07.
+
+## Completion checkpoint — 2026-09-26
+
+Phase 06 implementation and required local checks are complete. Final browser report: 20/20 passed, no flaky or skipped cases. Verification covers 30 unit, 4 architecture, 61 PostgreSQL/API, 13 frontend and 20 browser tests (128 distinct cases across the recorded runs), with all 17 sales/cylinder integration cases rerun after the final endpoint correction. Formatting, lint, types, production builds, migration fresh/upgrade/repeat and model checks, OpenAPI, Compose health and PDF review evidence are detailed in the phase report. Historical results are distinguished from final reruns there.
+
+Approved scope includes variable worker-entered usage fees, controlled deposit waivers and damage/loss approval, separate deposit liability and actual refunds, filling loss per line, and separately paid purchase costs capitalized into stock. Source/customer cylinder references are supported; per-source physical gas balances remain a documented future decision. Existing posted history is preserved. Five additive Phase 06 migrations must precede API startup; no production deployment or remote CI success is claimed.
+
+Acceptance: implementation meets the recorded Phase 06 checks and approved operating rules. The owner authorized integration after verification; Git completion will be recorded below. Exact next-chat prompt: Review the completed Phase 06 checkpoint in PROJECT_STATE.md, docs/PHASE_HISTORY.md and docs/PHASE_06_REPORT.md. Address only requested Phase 06 follow-up work; do not begin Phase 07 unless explicitly requested.
