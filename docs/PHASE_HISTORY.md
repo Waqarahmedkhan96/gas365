@@ -177,3 +177,7 @@ Phase 06 implementation and required local checks are complete. Final browser re
 Approved scope includes variable worker-entered usage fees, controlled deposit waivers and damage/loss approval, separate deposit liability and actual refunds, filling loss per line, and separately paid purchase costs capitalized into stock. Source/customer cylinder references are supported; per-source physical gas balances remain a documented future decision. Existing posted history is preserved. Five additive Phase 06 migrations must precede API startup; no production deployment or remote CI success is claimed.
 
 Acceptance: implementation meets the recorded Phase 06 checks and approved operating rules. The owner authorized integration after verification; Git completion will be recorded below. Exact next-chat prompt: Review the completed Phase 06 checkpoint in PROJECT_STATE.md, docs/PHASE_HISTORY.md and docs/PHASE_06_REPORT.md. Address only requested Phase 06 follow-up work; do not begin Phase 07 unless explicitly requested.
+
+## Git integration completed — 2026-09-26
+
+Verified implementation checkpoint: `3a7d055`. Merge commit: `d222c75` on `main`, pushed successfully to origin. The merged local `feature/phase-06-sales` branch was deleted; no remote feature branch existed. The secondary detached worktree and its files were preserved. Phase 06 is complete; Phase 07 has not started. The next action is only an explicitly requested follow-up or new phase.
