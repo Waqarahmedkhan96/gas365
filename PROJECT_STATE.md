@@ -121,7 +121,6 @@ Implementation and required local checks are complete. Run in this chat: 4 archi
 
 Toolchain note: .NET SDK 10.0.401 is installed user-locally at `%LOCALAPPDATA%\Gas365\dotnet`. Prepend it to PATH for builds. Use `npx pnpm@12.4.2` if pnpm is not on PATH.
 
-
 ## Phase 07 Git integration completed — 2026-09-28
 
 Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`, pushed successfully to origin. The merged local `feature/phase-07-finance` branch was deleted; no remote feature branch existed. The secondary detached worktree was preserved. Phase 07 is complete; Phase 08 has not started.
