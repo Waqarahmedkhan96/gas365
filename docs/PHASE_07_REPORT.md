@@ -67,3 +67,8 @@ The initial draft added the four tables, captured earlier cash paths into the de
 ## Next action
 
 Phase 07 is complete. Do not start Phase 08 unless the owner requests it.
+
+
+## Phase 07 Git integration completed — 2026-09-28
+
+Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`, pushed successfully to origin. The merged local `feature/phase-07-finance` branch was deleted; no remote feature branch existed. The secondary detached worktree was preserved. Phase 07 is complete; Phase 08 has not started.

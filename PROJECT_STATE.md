@@ -120,3 +120,8 @@ Continue Phase 07 in this chat from the uncommitted feature branch. Complete fin
 Implementation and required local checks are complete. Run in this chat: 4 architecture, 40 unit and 72 PostgreSQL/API tests (116), 14 frontend tests and 22/22 desktop/mobile browser tests on rebuilt containers. Build with 0 warnings, formatting, lint, types, production build, OpenAPI, fresh/upgrade/repeat migrations and model drift, Compose health, and pnpm/NuGet audits also passed. Corrections made during verification: clear register-guard error messages, accessible finance select labels, and split auth rate limits (strict per-IP credential attempts; separate per-user budget for read-only session checks). See the [Phase 07 report](docs/PHASE_07_REPORT.md). Apply migration `20260928120055_FinanceAndRegisters` before API startup. No remote CI or production deployment is claimed.
 
 Toolchain note: .NET SDK 10.0.401 is installed user-locally at `%LOCALAPPDATA%\Gas365\dotnet`. Prepend it to PATH for builds. Use `npx pnpm@12.4.2` if pnpm is not on PATH.
+
+
+## Phase 07 Git integration completed — 2026-09-28
+
+Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`, pushed successfully to origin. The merged local `feature/phase-07-finance` branch was deleted; no remote feature branch existed. The secondary detached worktree was preserved. Phase 07 is complete; Phase 08 has not started.

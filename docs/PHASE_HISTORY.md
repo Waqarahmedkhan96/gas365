@@ -203,3 +203,8 @@ Phase 07 policy approval on 2026-09-28: owner approved invoice-date aging bucket
 **Limitations:** No allocation to cylinder settlement receivables; accounts and categories cannot be renamed or retired; the reconciliation breakdown by category is deferred to Phase 08 reporting. Details are in the [Phase 07 report](PHASE_07_REPORT.md).
 
 **Next action:** Phase 07 is complete. Start Phase 08 only when the owner requests it, using the reusable prompt above with NN = 08.
+
+
+## Phase 07 Git integration completed — 2026-09-28
+
+Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`, pushed successfully to origin. The merged local `feature/phase-07-finance` branch was deleted; no remote feature branch existed. The secondary detached worktree was preserved. Phase 07 is complete; Phase 08 has not started.
