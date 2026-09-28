@@ -49,6 +49,6 @@ public sealed partial class Gas365DbContext
         entry.Property(x => x.Payable).HasPrecision(20, 2); entry.Property(x => x.Cash).HasPrecision(20, 2);
         entry.Property(x => x.Kind).HasMaxLength(30); entry.Property(x => x.Reason).HasMaxLength(300);
         entry.Property(x => x.IdempotencyKey).HasMaxLength(80); entry.Property(x => x.RequestHash).HasMaxLength(64);
-        entry.ToTable(t => t.HasCheckConstraint("CK_PurchaseEntry_Signs", "(\"Kind\" = 'Invoice' AND \"Payable\" >= 0 AND \"Cash\" = 0) OR (\"Kind\" = 'Payment' AND \"Payable\" < 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'PaymentReversal' AND \"Payable\" > 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'Reversal' AND \"Payable\" <= 0 AND \"Cash\" = 0) OR (\"Kind\" = 'CostPayment' AND \"Payable\" = 0 AND \"Cash\" < 0) OR (\"Kind\" = 'CostPaymentReversal' AND \"Payable\" = 0 AND \"Cash\" > 0)"));
+        entry.ToTable(t => t.HasCheckConstraint("CK_PurchaseEntry_Signs", "(\"Kind\" IN ('Allocation','AllocationReversal') AND \"Cash\" = 0 AND ((\"Kind\" = 'Allocation' AND \"Payable\" < 0) OR (\"Kind\" = 'AllocationReversal' AND \"Payable\" > 0))) OR (\"Kind\" = 'Invoice' AND \"Payable\" >= 0 AND \"Cash\" = 0) OR (\"Kind\" = 'Payment' AND \"Payable\" < 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'PaymentReversal' AND \"Payable\" > 0 AND \"Cash\" = \"Payable\") OR (\"Kind\" = 'Reversal' AND \"Payable\" <= 0 AND \"Cash\" = 0) OR (\"Kind\" = 'CostPayment' AND \"Payable\" = 0 AND \"Cash\" < 0) OR (\"Kind\" = 'CostPaymentReversal' AND \"Payable\" = 0 AND \"Cash\" > 0)"));
     }
 }

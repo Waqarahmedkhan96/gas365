@@ -1,6 +1,6 @@
 # Gas365 Combined Phase History and Chat Handoff
 
-Last consolidated: 2026-09-25.
+Last consolidated: 2026-09-28.
 
 This is the cumulative record to read when starting a new phase chat. The project contains Phase 00 planning and implementation through Phase 06. Phase 04 was accepted following owner approval of the costing policy on 2026-09-19. Phase 05 is implemented, with local verification complete and business acceptance tracked below. Phase 06 implementation and final verification are recorded in the latest addendum; earlier partial checkpoints are historical.
 
@@ -15,7 +15,9 @@ This is the cumulative record to read when starting a new phase chat. The projec
 | 02    | Identity, tenancy, branches and permissions | Complete, locally verified                                      | `fd77996`                 |
 | 03    | Design system and application shell         | Complete, locally verified                                      | `5f4c1f9`                 |
 | 04    | Catalog and inventory ledger                | Accepted 2026-09-19; implementation locally verified 2026-09-18 | `7d58917`                 |
-| 05    | Suppliers and purchasing                    | Locally verified 2026-09-21; business acceptance pending        | `a3b75a0`                 |
+| 05    | Suppliers and purchasing                    | Locally verified 2026-09-21; owner choices resolved in Phase 06 | `a3b75a0`                 |
+| 06    | Customers, sales, exchanges and receipts    | Complete; merged 2026-09-26                                     | `3a7d055`                 |
+| 07    | Credit, expenses, loans and cash register   | Complete; locally verified 2026-09-28                           | See addendum below        |
 
 ## Phase 00 — Repository Bootstrap and Source Inventory
 
@@ -181,3 +183,23 @@ Acceptance: implementation meets the recorded Phase 06 checks and approved opera
 ## Git integration completed — 2026-09-26
 
 Verified implementation checkpoint: `3a7d055`. Merge commit: `d222c75` on `main`, pushed successfully to origin. The merged local `feature/phase-06-sales` branch was deleted; no remote feature branch existed. The secondary detached worktree and its files were preserved. Phase 06 is complete; Phase 07 has not started. The next action is only an explicitly requested follow-up or new phase.
+
+## Phase 07 in progress — 2026-09-28
+
+Started from clean main on `feature/phase-07-finance`. Initial domain/application/infrastructure scaffold compiled in Release with zero warnings/errors. API/UI integration and an additive migration are in progress and unverified. Uncommitted; no merge/push. Prior Phase 06 results are historical. See [Phase 07 report](PHASE_07_REPORT.md) for acceptance criteria, provisional policies, migration impact and exact continuation. Continue Phase 07 only, finish verification and resolve operating choices before integration.
+
+Phase 07 policy approval on 2026-09-28: owner approved invoice-date aging buckets, principal-only loans, reconciled opening balances and separate reasoned cash-variance adjustments. This resolves the operating questions; it is not a claim that implementation checks have passed.
+
+## Phase 07 completion checkpoint — 2026-09-28
+
+**Delivered:** Branch cash/bank accounts with reconciled openings; customer and supplier advances with invoice allocations; expenses with capital/operating categories; owner funds; principal-only loans and repayments; transfers; reasoned cash adjustments; dependency-ordered reversals; register open/close/reopen with variance history. Earlier sale, purchase and cylinder cash is captured atomically into the default drawer, and closed or unopened days reject cash at the database. Udhaar, expense, loan and cash-register screens were added. See [finance contracts](FINANCE.md).
+
+**Decisions:** The owner-approved Phase 07 policies are recorded above. As a security correction, per-IP login/registration/reset limits stay strict, while read-only session checks (`/csrf`, `/me`, `/sessions`) get a separate per-user budget so shared shop and carrier IPs are not blocked. The owner delegated this choice to industry best practice.
+
+**Verification in the current chat:** 4 architecture, 40 unit and 72 PostgreSQL/API tests (116); 14 frontend tests; 22/22 desktop/mobile browser tests on rebuilt containers. Build (0 warnings), backend/frontend formatting, lint, types, production build, OpenAPI, fresh/upgrade/repeat migration and model-drift checks, Compose health, and pnpm/NuGet audits passed. An earlier run failed the finance browser journey 2/22 before the label and rate-limit corrections; the final run supersedes it. No remote CI or production deployment is claimed.
+
+**Migration impact:** Apply `20260928120055_FinanceAndRegisters` before API startup. It is additive and creates no finance rows. Creating a branch's first cash account activates drawer controls. Downgrade is destructive.
+
+**Limitations:** No allocation to cylinder settlement receivables; accounts and categories cannot be renamed or retired; the reconciliation breakdown by category is deferred to Phase 08 reporting. Details are in the [Phase 07 report](PHASE_07_REPORT.md).
+
+**Next action:** Phase 07 is complete. Start Phase 08 only when the owner requests it, using the reusable prompt above with NN = 08.

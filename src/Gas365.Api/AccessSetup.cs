@@ -24,6 +24,7 @@ public static class AccessSetup
         builder.Services.AddScoped<ISalesDraftAccess, SalesDraftAccess>();
         builder.Services.AddScoped<ISalesAccess, SalesAccess>();
         builder.Services.AddScoped<ICylinderLoanAccess, CylinderLoanAccess>();
+        builder.Services.AddScoped<IFinanceAccess, FinanceAccess>();
         builder.Services.AddSingleton<Gas365.Domain.IInventoryCosting, Gas365.Domain.WeightedAverageCosting>();
         builder.Services.AddScoped<IAccountMessages, AccountMessages>();
         builder.Services.AddScoped<SessionEvents>();
@@ -64,8 +65,16 @@ public static class AccessSetup
             options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "local",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            // Read-only session checks run on every page load; shops and mobile carriers often share one public IP.
+            // Keep them outside the strict credential budget and count them per signed-in user where possible.
+            options.AddPolicy("session", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "local",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 300, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
         });
     }
+
+    // Cash-register guards in FinanceAndRegisters.Guards; other constraint messages stay generic.
+    private static readonly HashSet<string> RegisterGuardMessages = ["Cash register is not open", "Closed branch day requires reopening", "Closed business day requires reopening"];
 
     private static bool IsTransactionConflict(Exception exception)
     {
@@ -81,6 +90,8 @@ public static class AccessSetup
             try { await next(context); }
             catch (AccessException exception) { await Results.Problem(statusCode: exception.StatusCode, title: exception.Message).ExecuteAsync(context); }
             catch (DbUpdateConcurrencyException) { await Results.Problem(statusCode: 409, title: "The record changed. Refresh and try again.").ExecuteAsync(context); }
+            catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23514" } guard && RegisterGuardMessages.Contains(guard.MessageText))
+            { await Results.Problem(statusCode: 409, title: guard.MessageText + ". Ask an authorized user to open or reopen the cash register.").ExecuteAsync(context); }
             catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23505" or "23503" or "23514" or "40001" or "40P01" })
             { await Results.Problem(statusCode: 409, title: "This change conflicts with an existing record or limit.").ExecuteAsync(context); }
             catch (Exception exception) when (IsTransactionConflict(exception))
@@ -114,5 +125,6 @@ public static class AccessSetup
         app.MapInventoryEndpoints();
         app.MapPurchasingEndpoints();
         app.MapCustomerEndpoints();
+        app.MapFinanceEndpoints();
     }
 }

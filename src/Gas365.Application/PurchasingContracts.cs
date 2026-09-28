@@ -16,7 +16,7 @@ public sealed record PurchasePostRequest(string IdempotencyKey, uint Version, de
 public sealed record PurchasePaymentRequest(string IdempotencyKey, decimal Amount, string Reason, Guid ExpectedLastEntryId);
 public sealed record PurchaseReverseRequest(string IdempotencyKey, string Reason);
 public sealed record SupplierLedgerDto(Guid PurchaseId, PurchaseEntryDto Entry);
-public sealed record SupplierProfileDto(SupplierDto Supplier, decimal Balance, PageDto<SupplierLedgerDto> Ledger);
+public sealed record SupplierProfileDto(SupplierDto Supplier, decimal Balance, PageDto<SupplierLedgerDto> Ledger, decimal Unapplied = 0);
 public interface IPurchasingAccess
 {
     Task<PageDto<SupplierDto>> SuppliersAsync(string? search, int page, CancellationToken ct);

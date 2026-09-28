@@ -83,8 +83,11 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
             Assert.Equal("Retained supplier", (await upgraded.Suppliers.SingleAsync(x => x.Id == supplierId)).Name);
             Assert.Empty(await upgraded.Customers.ToArrayAsync());
             Assert.Empty(await upgraded.PriceLists.ToArrayAsync());
+            Assert.Empty(await upgraded.MoneyAccounts.ToArrayAsync());
+            Assert.Empty(await upgraded.FinanceEntries.ToArrayAsync());
+            Assert.Contains(Permissions.FinancePost, (await upgraded.TenantRoles.SingleAsync()).Permissions);
         }
-        Assert.Equal(10, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(11, (await context.Database.GetAppliedMigrationsAsync()).Count());
         await context.Database.MigrateAsync();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());

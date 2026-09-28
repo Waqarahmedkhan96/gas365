@@ -19,6 +19,9 @@ import {
   type Audit,
 } from './access-api';
 
+const FinancePage = lazy(() =>
+  import('./FinancePage').then((module) => ({ default: module.FinancePage })),
+);
 const SalesDraftPage = lazy(() =>
   import('./SalesDraftPage').then((module) => ({
     default: module.SalesDraftPage,
@@ -44,6 +47,12 @@ const ShowcasePage = lazy(() =>
 );
 
 const permissions = [
+  'finance.view',
+  'finance.post',
+  'finance.manage',
+  'finance.reverse',
+  'register.close',
+  'register.reopen',
   'sales.view',
   'sales.create',
   'sales.discount',
@@ -67,6 +76,12 @@ const permissions = [
   'inventory.reverse',
 ];
 const permissionLabels: Record<string, string> = {
+  'finance.view': 'View financial ledgers and accounts',
+  'finance.post': 'Record payments, expenses, loans and transfers',
+  'finance.manage': 'Configure accounts, categories and cash adjustments',
+  'finance.reverse': 'Reverse financial entries',
+  'register.close': 'Approve cash-register closing',
+  'register.reopen': 'Reopen closed cash registers',
   'sales.view': 'View sales drafts',
   'sales.create': 'Create and edit sales drafts',
   'sales.discount': 'Apply sales discounts',
@@ -232,6 +247,15 @@ export function WorkspacePage() {
         />
       ) : (
         <>
+          {['udhaar', 'expenses', 'loans', 'cash-register'].includes(tab) && (
+            <Suspense fallback={<p>Loading finances…</p>}>
+              <FinancePage
+                user={user}
+                section={tab}
+                timeZone={tenant.timeZone}
+              />
+            </Suspense>
+          )}
           {tab === 'sales' && (
             <Suspense fallback={<p role="status">Loading sales drafts...</p>}>
               <SalesDraftPage user={user} />

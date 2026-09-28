@@ -2,6 +2,34 @@ import type { Me } from './access-api';
 
 export const pages = [
   {
+    id: 'udhaar',
+    label: 'Udhaar',
+    description: 'Credit balances, allocations and aging.',
+    permission: 'finance.view',
+    icon: 'team',
+  },
+  {
+    id: 'expenses',
+    label: 'Expenses',
+    description: 'Operating expenses and capital outlays.',
+    permission: 'finance.view',
+    icon: 'branches',
+  },
+  {
+    id: 'loans',
+    label: 'Loans and owner funds',
+    description: 'Principal, repayments, investments and withdrawals.',
+    permission: 'finance.view',
+    icon: 'branches',
+  },
+  {
+    id: 'cash-register',
+    label: 'Cash register',
+    description: 'Accounts, transfers and controlled drawer closing.',
+    permission: 'finance.view',
+    icon: 'branches',
+  },
+  {
     id: 'sales',
     label: 'Sales',
     description: 'Sales, payments, cylinder exchanges and returns.',

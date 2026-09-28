@@ -31,7 +31,13 @@ public static class Permissions
     public const string CylinderWaive = "cylinders.waive_deposit";
     public const string CylinderReturn = "cylinders.return";
     public const string CylinderApprove = "cylinders.approve_damage_loss";
-    public static readonly string[] All = [TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage, CustomerView, CustomerManage, PriceManage, SalesView, SalesDraft, SalesDiscount, SalesPost, SalesPay, SalesReverse, SalesProfit, CylinderManage, CylinderWaive, CylinderReturn, CylinderApprove];
+    public const string FinanceView = "finance.view";
+    public const string FinancePost = "finance.post";
+    public const string FinanceManage = "finance.manage";
+    public const string FinanceReverse = "finance.reverse";
+    public const string RegisterClose = "register.close";
+    public const string RegisterReopen = "register.reopen";
+    public static readonly string[] All = [FinanceView, FinancePost, FinanceManage, FinanceReverse, RegisterClose, RegisterReopen, TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage, CustomerView, CustomerManage, PriceManage, SalesView, SalesDraft, SalesDiscount, SalesPost, SalesPay, SalesReverse, SalesProfit, CylinderManage, CylinderWaive, CylinderReturn, CylinderApprove];
 }
 
 public interface ITenantOwned { Guid TenantId { get; set; } }

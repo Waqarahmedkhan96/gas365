@@ -44,7 +44,7 @@ public static class SaleReceipt
             if (!string.IsNullOrEmpty(line.CylinderReference)) Text("Cylinder: " + line.CylinderReference);
             y += 8;
         }
-        Text("Total: " + Money(sale.Total)); Text("Cash received: " + Money(sale.Paid)); Text("Balance: " + Money(sale.Outstanding));
+        Text("Total: " + Money(sale.Total)); Text("Paid / allocated: " + Money(sale.Paid)); Text("Balance: " + Money(sale.Outstanding));
         if (sale.LoanIds is { Length: > 0 })
         {
             Text("Refundable cylinder deposits collected separately: " + Money(sale.DepositCollected));

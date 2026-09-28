@@ -293,7 +293,8 @@ public sealed class AccessTests(DatabaseFixture database) : IClassFixture<Databa
         Assert.Contains("__Host-Gas365.Session", cookie);
         Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase);
         var statuses = new List<HttpStatusCode>();
-        for (var i = 0; i < 61; i++) statuses.Add((await client.GetAsync("/api/auth/csrf")).StatusCode);
+        // Credential attempts carry the strict budget; session checks such as /csrf have their own (see RateLimitTests).
+        for (var i = 0; i < 61; i++) statuses.Add((await Send(client, "/api/auth/login", HttpMethod.Post, new LoginRequest($"burst-{i}@test.example", Password))).StatusCode);
         Assert.Contains(HttpStatusCode.TooManyRequests, statuses);
     }
 }

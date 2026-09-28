@@ -63,7 +63,7 @@ public sealed class SalesAccess(Gas365DbContext db, TenantScope scope, IInventor
         var doc = await db.SaleDocuments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id || x.DraftId == id, ct) ?? throw new AccessException(404, "Posted sale not found.");
         await BranchAsync(doc.BranchId, ct);
         var entries = await db.SaleEntries.AsNoTracking().Where(x => x.SaleId == doc.Id).OrderBy(x => x.Sequence).ToArrayAsync(ct);
-        var reversed = entries.Any(x => x.Kind == "Reversal"); var outstanding = entries.Sum(x => x.Receivable); var paid = entries.Sum(x => x.Cash);
+        var reversed = entries.Any(x => x.Kind == "Reversal"); var outstanding = entries.Sum(x => x.Receivable); var paid = -entries.Where(x => x.Kind is "Payment" or "PaymentReversal" or "Allocation" or "AllocationReversal").Sum(x => x.Receivable);
         var profit = scope.Has(Permissions.SalesProfit);
         var loans = await db.CylinderLoans.Where(x => x.SaleId == doc.Id).Select(x => x.Id).ToArrayAsync(ct);
         var depositCollected = await db.CylinderLoanEntries.Where(x => loans.Contains(x.LoanId) && (x.Kind == "Issue" || x.Kind == "IssueReversal")).SumAsync(x => x.Cash, ct);
@@ -224,7 +224,7 @@ public sealed class SalesAccess(Gas365DbContext db, TenantScope scope, IInventor
         await using var tx = await db.Database.BeginTransactionAsync(ct); await LockAsync(ct);
         var replay = await ReplayAsync(r.IdempotencyKey, hash, ct); if (replay is not null) return await SaleAsync(replay.SaleId, ct);
         var doc = await PostedAsync(id, ct);
-        if (await db.SaleEntries.Where(x => x.SaleId == id).SumAsync(x => x.Cash, ct) != 0) throw new AccessException(409, "Reverse recorded payments before reversing the sale.");
+        if (await db.SaleEntries.Where(x => x.SaleId == id && (x.Kind == "Payment" || x.Kind == "PaymentReversal" || x.Kind == "Allocation" || x.Kind == "AllocationReversal")).SumAsync(x => x.Receivable, ct) != 0) throw new AccessException(409, "Reverse recorded payments before reversing the sale.");
         var loans = await db.CylinderLoans.Where(x => x.SaleId == id).ToArrayAsync(ct);
         var loanIds = loans.Select(x => x.Id).ToArray();
         if (await db.CylinderLoanEntries.AnyAsync(x => loanIds.Contains(x.LoanId) && x.Kind != "Issue" && x.Kind != "Approval", ct)) throw new AccessException(409, "Cylinder return or settlement history prevents reversing the original sale.");

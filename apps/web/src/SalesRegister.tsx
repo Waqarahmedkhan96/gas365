@@ -355,7 +355,7 @@ function SaleDetail({
         )}
         <dt>Total</dt>
         <dd>{money(sale.total)}</dd>
-        <dt>Cash received</dt>
+        <dt>Paid / allocated</dt>
         <dd>{money(sale.paid)}</dd>
         <dt>Balance</dt>
         <dd>{money(sale.outstanding)}</dd>

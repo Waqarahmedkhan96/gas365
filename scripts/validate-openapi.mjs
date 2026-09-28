@@ -10,6 +10,11 @@ await SwaggerParser.validate(structuredClone(schema));
 if (!schema.paths['/api/health']?.get?.responses['503'])
   throw new Error('Missing health failure contract');
 for (const [path, method] of [
+  ['/api/workspace/finance/accounts', 'post'],
+  ['/api/workspace/finance/entries', 'post'],
+  ['/api/workspace/finance/entries/{id}/reverse', 'post'],
+  ['/api/workspace/finance/register', 'post'],
+  ['/api/workspace/finance/credit', 'get'],
   ['/api/auth/login', 'post'],
   ['/api/auth/me', 'get'],
   ['/api/auth/sessions/{id}', 'delete'],

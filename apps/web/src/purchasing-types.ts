@@ -61,6 +61,7 @@ export type Purchase = {
 export type SupplierProfile = {
   supplier: Supplier;
   balance: number;
+  unapplied: number;
   ledger: {
     items: { purchaseId: string; entry: PurchaseEntry }[];
     total: number;

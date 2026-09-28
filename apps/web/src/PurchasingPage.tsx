@@ -289,6 +289,11 @@ function PurchasingWorkspace({
                 {profile.data.supplier.phone} {profile.data.supplier.address}
               </p>
               <p>Payable in selected branch: {money(profile.data.balance)}</p>
+              <p>
+                Unapplied supplier advances: {money(profile.data.unapplied)}.
+                Invoice activity is listed below; finance permissions give
+                access to the complete Udhaar history.
+              </p>
               {has('suppliers.manage') && (
                 <Button onClick={() => setSupplierEdit(profile.data!.supplier)}>
                   Edit supplier

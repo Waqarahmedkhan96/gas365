@@ -54,7 +54,7 @@ public static class PurchaseVoucher
             if (line.Serials.Length > 0) Text("Serials: " + string.Join(", ", line.Serials));
             y += 8;
         }
-        Text("Total: " + Money(purchase.Total)); Text("Net cash paid: " + Money(purchase.Paid)); Text("Outstanding: " + Money(purchase.Outstanding));
+        Text("Total: " + Money(purchase.Total)); Text("Paid / allocated: " + Money(purchase.Paid)); Text("Outstanding: " + Money(purchase.Outstanding));
         if (purchase.SeparateCosts)
         {
             Text("Purchase costs are paid separately from the goods supplier and included in stock value.");
