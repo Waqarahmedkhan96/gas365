@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 06 — Customers, Sales, Exchanges and Receipts: complete, locally verified, merged into main and pushed; the merged feature branch is deleted. Includes posted sales, all sale modes, payments, receipts, cylinder custody/deposits/returns and separately paid purchase costs. See [Phase 06 report](docs/PHASE_06_REPORT.md).
+Phase 07 — Credit, Expenses, Loans and Cash Register: complete and locally verified on 2026-09-28; Git integration is recorded at the end of this file. See [Phase 07 report](docs/PHASE_07_REPORT.md) and [finance contracts](docs/FINANCE.md). Phase 08 has not started. Earlier Phase 06 and Phase 07 in-progress paragraphs below are historical.
 
 ## Previous phase checkpoint
 
@@ -61,6 +61,8 @@ The owner accepted the recommendations in this task and clarified that workers e
 
 ## Open decisions
 
+Phase 07 operating rules approved on 2026-09-28: invoice-date aging (Current/1–30/31–60/61–90/90+), principal-only loans, operator-reconciled opening balances and recorded cash variances requiring a separate reasoned adjustment before book cash changes. These are implemented and verified. Open for later phases: allocating advances to cylinder settlement receivables; renaming or retiring accounts and expense categories; a per-category reconciliation breakdown (Phase 08 reporting).
+
 Owner decisions recorded during Phase 06: petrol, tolls, loading and unloading are paid separately from the goods supplier, including costs of the business's own vehicle. The previous supplier-paid landed-charge assumption is rejected and requires a purchasing correction. Separate reasoned payment reversal before purchase reversal is approved. Borrowed cylinders and refundable deposits are explicitly included in Phase 06, not deferred.
 
 On 2026-09-21 the owner chose to capitalize separately paid purchase-related costs into stock. New purchasing code separates their cash payments from the goods supplier balance; historical posted purchases retain their original treatment. Cylinder deposit and usage policy is approved; workers enter a variable fee on return. Exchange means receiving an empty cylinder and giving a filled cylinder. Filling permits custom quantities such as 0.1, 1.5, 1.6, 3.5 and 30 kg, with manual LPG loss for each cylinder's filling, displayed in red with a text label. The unanswered tracking clarification is handled by optional source-cylinder and customer-cylinder references on each filling line, as stated during implementation. These are traceable references, not a physical source-cylinder gas balance. A dedicated source-cylinder gas subledger remains an open future decision. Existing posted purchasing history must remain unchanged.
@@ -81,7 +83,9 @@ Toolchain: .NET SDK 10.0.401, runtime/EF 10.0.12, Node 24.13.1, pnpm 12.4.2 and 
 
 ## Exact next prompt
 
-Finish Phase 06 verification and Git integration. Read the current Phase 06 report and preserve historical evidence. After required checks pass, merge to main, push and delete the merged feature branch. Do not start Phase 07.
+Current (2026-09-28): Phase 07 is complete. When the owner requests Phase 08, open a new chat and use the reusable prompt in docs/PHASE_HISTORY.md with NN = 08. Do not start Phase 08 automatically.
+
+Historical Phase 06 prompt: Finish Phase 06 verification and Git integration. Read the current Phase 06 report and preserve historical evidence. After required checks pass, merge to main, push and delete the merged feature branch. Do not start Phase 07.
 
 Current Phase 06 kickoff baseline: 72 tests passed (11 unit, 4 architecture, 44 PostgreSQL/API, 13 frontend), plus frontend lint/types and documentation formatting/whitespace. No Phase 06 application implementation or new migration; browser/OpenAPI/Compose/PDF visual checks were not rerun. This was historical kickoff verification; see the Phase 06 report for later implementation checks.
 
@@ -106,3 +110,13 @@ Acceptance: implementation meets the recorded Phase 06 checks and approved opera
 ## Git integration completed — 2026-09-26
 
 Verified implementation checkpoint: `3a7d055`. Merge commit: `d222c75` on `main`, pushed successfully to origin. The merged local `feature/phase-06-sales` branch was deleted; no remote feature branch existed. The secondary detached worktree and its files were preserved. Phase 06 is complete; Phase 07 has not started. The next action is only an explicitly requested follow-up or new phase.
+
+## Active Phase 07 continuation — 2026-09-28
+
+Continue Phase 07 in this chat from the uncommitted feature branch. Complete finance integration, screens, guards and tests; resolve operating decisions; run all quality gates and update all three checkpoint records. Merge to main, push and delete the feature branch only after completion. Do not repeat Phase 06 or start Phase 08.
+
+## Phase 07 completion checkpoint — 2026-09-28
+
+Implementation and required local checks are complete. Run in this chat: 4 architecture, 40 unit and 72 PostgreSQL/API tests (116), 14 frontend tests and 22/22 desktop/mobile browser tests on rebuilt containers. Build with 0 warnings, formatting, lint, types, production build, OpenAPI, fresh/upgrade/repeat migrations and model drift, Compose health, and pnpm/NuGet audits also passed. Corrections made during verification: clear register-guard error messages, accessible finance select labels, and split auth rate limits (strict per-IP credential attempts; separate per-user budget for read-only session checks). See the [Phase 07 report](docs/PHASE_07_REPORT.md). Apply migration `20260928120055_FinanceAndRegisters` before API startup. No remote CI or production deployment is claimed.
+
+Toolchain note: .NET SDK 10.0.401 is installed user-locally at `%LOCALAPPDATA%\Gas365\dotnet`. Prepend it to PATH for builds. Use `npx pnpm@12.4.2` if pnpm is not on PATH.

@@ -27,6 +27,7 @@ public sealed partial class Gas365DbContext(DbContextOptions<Gas365DbContext> op
         ConfigureSales(model);
         ConfigurePostedSales(model);
         ConfigureCylinderLoans(model);
+        ConfigureFinance(model);
         model.Entity<ApplicationUser>().Property(x => x.DisplayName).HasMaxLength(120);
         model.Entity<ApplicationUser>().HasIndex(x => x.NormalizedEmail).IsUnique();
         model.Entity<Tenant>().HasKey(x => x.TenantId);
@@ -76,7 +77,7 @@ public sealed partial class Gas365DbContext(DbContextOptions<Gas365DbContext> op
             if (scope.TenantId == Guid.Empty || entry.Entity.TenantId != scope.TenantId ||
                 (entry.State != EntityState.Added && entry.Property(nameof(ITenantOwned.TenantId)).OriginalValue is Guid original && original != scope.TenantId))
                 throw new InvalidOperationException("Tenant boundary violation.");
-            if (entry.Entity is (AuditEvent or StockDocument or StockMovement or PurchaseDocument or PurchaseEntry or SaleDocument or SaleEntry or CylinderLoan or CylinderLoanEntry) && entry.State != EntityState.Added)
+            if (entry.Entity is (AuditEvent or StockDocument or StockMovement or PurchaseDocument or PurchaseEntry or SaleDocument or SaleEntry or CylinderLoan or CylinderLoanEntry or MoneyAccount or ExpenseCategory or FinanceEntry or RegisterEvent) && entry.State != EntityState.Added)
                 throw new InvalidOperationException("Audit events are append-only.");
         }
     }

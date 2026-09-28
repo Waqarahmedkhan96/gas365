@@ -44,9 +44,10 @@ public sealed class PurchasingAccess(Gas365DbContext db, TenantScope scope, IInv
     {
         Require(Permissions.PurchaseView); Page(page); await BranchAsync(branchId, ct); var supplier = await SupplierRow(id, ct);
         var query = db.PurchaseEntries.AsNoTracking().Where(e => e.BranchId == branchId && e.Kind != "CostPayment" && e.Kind != "CostPaymentReversal" && db.PurchaseDocuments.Any(d => d.Id == e.PurchaseId && d.SupplierId == id));
-        var balance = await query.SumAsync(x => x.Payable, ct); var count = await query.CountAsync(ct);
+        var unapplied = await db.FinanceEntries.Where(x => x.BranchId == branchId && x.SupplierId == id).SumAsync(x => x.Amount, ct);
+        var balance = await query.SumAsync(x => x.Payable, ct) - unapplied; var count = await query.CountAsync(ct);
         var rows = await query.OrderByDescending(x => x.PostedAt).ThenBy(x => x.Id).Skip((page - 1) * 20).Take(20).ToArrayAsync(ct);
-        return new(Dto(supplier), balance, new(rows.Select(x => new SupplierLedgerDto(x.PurchaseId, Dto(x))).ToArray(), count, page, 20));
+        return new(Dto(supplier), balance, new(rows.Select(x => new SupplierLedgerDto(x.PurchaseId, Dto(x))).ToArray(), count, page, 20), unapplied);
     }
     private async Task<PurchaseSnapshot> CalculateAsync(PurchaseDraftRequest r, CancellationToken ct)
     {
@@ -118,7 +119,7 @@ public sealed class PurchasingAccess(Gas365DbContext db, TenantScope scope, IInv
         await BranchAsync(doc.BranchId, ct);
         var entries = await db.PurchaseEntries.AsNoTracking().Where(x => x.PurchaseId == doc.Id).OrderBy(x => x.PostedAt).ThenBy(x => x.Id).ToArrayAsync(ct);
         var reversed = entries.Any(x => x.Kind == "Reversal"); var outstanding = entries.Sum(x => x.Payable);
-        var paid = -entries.Where(x => x.Kind is "Payment" or "PaymentReversal").Sum(x => x.Cash);
+        var paid = -entries.Where(x => x.Kind is "Payment" or "PaymentReversal" or "Allocation" or "AllocationReversal").Sum(x => x.Payable);
         var costsPaid = -entries.Where(x => x.Kind is "CostPayment" or "CostPaymentReversal").Sum(x => x.Cash);
         var postedSnapshot = Parse<PurchaseSnapshot>(doc.Content);
         return new(doc.Id, doc.BranchId, doc.SupplierId, doc.SupplierName, reversed ? "Reversed" : outstanding == 0 ? "Paid" : paid > 0 ? "Partially Paid" : "Posted", 0, doc.Total, paid, outstanding, postedSnapshot, doc.StockDocumentId, doc.CorrectsId, entries.Select(Dto).ToArray(), doc.SeparateCosts, costsPaid, doc.SeparateCosts && !reversed ? postedSnapshot.LandedCharges - costsPaid : 0);
@@ -228,7 +229,7 @@ public sealed class PurchasingAccess(Gas365DbContext db, TenantScope scope, IInv
         await using var tx = await db.Database.BeginTransactionAsync(ct); await LockAsync(ct);
         var replay = await ReplayAsync(r.IdempotencyKey, hash, ct); if (replay is not null) return await PurchaseAsync(replay.PurchaseId, ct);
         var doc = await PostedAsync(id, ct);
-        if (await db.PurchaseEntries.Where(x => x.PurchaseId == id).SumAsync(x => x.Cash, ct) != 0) throw new AccessException(409, "Reverse recorded payments before reversing the purchase.");
+        if (await db.PurchaseEntries.Where(x => x.PurchaseId == id).SumAsync(x => x.Cash, ct) != 0 || await db.PurchaseEntries.Where(x => x.PurchaseId == id && (x.Kind == "Allocation" || x.Kind == "AllocationReversal")).SumAsync(x => x.Payable, ct) != 0) throw new AccessException(409, "Reverse recorded payments before reversing the purchase.");
         var rows = await db.StockMovements.Where(x => x.DocumentId == doc.StockDocumentId).ToArrayAsync(ct);
         foreach (var pool in rows.GroupBy(x => new { x.ItemId, x.WarehouseId }))
         {

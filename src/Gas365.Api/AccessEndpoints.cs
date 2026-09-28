@@ -24,7 +24,7 @@ public static class AccessEndpoints
         {
             context.Response.Headers.CacheControl = "no-store";
             return Results.Ok(new { token = antiforgery.GetAndStoreTokens(context).RequestToken });
-        });
+        }).RequireRateLimiting("session");
         auth.MapPost("/register", async (RegisterRequest request, IIdentityAccess service, CancellationToken ct) =>
         { await service.RegisterAsync(request, ct); return Results.NoContent(); });
         auth.MapPost("/login", async (LoginRequest request, IIdentityAccess service, HttpContext context, CancellationToken ct) =>
@@ -37,12 +37,12 @@ public static class AccessEndpoints
         { await service.ResendAsync(request, ct); return Results.NoContent(); });
         auth.MapPost("/reset", async (ResetRequest request, IIdentityAccess service, CancellationToken ct) =>
         { await service.ResetAsync(request, ct); return Results.NoContent(); });
-        auth.MapGet("/me", (IIdentityAccess service, CancellationToken ct) => service.MeAsync(ct)).RequireAuthorization();
+        auth.MapGet("/me", (IIdentityAccess service, CancellationToken ct) => service.MeAsync(ct)).RequireAuthorization().RequireRateLimiting("session");
         auth.MapPost("/switch", async (SwitchRequest request, IIdentityAccess service, HttpContext context, CancellationToken ct) =>
         { await SignIn(context, await service.SwitchAsync(request.MembershipId, ct)); return Results.NoContent(); }).RequireAuthorization();
         auth.MapPost("/logout", async (IIdentityAccess service, TenantScope scope, HttpContext context, CancellationToken ct) =>
         { await service.RevokeAsync(scope.SessionId, ct); await context.SignOutAsync(); return Results.NoContent(); }).RequireAuthorization();
-        auth.MapGet("/sessions", (IIdentityAccess service, CancellationToken ct) => service.SessionsAsync(ct)).RequireAuthorization();
+        auth.MapGet("/sessions", (IIdentityAccess service, CancellationToken ct) => service.SessionsAsync(ct)).RequireAuthorization().RequireRateLimiting("session");
         auth.MapDelete("/sessions/{id:guid}", async (Guid id, IIdentityAccess service, CancellationToken ct) =>
         { await service.RevokeAsync(id, ct); return Results.NoContent(); }).RequireAuthorization();
 
