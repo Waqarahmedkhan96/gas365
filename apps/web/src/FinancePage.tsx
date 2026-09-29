@@ -12,8 +12,16 @@ type Account = {
   kind: string;
   defaultCash: boolean;
   balance: number;
+  active: boolean;
+  version: number;
 };
-type Category = { id: string; name: string; capital: boolean };
+type Category = {
+  id: string;
+  name: string;
+  capital: boolean;
+  active: boolean;
+  version: number;
+};
 type Entry = {
   id: string;
   kind: string;
@@ -52,6 +60,7 @@ type Credit = {
     original: number;
     outstanding: number;
     bucket: string;
+    kind: 'Sale' | 'Purchase' | 'CylinderLoan';
   }[];
   entries: {
     id: string;
@@ -106,6 +115,51 @@ function Select({
         ))}
       </select>
     </div>
+  );
+}
+// Renames or retires account/category master data. History keeps its original references.
+function MasterEditor({
+  label,
+  name,
+  active,
+  busy,
+  onSave,
+}: {
+  label: string;
+  name: string;
+  active: boolean;
+  busy: boolean;
+  onSave: (name: string, active: boolean) => void;
+}) {
+  return (
+    <details>
+      <summary>Edit {label}</summary>
+      <form
+        className="grid gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const d = new FormData(e.currentTarget);
+          onSave(str(d, 'name'), d.has('active'));
+        }}
+      >
+        <Field
+          label={`Name for ${label}`}
+          name="name"
+          defaultValue={name}
+          required
+          maxLength={120}
+        />
+        <Field
+          label={`${label} is active`}
+          name="active"
+          type="checkbox"
+          defaultChecked={active}
+        />
+        <Button disabled={busy} variant="secondary">
+          Save {label}
+        </Button>
+      </form>
+    </details>
   );
 }
 export function FinancePage({
@@ -215,22 +269,13 @@ function FinanceWorkspace({
       !!account &&
       accounts.data?.some((x) => x.id === account && x.kind === 'Cash'),
   });
-  async function write(path: string, body: Record<string, unknown>) {
+  async function run(action: () => Promise<unknown>) {
     if (busy) return;
     setBusy(true);
     setError('');
     setMessage('');
-    const fingerprint = JSON.stringify({ path, body });
-    const idempotencyKey = keys.current.get(fingerprint) || crypto.randomUUID();
-    keys.current.set(fingerprint, idempotencyKey);
     try {
-      await api(
-        root + path,
-        'POST',
-        { ...body, idempotencyKey },
-        user.tenantId,
-      );
-      keys.current.delete(fingerprint);
+      await action();
       await cache.invalidateQueries({ queryKey: ['finance'] });
       setMessage('Saved. Balances refreshed.');
     } catch (e) {
@@ -239,6 +284,24 @@ function FinanceWorkspace({
       setBusy(false);
     }
   }
+  function write(path: string, body: Record<string, unknown>) {
+    const fingerprint = JSON.stringify({ path, body });
+    const idempotencyKey = keys.current.get(fingerprint) || crypto.randomUUID();
+    keys.current.set(fingerprint, idempotencyKey);
+    return run(async () => {
+      await api(
+        root + path,
+        'POST',
+        { ...body, idempotencyKey },
+        user.tenantId,
+      );
+      keys.current.delete(fingerprint);
+    });
+  }
+  const update = (path: string, body: Record<string, unknown>) =>
+    run(() => api(root + path, 'PUT', body, user.tenantId));
+  const usableAccounts = accounts.data?.filter((a) => a.active) || [];
+  const usableCategories = categories.data?.filter((c) => c.active) || [];
   function submit(
     event: FormEvent<HTMLFormElement>,
     fn: (d: FormData) => void,
@@ -253,6 +316,15 @@ function FinanceWorkspace({
     reason: str(d, 'reason'),
     accountId: kind === 'Allocate' ? null : str(d, 'accountId') || null,
   });
+  // The server validates that the target belongs to the payment's counterparty and branch.
+  function allocationTarget(id: string) {
+    const line = credit.data?.invoices.find((x) => x.id === id);
+    return line?.kind === 'CylinderLoan'
+      ? { cylinderLoanId: id }
+      : line?.kind === 'Sale'
+        ? { saleId: id }
+        : { purchaseId: id };
+  }
   if (!branch) return <p>Select a branch to manage finances.</p>;
   const queryError =
     accounts.error ||
@@ -282,7 +354,23 @@ function FinanceWorkspace({
           {accounts.data?.map((a) => (
             <li key={a.id}>
               {a.name} ({a.kind}
-              {a.defaultCash ? ', default drawer' : ''}): {money(a.balance)}
+              {a.defaultCash ? ', default drawer' : ''}
+              {a.active ? '' : ', retired'}): {money(a.balance)}
+              {has('finance.manage') && (
+                <MasterEditor
+                  label={a.name}
+                  name={a.name}
+                  active={a.active}
+                  busy={busy}
+                  onSave={(name, active) =>
+                    void update(`/accounts/${a.id}`, {
+                      name,
+                      active,
+                      version: a.version,
+                    })
+                  }
+                />
+              )}
             </li>
           ))}
         </ul>
@@ -342,7 +430,7 @@ function FinanceWorkspace({
             label="Cash drawer"
             value={account}
             onChange={setAccount}
-            options={accounts.data?.filter((a) => a.kind === 'Cash') || []}
+            options={usableAccounts.filter((a) => a.kind === 'Cash')}
           />
           <Field
             label="Business date"
@@ -511,7 +599,21 @@ function FinanceWorkspace({
           <ul>
             {categories.data?.map((c) => (
               <li key={c.id}>
-                {c.name} ({c.capital ? 'Capital item' : 'Operating expense'})
+                {c.name} ({c.capital ? 'Capital item' : 'Operating expense'}
+                {c.active ? '' : ', retired'})
+                <MasterEditor
+                  label={c.name}
+                  name={c.name}
+                  active={c.active}
+                  busy={busy}
+                  onSave={(name, active) =>
+                    void update(`/categories/${c.id}`, {
+                      name,
+                      active,
+                      version: c.version,
+                    })
+                  }
+                />
               </li>
             ))}
           </ul>
@@ -545,7 +647,6 @@ function FinanceWorkspace({
             className="grid gap-3"
             onSubmit={(e) =>
               submit(e, (d) => {
-                const p = openItems.data?.find((x) => x.id === parent);
                 const partyFields =
                   kind === 'CustomerReceipt'
                     ? { customerId: party }
@@ -568,9 +669,7 @@ function FinanceWorkspace({
                     ? { parentId: parent }
                     : {}),
                   ...(kind === 'Allocate'
-                    ? p?.customerId
-                      ? { saleId: str(d, 'invoiceId') }
-                      : { purchaseId: str(d, 'invoiceId') }
+                    ? allocationTarget(str(d, 'invoiceId'))
                     : {}),
                 });
               })
@@ -596,21 +695,21 @@ function FinanceWorkspace({
               <Select
                 label="Payment account"
                 name="accountId"
-                options={accounts.data || []}
+                options={usableAccounts}
               />
             )}
             {kind === 'Expense' && (
               <Select
                 label="Expense category"
                 name="categoryId"
-                options={categories.data || []}
+                options={usableCategories}
               />
             )}
             {kind === 'Transfer' && (
               <Select
                 label="Destination account"
                 name="destination"
-                options={accounts.data || []}
+                options={usableAccounts}
               />
             )}
             {(kind === 'CustomerReceipt' || kind === 'SupplierPayment') && (
@@ -659,11 +758,7 @@ function FinanceWorkspace({
                 label="Invoice to allocate"
                 name="invoiceId"
                 options={(credit.data?.invoices || [])
-                  .filter(
-                    (x) =>
-                      x.outstanding > 0 &&
-                      x.reference !== 'Cylinder settlement',
-                  )
+                  .filter((x) => x.outstanding > 0)
                   .map((x) => ({
                     id: x.id,
                     name: `${x.reference} · ${money(x.outstanding)}`,

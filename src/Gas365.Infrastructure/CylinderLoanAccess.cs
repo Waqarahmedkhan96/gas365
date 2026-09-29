@@ -173,7 +173,7 @@ public sealed class CylinderLoanAccess(Gas365DbContext db, TenantScope scope, II
         var original = entries.SingleOrDefault(x => x.Id == entryId && x.Kind is "Return" or "Refund" or "Payment") ?? throw new AccessException(404, "Reversible cylinder entry not found.");
         if (!Active(original, entries)) throw new AccessException(409, "Entry already reversed.");
         if (original.Cash != 0) Require(Permissions.SalesPay);
-        if (original.Kind == "Return" && entries.Any(x => x.Sequence > original.Sequence && x.Kind is "Refund" or "Payment" && Active(x, entries))) throw new AccessException(409, "Reverse later cash entries before reversing the return.");
+        if (original.Kind == "Return" && entries.Any(x => x.Sequence > original.Sequence && x.Kind is "Refund" or "Payment" or "Allocation" && Active(x, entries))) throw new AccessException(409, "Reverse later cash entries and advance allocations before reversing the return.");
         var e = await EntryAsync(loan, original.Kind + "Reversal", r.IdempotencyKey, hash, r.Reason, ct);
         e.Cash = -original.Cash; e.Liability = -original.Liability; e.Receivable = -original.Receivable; e.Revenue = -original.Revenue; e.UsageFee = -original.UsageFee; e.DamageOrLossCharge = -original.DamageOrLossCharge; e.ReversesId = original.Id;
         if (original.StockDocumentId.HasValue)

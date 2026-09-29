@@ -17,12 +17,12 @@ public sealed partial class Gas365DbContext
         a.HasOne<Branch>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId }).OnDelete(DeleteBehavior.Restrict);
         a.HasIndex(x => new { x.TenantId, x.BranchId, x.Name }).IsUnique();
         a.HasIndex(x => new { x.TenantId, x.BranchId }).IsUnique().HasFilter("\"DefaultCash\" = TRUE");
-        a.Property(x => x.Name).HasMaxLength(120); a.Property(x => x.Kind).HasMaxLength(10);
+        a.Property(x => x.Name).HasMaxLength(120); a.Property(x => x.Kind).HasMaxLength(10); a.Property(x => x.Version).IsRowVersion();
         a.ToTable(t => t.HasCheckConstraint("CK_MoneyAccount_Kind", "\"Kind\" IN ('Cash','Bank') AND (NOT \"DefaultCash\" OR \"Kind\" = 'Cash')"));
         var c = model.Entity<ExpenseCategory>();
         c.HasKey(x => new { x.TenantId, x.Id }); c.HasQueryFilter(x => x.TenantId == scope.TenantId);
         c.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Restrict);
-        c.HasIndex(x => new { x.TenantId, x.Name }).IsUnique(); c.Property(x => x.Name).HasMaxLength(120);
+        c.HasIndex(x => new { x.TenantId, x.Name }).IsUnique(); c.Property(x => x.Name).HasMaxLength(120); c.Property(x => x.Version).IsRowVersion();
         var e = model.Entity<FinanceEntry>();
         e.HasKey(x => new { x.TenantId, x.Id }); e.HasQueryFilter(x => x.TenantId == scope.TenantId);
         e.HasAlternateKey(x => new { x.TenantId, x.BranchId, x.Id });
@@ -35,6 +35,7 @@ public sealed partial class Gas365DbContext
         e.HasOne<FinanceEntry>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.ReversesId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
         e.HasOne<SaleDocument>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.SaleId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
         e.HasOne<PurchaseDocument>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.PurchaseId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
+        e.HasOne<CylinderLoan>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.CylinderLoanId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
         e.Property(x => x.Sequence).ValueGeneratedOnAdd();
         e.HasIndex(x => new { x.TenantId, x.BranchId, x.Sequence });
         e.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();

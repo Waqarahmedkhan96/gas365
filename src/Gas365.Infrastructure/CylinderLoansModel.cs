@@ -45,6 +45,7 @@ public sealed partial class Gas365DbContext
         foreach (var property in new[] { "Cash", "Liability", "Receivable", "Revenue", "UsageFee", "DamageOrLossCharge" }) e.Property<decimal>(property).HasPrecision(20, 2);
         e.Property(x => x.Kind).HasMaxLength(30); e.Property(x => x.Condition).HasMaxLength(30); e.Property(x => x.Reason).HasMaxLength(300);
         e.Property(x => x.IdempotencyKey).HasMaxLength(80); e.Property(x => x.RequestHash).HasMaxLength(64);
-        e.ToTable(t => t.HasCheckConstraint("CK_CylinderLoanEntry_Reconcile", "\"Cash\" + \"Receivable\" = \"Revenue\" + \"Liability\""));
+        // Advance allocations settle the receivable from customer credit held in finance entries, so only the receivable moves.
+        e.ToTable(t => t.HasCheckConstraint("CK_CylinderLoanEntry_Reconcile", "(\"Kind\" IN ('Allocation','AllocationReversal') AND \"Cash\" = 0 AND \"Revenue\" = 0 AND \"Liability\" = 0 AND \"UsageFee\" = 0 AND \"DamageOrLossCharge\" = 0 AND ((\"Kind\" = 'Allocation' AND \"Receivable\" < 0) OR (\"Kind\" = 'AllocationReversal' AND \"Receivable\" > 0))) OR (\"Kind\" NOT IN ('Allocation','AllocationReversal') AND \"Cash\" + \"Receivable\" = \"Revenue\" + \"Liability\")"));
     }
 }
