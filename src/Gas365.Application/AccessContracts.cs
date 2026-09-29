@@ -25,7 +25,8 @@ public sealed record BranchRequest(string Name, bool Active = true, uint Version
 public sealed record RoleRequest(string Name, string[] Permissions, uint Version = 0);
 public sealed record InviteRequest(string Email, string Name, Guid RoleId, Guid[] BranchIds);
 public sealed record MemberRequest(Guid RoleId, bool Active, Guid[] BranchIds, uint Version);
-public sealed record TenantRequest(string Name, string TimeZone);
+// Omitted notification settings keep their current values.
+public sealed record TenantRequest(string Name, string TimeZone, int? OverdueCreditDays = null, TimeOnly? ClosingReminder = null);
 public sealed record SwitchRequest(Guid MembershipId);
 public sealed record SessionGrant(Guid SessionId, Guid UserId, DateTimeOffset ExpiresAt);
 public sealed record BranchDto(Guid Id, string Name, bool Active, uint Version);
@@ -33,7 +34,7 @@ public sealed record RoleDto(Guid Id, string Name, bool IsOwner, string[] Permis
 public sealed record MemberDto(Guid Id, string Name, string Email, Guid RoleId, bool Active, Guid[] BranchIds, uint Version);
 public sealed record WorkspaceDto(Guid MembershipId, Guid TenantId, string Name);
 public sealed record MeDto(Guid UserId, string Name, string Email, Guid TenantId, Guid MembershipId, string[] Permissions, bool IsOwner, WorkspaceDto[] Workspaces);
-public sealed record TenantDto(Guid TenantId, string Name, string TimeZone, int MaxBranches, int MaxUsers, int MaxAdmins);
+public sealed record TenantDto(Guid TenantId, string Name, string TimeZone, int MaxBranches, int MaxUsers, int MaxAdmins, int OverdueCreditDays, TimeOnly ClosingReminder);
 public sealed record SessionDto(Guid Id, DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt, bool Current);
 public sealed record AuditDto(Guid Id, string Action, Guid? ActorId, Guid? SubjectId, DateTimeOffset OccurredAt);
 

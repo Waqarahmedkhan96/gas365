@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 08 — Dashboard, Reports, PDF and Excel/CSV: complete and locally verified on 2026-09-29; see the latest checkpoint at the end of this file. Phases 00–07 are complete. Earlier in-progress paragraphs below are historical.
+Phase 09 — Audit, Imports, Notifications and Corrections: complete and locally verified on 2026-09-29; see the latest checkpoint at the end of this file. Phases 00–08 are complete. Earlier in-progress paragraphs below are historical.
 
 ## Previous phase checkpoint
 
@@ -134,3 +134,7 @@ Owner direction on 2026-09-29: continue through the remaining phases in this cha
 ## Phase 08 completion checkpoint — 2026-09-29
 
 Dashboard, 15 reconciled reports and background CSV, XLSX and PDF exports are complete and locally verified: 144 backend, 17 frontend and 24/24 browser tests, plus the remaining quality gates. See the [Phase 08 report](docs/PHASE_08_REPORT.md) and [reports](docs/REPORTS.md). Apply migration `20260929080123_ReportingAndExports` before API startup. With Phase 08, the functional MVP (Phases 00–08) is implemented; Phases 09–11 remain mandatory before broad commercial launch. Next: Phase 09 (audit, imports, notifications and corrections), per the owner's instruction to continue.
+
+## Phase 09 completion checkpoint — 2026-09-29
+
+Audit timeline, corrections explorer, validated and resumable imports, opening balances, notifications and job health are complete and locally verified: 149 backend, 20 frontend and 26/26 browser tests, plus the remaining quality gates. See the [Phase 09 report](docs/PHASE_09_REPORT.md) and [operations contract](docs/OPERATIONS.md). Apply migration `20260929092809_AuditImportsAndNotifications` before API startup. Owner decisions recorded 2026-09-29: imports include openings; overdue after 30 days (adjustable); in-app notifications; closing reminder at 21:00 (adjustable). Next: Phase 10 (subscriptions, onboarding and platform administration).

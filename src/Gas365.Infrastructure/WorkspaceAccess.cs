@@ -20,7 +20,7 @@ public sealed class WorkspaceAccess(Gas365DbContext db, TenantScope scope, UserM
     public async Task<TenantDto> TenantAsync(CancellationToken ct)
     {
         var tenant = await db.Tenants.AsNoTracking().SingleAsync(ct);
-        return new(tenant.TenantId, tenant.Name, tenant.TimeZone, tenant.MaxBranches, tenant.MaxUsers, tenant.MaxAdmins);
+        return new(tenant.TenantId, tenant.Name, tenant.TimeZone, tenant.MaxBranches, tenant.MaxUsers, tenant.MaxAdmins, tenant.OverdueCreditDays, tenant.ClosingReminder);
     }
 
     public async Task UpdateTenantAsync(TenantRequest request, CancellationToken ct)
@@ -30,10 +30,12 @@ public sealed class WorkspaceAccess(Gas365DbContext db, TenantScope scope, UserM
         var zone = IdentityAccess.Text(request.TimeZone, 100);
         if (!TimeZoneInfo.TryFindSystemTimeZoneById(zone, out _) || !zone.Contains('/'))
             throw new AccessException(400, "Choose an IANA time zone, such as Asia/Karachi.");
+        if (request.OverdueCreditDays is < 1 or > 365) throw new AccessException(400, "Overdue credit days must be between 1 and 365.");
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         await LockAsync(ct);
         var tenant = await db.Tenants.SingleAsync(ct);
         tenant.Name = name; tenant.TimeZone = zone;
+        tenant.OverdueCreditDays = request.OverdueCreditDays ?? tenant.OverdueCreditDays; tenant.ClosingReminder = request.ClosingReminder ?? tenant.ClosingReminder;
         Audit("tenant.updated", tenant.TenantId);
         await db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);

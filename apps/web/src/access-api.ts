@@ -37,6 +37,8 @@ export type Tenant = {
   maxBranches: number;
   maxUsers: number;
   maxAdmins: number;
+  overdueCreditDays: number;
+  closingReminder: string;
 };
 export type Session = {
   id: string;

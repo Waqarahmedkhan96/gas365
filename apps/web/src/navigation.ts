@@ -2,6 +2,20 @@ import type { Me } from './access-api';
 
 export const pages = [
   {
+    id: 'notifications',
+    label: 'Notifications',
+    description: 'Low stock, overdue credit and open-register alerts.',
+    icon: 'notifications',
+  },
+  {
+    id: 'imports',
+    label: 'Imports',
+    description:
+      'Bring customers, suppliers, items and opening balances from Excel or CSV.',
+    permission: 'imports.manage',
+    icon: 'imports',
+  },
+  {
     id: 'reports',
     label: 'Reports',
     description: 'Reconciled reports with CSV, Excel and PDF exports.',
@@ -120,7 +134,7 @@ export const pages = [
   {
     id: 'audit',
     label: 'Activity',
-    description: 'Recent changes in your workspace.',
+    description: 'Audit timeline and a single view of every correction.',
     permission: 'audit.view',
     icon: 'audit',
   },

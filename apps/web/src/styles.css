@@ -1037,3 +1037,37 @@ h3 {
 .report-table th {
   white-space: nowrap;
 }
+
+.notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+}
+.notification-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--destructive);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+.link-button {
+  color: var(--primary);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}

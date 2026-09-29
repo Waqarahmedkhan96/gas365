@@ -59,7 +59,7 @@ it('uses one permission policy for route and navigation decisions', () => {
   const worker = { permissions: [], isOwner: false } as unknown as Me;
   expect(
     pages.filter((page) => canVisit(page, worker)).map((page) => page.id),
-  ).toEqual(['overview', 'branches', 'sessions']);
+  ).toEqual(['notifications', 'overview', 'branches', 'sessions']);
   const admin = { ...worker, permissions: ['users.manage', 'audit.view'] };
   expect(
     canVisit(

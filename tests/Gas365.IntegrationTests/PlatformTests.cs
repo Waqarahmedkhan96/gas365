@@ -35,7 +35,8 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
         var options = new DbContextOptionsBuilder<Gas365DbContext>().UseNpgsql(database.ConnectionString).Options;
         await using (var prior = new Gas365DbContext(options, new TenantScope { TenantId = tenantId }))
         {
-            prior.Tenants.Add(new Tenant { TenantId = tenantId, Name = "Upgrade tenant" });
+            // Raw SQL: later migrations add tenant columns that do not exist at this schema version.
+            await prior.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"Tenants\" (\"TenantId\", \"Name\", \"TimeZone\", \"MaxBranches\", \"MaxUsers\", \"MaxAdmins\") VALUES ({tenantId}, 'Upgrade tenant', 'Asia/Karachi', 3, 10, 3)");
             prior.TenantRoles.Add(new TenantRole { TenantId = tenantId, Name = "Owner", IsOwner = true, Permissions = [Permissions.TenantManage] });
             await prior.SaveChangesAsync();
         }
@@ -98,8 +99,10 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
             Assert.Contains(Permissions.FinancePost, (await upgraded.TenantRoles.SingleAsync()).Permissions);
             Assert.Contains(Permissions.ReportsExport, (await upgraded.TenantRoles.SingleAsync()).Permissions);
             Assert.Empty(await upgraded.ExportJobs.ToArrayAsync());
+            Assert.Contains(Permissions.ImportsManage, (await upgraded.TenantRoles.SingleAsync()).Permissions);
+            var settings = await upgraded.Tenants.SingleAsync(); Assert.Equal(30, settings.OverdueCreditDays); Assert.Equal(new TimeOnly(21, 0), settings.ClosingReminder);
         }
-        Assert.Equal(13, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(14, (await context.Database.GetAppliedMigrationsAsync()).Count());
         await context.Database.MigrateAsync();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());

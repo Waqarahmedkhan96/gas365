@@ -51,6 +51,12 @@ public sealed partial class ReportAccess
             items.AddRange(loans.GroupBy(x => x.LoanId).Where(g => g.Any(x => x.Receivable > 0))
                 .Select(g => (g.First().CustomerId, g.Sum(x => x.Receivable), g.Where(x => x.Receivable > 0).OrderBy(x => x.Sequence).First().BusinessDate)));
         }
+        // Pre-Gas365 balances age from the original invoice date supplied at cutover.
+        var openings = await (from e in db.OpeningBalanceEntries.AsNoTracking()
+                              join o in db.OpeningBalances.AsNoTracking() on e.OpeningBalanceId equals o.Id
+                              where ids.Contains(e.BranchId) && e.BusinessDate <= asOf && (supplier ? o.SupplierId != null : o.CustomerId != null)
+                              select new { o.Id, Party = supplier ? o.SupplierId!.Value : o.CustomerId!.Value, o.OriginalDate, e.Kind, e.Amount }).ToArrayAsync(ct);
+        items.AddRange(openings.GroupBy(x => x.Id).Where(g => g.Any(x => x.Kind == "Opening")).Select(g => (g.First().Party, g.Sum(x => x.Amount), g.First().OriginalDate)));
         var unapplied = await db.FinanceEntries.AsNoTracking().Where(x => ids.Contains(x.BranchId) && x.BusinessDate <= asOf && (supplier ? x.SupplierId != null : x.CustomerId != null))
             .GroupBy(x => supplier ? x.SupplierId!.Value : x.CustomerId!.Value).Select(g => new { Party = g.Key, Amount = g.Sum(x => x.Amount) }).ToDictionaryAsync(x => x.Party, x => x.Amount, ct);
         var parties = supplier ? await db.Suppliers.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name, ct) : await db.Customers.AsNoTracking().ToDictionaryAsync(x => x.Id, x => x.Name, ct);

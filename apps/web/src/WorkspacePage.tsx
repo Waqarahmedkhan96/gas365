@@ -16,7 +16,6 @@ import {
   type Role,
   type Member,
   type Session,
-  type Audit,
 } from './access-api';
 
 const FinancePage = lazy(() =>
@@ -24,6 +23,17 @@ const FinancePage = lazy(() =>
 );
 const ReportsPage = lazy(() =>
   import('./ReportsPage').then((module) => ({ default: module.ReportsPage })),
+);
+const ImportsPage = lazy(() =>
+  import('./ImportsPage').then((module) => ({ default: module.ImportsPage })),
+);
+const AuditPage = lazy(() =>
+  import('./AuditPage').then((module) => ({ default: module.AuditPage })),
+);
+const NotificationsPage = lazy(() =>
+  import('./NotificationsPage').then((module) => ({
+    default: module.NotificationsPage,
+  })),
 );
 const Dashboard = lazy(() =>
   import('./Dashboard').then((module) => ({ default: module.Dashboard })),
@@ -138,16 +148,14 @@ export function WorkspacePage() {
     queryFn: async () => {
       const get = <T,>(path: string) =>
         api<T>(`/api/workspace/${path}`, 'GET', undefined, user!.tenantId);
-      const [tenant, branches, roles, members, sessions, audit] =
-        await Promise.all([
-          get<Tenant>('tenant'),
-          get<Branch[]>('branches'),
-          has('users.manage') ? get<Role[]>('roles') : [],
-          has('users.manage') ? get<Member[]>('members') : [],
-          api<Session[]>('/api/auth/sessions'),
-          has('audit.view') ? get<Audit[]>('audit') : [],
-        ]);
-      return { tenant, branches, roles, members, sessions, audit };
+      const [tenant, branches, roles, members, sessions] = await Promise.all([
+        get<Tenant>('tenant'),
+        get<Branch[]>('branches'),
+        has('users.manage') ? get<Role[]>('roles') : [],
+        has('users.manage') ? get<Member[]>('members') : [],
+        api<Session[]>('/api/auth/sessions'),
+      ]);
+      return { tenant, branches, roles, members, sessions };
     },
   });
 
@@ -210,7 +218,7 @@ export function WorkspacePage() {
         <Link to="/login">Sign in</Link>
       </main>
     );
-  const { tenant, branches, roles, members, sessions, audit } = info.data;
+  const { tenant, branches, roles, members, sessions } = info.data;
 
   const allowed = currentPage && canVisit(currentPage, user);
   return (
@@ -269,6 +277,16 @@ export function WorkspacePage() {
                 branches={branches}
                 timeZone={tenant.timeZone}
               />
+            </Suspense>
+          )}
+          {tab === 'notifications' && (
+            <Suspense fallback={<p role="status">Loading notifications…</p>}>
+              <NotificationsPage user={user} timeZone={tenant.timeZone} />
+            </Suspense>
+          )}
+          {tab === 'imports' && (
+            <Suspense fallback={<p role="status">Loading imports…</p>}>
+              <ImportsPage user={user} />
             </Suspense>
           )}
           {tab === 'overview' && has('reports.view') && (
@@ -371,6 +389,8 @@ export function WorkspacePage() {
                       mutate('tenant', 'PUT', {
                         name: f.get('name'),
                         timeZone: f.get('timeZone'),
+                        overdueCreditDays: Number(f.get('overdueCreditDays')),
+                        closingReminder: f.get('closingReminder'),
                       }),
                     );
                   }}
@@ -390,6 +410,26 @@ export function WorkspacePage() {
                     <Input
                       name="timeZone"
                       defaultValue={tenant.timeZone}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Credit is overdue after (days)
+                    <Input
+                      name="overdueCreditDays"
+                      type="number"
+                      min={1}
+                      max={365}
+                      defaultValue={tenant.overdueCreditDays}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Remind to close open registers at
+                    <Input
+                      name="closingReminder"
+                      type="time"
+                      defaultValue={tenant.closingReminder.slice(0, 5)}
                       required
                     />
                   </label>
@@ -615,20 +655,13 @@ export function WorkspacePage() {
             </section>
           )}
           {tab === 'audit' && (
-            <section className="status-card">
-              <h2>Recent activity</h2>
-              <p>The latest 100 events in this workspace.</p>
-              {audit.map((item) => (
-                <div className="record-row" key={item.id}>
-                  <strong>{item.action.replaceAll('.', ' ')}</strong>
-                  <time dateTime={item.occurredAt}>
-                    {new Date(item.occurredAt).toLocaleString(undefined, {
-                      timeZone: tenant.timeZone,
-                    })}
-                  </time>
-                </div>
-              ))}
-            </section>
+            <Suspense fallback={<p role="status">Loading activity…</p>}>
+              <AuditPage
+                user={user}
+                branches={branches}
+                timeZone={tenant.timeZone}
+              />
+            </Suspense>
           )}
           {tab === 'showcase' && (
             <Suspense

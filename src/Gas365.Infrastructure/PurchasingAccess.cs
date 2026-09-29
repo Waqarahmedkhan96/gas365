@@ -45,7 +45,8 @@ public sealed class PurchasingAccess(Gas365DbContext db, TenantScope scope, IInv
         Require(Permissions.PurchaseView); Page(page); await BranchAsync(branchId, ct); var supplier = await SupplierRow(id, ct);
         var query = db.PurchaseEntries.AsNoTracking().Where(e => e.BranchId == branchId && e.Kind != "CostPayment" && e.Kind != "CostPaymentReversal" && db.PurchaseDocuments.Any(d => d.Id == e.PurchaseId && d.SupplierId == id));
         var unapplied = await db.FinanceEntries.Where(x => x.BranchId == branchId && x.SupplierId == id).SumAsync(x => x.Amount, ct);
-        var balance = await query.SumAsync(x => x.Payable, ct) - unapplied; var count = await query.CountAsync(ct);
+        var openings = await db.OpeningBalanceEntries.Where(x => x.BranchId == branchId && db.OpeningBalances.Any(o => o.Id == x.OpeningBalanceId && o.SupplierId == id)).SumAsync(x => x.Amount, ct);
+        var balance = await query.SumAsync(x => x.Payable, ct) + openings - unapplied; var count = await query.CountAsync(ct);
         var rows = await query.OrderByDescending(x => x.PostedAt).ThenBy(x => x.Id).Skip((page - 1) * 20).Take(20).ToArrayAsync(ct);
         return new(Dto(supplier), balance, new(rows.Select(x => new SupplierLedgerDto(x.PurchaseId, Dto(x))).ToArray(), count, page, 20), unapplied);
     }

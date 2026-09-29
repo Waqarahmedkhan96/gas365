@@ -27,7 +27,12 @@ public static class AccessSetup
         builder.Services.AddScoped<IFinanceAccess, FinanceAccess>();
         builder.Services.AddScoped<IReportAccess, ReportAccess>();
         builder.Services.AddScoped<IExportProcessor, ExportProcessor>();
+        builder.Services.AddScoped<INotificationAccess, NotificationAccess>();
+        builder.Services.AddScoped<INotificationSweeper, NotificationSweeper>();
+        builder.Services.AddScoped<IImportAccess, ImportAccess>();
+        builder.Services.AddScoped<IAuditAccess, AuditAccess>();
         if (builder.Configuration.GetValue("Exports:WorkerEnabled", true)) builder.Services.AddHostedService<ExportWorker>();
+        if (builder.Configuration.GetValue("Notifications:WorkerEnabled", true)) builder.Services.AddHostedService<NotificationWorker>();
         builder.Services.AddSingleton<Gas365.Domain.IInventoryCosting, Gas365.Domain.WeightedAverageCosting>();
         builder.Services.AddScoped<IAccountMessages, AccountMessages>();
         builder.Services.AddScoped<SessionEvents>();
@@ -130,5 +135,6 @@ public static class AccessSetup
         app.MapCustomerEndpoints();
         app.MapFinanceEndpoints();
         app.MapReportEndpoints();
+        app.MapOperationsEndpoints();
     }
 }

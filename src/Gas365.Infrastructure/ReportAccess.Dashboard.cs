@@ -44,9 +44,10 @@ public sealed partial class ReportAccess
             metrics.Add(new("expenses", "Operating expenses", expenses.Sum(x => x.Amount), "money"));
             metrics.Add(new("cash", "Cash and bank balance", await db.FinanceEntries.AsNoTracking().Where(x => ids.Contains(x.BranchId) && x.AccountId != null).SumAsync(x => x.Cash, ct), "money"));
             var receivable = await db.SaleEntries.AsNoTracking().Where(x => ids.Contains(x.BranchId)).SumAsync(x => x.Receivable, ct)
-                + await db.CylinderLoanEntries.AsNoTracking().Where(x => ids.Contains(x.BranchId)).SumAsync(x => x.Receivable, ct);
+                + await db.CylinderLoanEntries.AsNoTracking().Where(x => ids.Contains(x.BranchId)).SumAsync(x => x.Receivable, ct)
+                + await OpeningOutstandingAsync(ids, supplier: false, ct);
             metrics.Add(new("receivables", "Customer receivables", receivable, "money"));
-            if (purchases) metrics.Add(new("payables", "Supplier payables", await db.PurchaseEntries.AsNoTracking().Where(x => ids.Contains(x.BranchId)).SumAsync(x => x.Payable, ct), "money"));
+            if (purchases) metrics.Add(new("payables", "Supplier payables", await db.PurchaseEntries.AsNoTracking().Where(x => ids.Contains(x.BranchId)).SumAsync(x => x.Payable, ct) + await OpeningOutstandingAsync(ids, supplier: true, ct), "money"));
         }
         if (inventory)
         {
@@ -64,4 +65,10 @@ public sealed partial class ReportAccess
             profit ? x.Value.Revenue - x.Value.Cost + x.Value.Charges : null, finance ? x.Value.Expenses : null)).ToArray();
         return new(from, to, label, [.. metrics], sales || profit || finance ? points : [], expensesByCategory, revenueByBranch, profit, finance);
     }
+
+    private Task<decimal> OpeningOutstandingAsync(Guid[] ids, bool supplier, CancellationToken ct) =>
+        (from e in db.OpeningBalanceEntries.AsNoTracking()
+         join o in db.OpeningBalances.AsNoTracking() on e.OpeningBalanceId equals o.Id
+         where ids.Contains(e.BranchId) && (supplier ? o.SupplierId != null : o.CustomerId != null)
+         select e.Amount).SumAsync(ct);
 }
