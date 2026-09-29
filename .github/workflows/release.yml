@@ -1,0 +1,100 @@
+name: Release
+
+# Staging deploys automatically after "Platform checks" pass on main.
+# Production deploys only when started manually, through the protected "production" environment:
+# configure required reviewers for it in GitHub (Settings > Environments) so every production release is approved.
+# Rollback: run this workflow manually with the previous image tag.
+on:
+  workflow_run:
+    workflows: [Platform checks]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+      tag:
+        description: Image tag (commit SHA) to deploy; leave empty to build this commit
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  images:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Choose image tag
+        id: tag
+        run: echo "tag=${INPUT_TAG:-$HEAD_SHA}" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/checkout@v4
+        if: github.event.inputs.tag == ''
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+      - name: Build, scan and push images
+        if: github.event.inputs.tag == ''
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          image_base="$(echo "$REGISTRY" | tr '[:upper:]' '[:lower:]')"
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for service in api web; do
+            docker build -f "infra/$service.Dockerfile" -t "$image_base/gas365-$service:$TAG" .
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.67.2 image --quiet --scanners vuln \
+              --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$image_base/gas365-$service:$TAG"
+            docker push "$image_base/gas365-$service:$TAG"
+          done
+
+  staging:
+    needs: images
+    if: github.event_name == 'workflow_run' || github.event.inputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to staging
+        env:
+          TAG: ${{ needs.images.outputs.tag }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: scripts/remote-deploy.sh
+
+  production:
+    needs: images
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production
+        env:
+          TAG: ${{ needs.images.outputs.tag }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: scripts/remote-deploy.sh

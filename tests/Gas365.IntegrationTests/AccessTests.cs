@@ -285,7 +285,16 @@ public sealed class AccessTests(DatabaseFixture database) : IClassFixture<Databa
     public async Task ProductionCookiesRequireHttpsAndAuthBurstIsLimited()
     {
         var owner = await Owner(); using var ca = owner.Client;
-        await using var production = application.WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
+        // Production refuses to start without its required settings, so the test supplies a complete configuration.
+        await using var production = application.WithWebHostBuilder(builder => builder.UseEnvironment("Production")
+            .ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DataProtection:KeyPath"] = Path.Combine(Path.GetTempPath(), "gas365-test-keys"),
+                ["Mail:Host"] = "smtp.example.test",
+                ["Mail:From"] = "noreply@example.test",
+                ["Mail:PublicOrigin"] = "https://gas365.example.test",
+                ["Platform:AdminEmails"] = "admin@example.test"
+            })));
         using var client = production.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         var login = await Send(client, "/api/auth/login", HttpMethod.Post, new LoginRequest(owner.Email, Password));
         login.EnsureSuccessStatusCode();

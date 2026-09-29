@@ -75,6 +75,25 @@ test('owner imports customers, records an opening balance, receives the overdue 
   ).toBeVisible();
   await expect(page.getByText('Imported', { exact: true })).toBeVisible();
 
+  // A file well above the proxy default body limit must pass through the web proxy to the API.
+  const large = [
+    'Name,Phone,Address',
+    ...Array.from(
+      { length: 2000 },
+      (_, i) => `Bulk customer ${i},0300${String(i).padStart(7, '0')},Karachi`,
+    ),
+  ].join('\r\n');
+  await page.getByLabel(/Excel \(\.xlsx\) or CSV file/).setInputFiles({
+    name: 'bulk.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(large),
+  });
+  await page.getByRole('button', { name: 'Upload and check' }).click();
+  await expect(page.getByText(/bulk\.csv · 2000 rows/)).toBeVisible();
+  await expect(
+    page.getByText('Ready to import', { exact: true }),
+  ).toBeVisible();
+
   await page.goto('/workspace/udhaar');
   await page
     .getByRole('combobox', { name: 'Counterparty' })

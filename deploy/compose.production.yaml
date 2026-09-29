@@ -1,0 +1,113 @@
+# Production and staging stack for one Linux server (EU staging now, Pakistani server for production).
+# Images are built by CI and pulled by immutable tag; nothing is built on the server.
+# Usage: docker compose -f compose.production.yaml --env-file .env up -d
+name: gas365
+
+x-api-environment: &api-environment
+  ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+  ConnectionStrings__Database: Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Timeout=5
+  DataProtection__KeyPath: /keys
+  Mail__Host: ${SMTP_HOST}
+  Mail__Port: ${SMTP_PORT:-587}
+  Mail__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+  Mail__Username: ${SMTP_USERNAME}
+  Mail__Password: ${SMTP_PASSWORD}
+  Mail__From: ${MAIL_FROM}
+  Mail__PublicOrigin: https://${DOMAIN}
+  Platform__AdminEmails: ${PLATFORM_ADMIN_EMAILS}
+  ForwardedHeaders__Limit: 2
+
+services:
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443', '443:443/udp']
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+  web:
+    image: ${IMAGE_REGISTRY}/gas365-web:${IMAGE_TAG}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8080/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    mem_limit: 128m
+
+  api:
+    image: ${IMAGE_REGISTRY}/gas365-api:${IMAGE_TAG}
+    restart: unless-stopped
+    environment: *api-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'dotnet', 'Gas365.Api.dll', '--health-probe']
+      interval: 10s
+      timeout: 8s
+      retries: 12
+      start_period: 20s
+    read_only: true
+    volumes:
+      - identity-keys:/keys
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    mem_limit: 768m
+
+  # Runs pending migrations once per deployment, before the new API version starts.
+  migrate:
+    image: ${IMAGE_REGISTRY}/gas365-api:${IMAGE_TAG}
+    command: ['--migrate']
+    environment: *api-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    volumes:
+      - identity-keys:/keys
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  postgres:
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # No published port: the database is reachable only from the application network.
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./backups:/backups
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1g
+
+volumes:
+  postgres-data:
+  identity-keys:
+  caddy-data:
+  caddy-config:

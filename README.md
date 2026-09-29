@@ -2,7 +2,7 @@
 
 Gas365 is a planned multi-tenant LPG operations platform for retailers and distributors in Pakistan. It covers LPG, cylinders, spare parts, purchasing, sales, credit, cash and profitability.
 
-The repository includes verified email sign-in, tenant/branch permissions, audit activity and a responsive application shell. Inventory uses the costing policy accepted on 2026-09-19. Purchasing provides suppliers, drafts, partial cash allocations and PDF vouchers. Phase 06 adds customers, price lists, sales, filling loss, exchanges, cylinder custody, deposits, refunds and receipts, and separates purchase-related cost payments from the supplier balance. See [sales contracts](docs/SALES.md) and the [Phase 06 report](docs/PHASE_06_REPORT.md) for verification status and operating boundaries.
+Gas365 covers the full LPG business cycle: verified sign-in with tenant and branch permissions; inventory with weighted-average costing; purchasing; sales, exchanges and cylinder custody with deposits; credit (udhaar), expenses, loans and cash registers; reconciled reports with CSV, Excel and PDF exports and a dashboard; validated Excel/CSV imports and opening balances; alerts and an audit and corrections explorer; subscriptions with owner-approved support access; and a hardened, portable deployment. The functional MVP (Phases 00–08) and Phases 09–11 are implemented and locally verified. See [project state](PROJECT_STATE.md) for the current checkpoint.
 
 ## Run locally
 
@@ -29,6 +29,14 @@ With Docker's Linux engine and Node installed, run `node scripts/bootstrap.mjs`,
 - [Purchasing and supplier contracts](docs/PURCHASING.md)
 - [Inventory rules and API contracts](docs/INVENTORY.md)
 - [Design system and application shell](docs/DESIGN_SYSTEM.md)
+- [Sales, cylinders and receipts](docs/SALES.md)
+- [Credit, expenses, loans and cash registers](docs/FINANCE.md)
+- [Reports, dashboard and exports](docs/REPORTS.md)
+- [Imports, opening balances, notifications and audit](docs/OPERATIONS.md)
+- [Subscriptions, onboarding and platform administration](docs/PLATFORM.md)
+- [Deployment runbook](docs/DEPLOYMENT.md)
+- [Launch readiness](docs/LAUNCH_READINESS.md)
+- Phase reports: [06](docs/PHASE_06_REPORT.md), [07](docs/PHASE_07_REPORT.md), [08](docs/PHASE_08_REPORT.md), [09](docs/PHASE_09_REPORT.md), [10](docs/PHASE_10_REPORT.md), [11](docs/PHASE_11_REPORT.md)
 - [Controlled phase prompts](prompts/PHASE_PROMPTS.md)
 - [Master prompt](00_MASTER_PROMPT.md)
 

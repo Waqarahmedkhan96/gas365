@@ -36,6 +36,8 @@ public static class AccessSetup
         builder.Services.AddSingleton<IPaymentProvider, ManualPaymentProvider>();
         if (builder.Configuration.GetValue("Exports:WorkerEnabled", true)) builder.Services.AddHostedService<ExportWorker>();
         if (builder.Configuration.GetValue("Notifications:WorkerEnabled", true)) builder.Services.AddHostedService<NotificationWorker>();
+        builder.Services.AddScoped<RetentionService>();
+        if (builder.Configuration.GetValue("Retention:WorkerEnabled", true)) builder.Services.AddHostedService<RetentionWorker>();
         builder.Services.AddSingleton<Gas365.Domain.IInventoryCosting, Gas365.Domain.WeightedAverageCosting>();
         builder.Services.AddScoped<IAccountMessages, AccountMessages>();
         builder.Services.AddScoped<SessionEvents>();
@@ -73,6 +75,13 @@ public static class AccessSetup
         builder.Services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = 429;
+            // Abuse protection across the whole API: per signed-in user, or per client address when anonymous.
+            var perMinute = builder.Configuration.GetValue("RateLimiting:ApiPerMinute", 600);
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                context.Request.Path.StartsWithSegments("/api") && !context.Request.Path.StartsWithSegments("/api/health")
+                    ? RateLimitPartition.GetFixedWindowLimiter("api:" + (context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "local"),
+                        _ => new FixedWindowRateLimiterOptions { PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })
+                    : RateLimitPartition.GetNoLimiter("unlimited"));
             options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "local",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
