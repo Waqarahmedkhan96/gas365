@@ -96,8 +96,10 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
             var category = await upgraded.ExpenseCategories.SingleAsync(); Assert.Equal(categoryId, category.Id); Assert.True(category.Active);
             Assert.Empty(await upgraded.FinanceEntries.ToArrayAsync());
             Assert.Contains(Permissions.FinancePost, (await upgraded.TenantRoles.SingleAsync()).Permissions);
+            Assert.Contains(Permissions.ReportsExport, (await upgraded.TenantRoles.SingleAsync()).Permissions);
+            Assert.Empty(await upgraded.ExportJobs.ToArrayAsync());
         }
-        Assert.Equal(12, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(13, (await context.Database.GetAppliedMigrationsAsync()).Count());
         await context.Database.MigrateAsync();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());

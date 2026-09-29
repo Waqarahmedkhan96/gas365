@@ -17,6 +17,11 @@ function Mark({ name }: { name: string }) {
         <rect x="14" y="14" width="7" height="7" rx="1" />
       </>
     ),
+    reports: (
+      <>
+        <path d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
+      </>
+    ),
     branches: (
       <>
         <path d="M4 21V8l8-5 8 5v13M2 21h20M9 21v-7h6v7M8 9h1m6 0h1" />

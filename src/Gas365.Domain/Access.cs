@@ -37,7 +37,9 @@ public static class Permissions
     public const string FinanceReverse = "finance.reverse";
     public const string RegisterClose = "register.close";
     public const string RegisterReopen = "register.reopen";
-    public static readonly string[] All = [FinanceView, FinancePost, FinanceManage, FinanceReverse, RegisterClose, RegisterReopen, TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage, CustomerView, CustomerManage, PriceManage, SalesView, SalesDraft, SalesDiscount, SalesPost, SalesPay, SalesReverse, SalesProfit, CylinderManage, CylinderWaive, CylinderReturn, CylinderApprove];
+    public const string ReportsView = "reports.view";
+    public const string ReportsExport = "reports.export";
+    public static readonly string[] All = [ReportsView, ReportsExport, FinanceView, FinancePost, FinanceManage, FinanceReverse, RegisterClose, RegisterReopen, TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage, CustomerView, CustomerManage, PriceManage, SalesView, SalesDraft, SalesDiscount, SalesPost, SalesPay, SalesReverse, SalesProfit, CylinderManage, CylinderWaive, CylinderReturn, CylinderApprove];
 }
 
 public interface ITenantOwned { Guid TenantId { get; set; } }

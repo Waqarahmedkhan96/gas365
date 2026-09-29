@@ -1031,3 +1031,9 @@ h3 {
   min-width: 0;
   text-align: right;
 }
+
+/* Report tables keep numbers and names on one line and scroll inside their focusable region. */
+.report-table td,
+.report-table th {
+  white-space: nowrap;
+}

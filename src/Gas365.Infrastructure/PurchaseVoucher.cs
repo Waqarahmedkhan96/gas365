@@ -68,7 +68,8 @@ public static class PurchaseVoucher
     }
     private sealed class VoucherFontResolver : IFontResolver
     {
-        public FontResolverInfo ResolveTypeface(string familyName, bool bold, bool italic) => new("Vera");
+        // One embedded face; PDFsharp simulates bold and italic when requested.
+        public FontResolverInfo ResolveTypeface(string familyName, bool bold, bool italic) => new("Vera", bold, italic);
         public byte[] GetFont(string faceName)
         {
             using var stream = typeof(PurchaseVoucher).Assembly.GetManifestResourceStream("Gas365.Infrastructure.Fonts.Vera.ttf")!;

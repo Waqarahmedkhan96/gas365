@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 07 — Credit, Expenses, Loans and Cash Register: complete and locally verified on 2026-09-28; Git integration is recorded at the end of this file. See [Phase 07 report](docs/PHASE_07_REPORT.md) and [finance contracts](docs/FINANCE.md). Phase 08 has not started. Earlier Phase 06 and Phase 07 in-progress paragraphs below are historical.
+Phase 08 — Dashboard, Reports, PDF and Excel/CSV: complete and locally verified on 2026-09-29; see the latest checkpoint at the end of this file. Phases 00–07 are complete. Earlier in-progress paragraphs below are historical.
 
 ## Previous phase checkpoint
 
@@ -130,3 +130,7 @@ Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`
 Advances can settle cylinder charges, and accounts and expense categories can be renamed, retired and reactivated. Both limitations are closed; see the [Phase 07 report](docs/PHASE_07_REPORT.md). Apply migration `20260929072843_FinanceMasterDataAndCylinderAllocation` before API startup. The per-category cash reconciliation is carried into Phase 08.
 
 Owner direction on 2026-09-29: continue through the remaining phases in this chat, one feature branch per phase, merging only after all checks pass. This explicitly supersedes the one-phase-per-chat default for this run. Commit messages must not mention tools or carry attribution IDs.
+
+## Phase 08 completion checkpoint — 2026-09-29
+
+Dashboard, 15 reconciled reports and background CSV, XLSX and PDF exports are complete and locally verified: 144 backend, 17 frontend and 24/24 browser tests, plus the remaining quality gates. See the [Phase 08 report](docs/PHASE_08_REPORT.md) and [reports](docs/REPORTS.md). Apply migration `20260929080123_ReportingAndExports` before API startup. With Phase 08, the functional MVP (Phases 00–08) is implemented; Phases 09–11 remain mandatory before broad commercial launch. Next: Phase 09 (audit, imports, notifications and corrections), per the owner's instruction to continue.

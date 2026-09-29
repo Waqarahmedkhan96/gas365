@@ -28,6 +28,7 @@ public sealed partial class Gas365DbContext(DbContextOptions<Gas365DbContext> op
         ConfigurePostedSales(model);
         ConfigureCylinderLoans(model);
         ConfigureFinance(model);
+        ConfigureReporting(model);
         model.Entity<ApplicationUser>().Property(x => x.DisplayName).HasMaxLength(120);
         model.Entity<ApplicationUser>().HasIndex(x => x.NormalizedEmail).IsUnique();
         model.Entity<Tenant>().HasKey(x => x.TenantId);

@@ -2,6 +2,13 @@ import type { Me } from './access-api';
 
 export const pages = [
   {
+    id: 'reports',
+    label: 'Reports',
+    description: 'Reconciled reports with CSV, Excel and PDF exports.',
+    permission: 'reports.view',
+    icon: 'reports',
+  },
+  {
     id: 'udhaar',
     label: 'Udhaar',
     description: 'Credit balances, allocations and aging.',

@@ -375,6 +375,8 @@ namespace Gas365.Infrastructure.Migrations
 
                     b.HasIndex("TenantId", "StockDocumentId");
 
+                    b.HasIndex("TenantId", "BranchId", "BusinessDate");
+
                     b.HasIndex("TenantId", "BranchId", "LoanId");
 
                     b.ToTable("CylinderLoanEntries", t =>
@@ -460,6 +462,106 @@ namespace Gas365.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ExpenseCategories");
+                });
+
+            modelBuilder.Entity("Gas365.Domain.ExportJob", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<byte[]>("Content")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Error")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Filter")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MembershipId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReportKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RowCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("Status", "RequestedAt");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "MembershipId", "RequestedAt");
+
+                    b.ToTable("ExportJobs", t =>
+                        {
+                            t.HasCheckConstraint("CK_ExportJob_Format", "\"Format\" IN ('csv','xlsx','pdf')");
+
+                            t.HasCheckConstraint("CK_ExportJob_Status", "\"Status\" IN ('Queued','Running','Completed','Failed','Expired') AND \"Attempts\" >= 0 AND (\"Status\" <> 'Completed' OR \"Content\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Gas365.Domain.FinanceEntry", b =>
@@ -571,6 +673,8 @@ namespace Gas365.Infrastructure.Migrations
                     b.HasIndex("TenantId", "SupplierId");
 
                     b.HasIndex("TenantId", "BranchId", "AccountId");
+
+                    b.HasIndex("TenantId", "BranchId", "BusinessDate");
 
                     b.HasIndex("TenantId", "BranchId", "CylinderLoanId");
 
@@ -898,6 +1002,8 @@ namespace Gas365.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("\"ReversesId\" IS NOT NULL");
 
+                    b.HasIndex("TenantId", "BranchId", "BusinessDate");
+
                     b.HasIndex("TenantId", "BranchId", "PostedAt");
 
                     b.HasIndex("TenantId", "BranchId", "PurchaseId");
@@ -1164,6 +1270,8 @@ namespace Gas365.Infrastructure.Migrations
                     b.HasIndex("TenantId", "Sequence")
                         .IsUnique();
 
+                    b.HasIndex("TenantId", "BranchId", "BusinessDate");
+
                     b.HasIndex("TenantId", "BranchId", "SaleId");
 
                     b.ToTable("SaleEntries", t =>
@@ -1283,14 +1391,14 @@ namespace Gas365.Infrastructure.Migrations
 
                     b.HasKey("TenantId", "Id");
 
-                    b.HasIndex("TenantId", "BranchId");
-
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique();
 
                     b.HasIndex("TenantId", "ReversesId")
                         .IsUnique()
                         .HasFilter("\"ReversesId\" IS NOT NULL");
+
+                    b.HasIndex("TenantId", "BranchId", "BusinessDate");
 
                     b.ToTable("StockDocuments");
                 });
@@ -1977,6 +2085,15 @@ namespace Gas365.Infrastructure.Migrations
                     b.HasOne("Gas365.Domain.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.ExportJob", b =>
+                {
+                    b.HasOne("Gas365.Domain.Membership", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "MembershipId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
