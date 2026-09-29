@@ -211,3 +211,13 @@ Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`
 ## Phase 07 follow-up — 2026-09-29
 
 Closed two Phase 07 limitations that no later phase covered: customer advances can now settle returned-cylinder charges, and accounts and expense categories can be renamed, retired and reactivated without rewriting history. The per-category cash reconciliation remains Phase 08 reporting scope. Checks run: 118 backend, 15 frontend and 22/22 browser tests, plus build, formatting, lint, types, OpenAPI and Compose. Migration: `20260929072843_FinanceMasterDataAndCylinderAllocation`. Details are in the [Phase 07 report](PHASE_07_REPORT.md) and [finance contracts](FINANCE.md).
+
+## Phase 08 — Dashboard, Reports, PDF and Excel/CSV — 2026-09-29
+
+**Delivered:** 15 defined, permission-aware reports, each reconciled to its ledger by an automated test. The cash reconciliation by formula line closes the Phase 07 carry-over. Also a permission-aware Recharts dashboard built on server aggregates, branch, date and type filters, and a PostgreSQL-backed background export queue for CSV, XLSX and PDF with private, expiring, audited downloads.
+
+**Verification in the current chat:** 144 backend tests (4 architecture, 63 unit, 77 PostgreSQL/API), 17 frontend and 24/24 browser tests, plus build, formatting, lint, types, OpenAPI, migrations, Compose and dependency audits. An earlier 23/24 browser run was superseded after an accessibility correction.
+
+**Migration impact:** apply `20260929080123_ReportingAndExports` (additive).
+
+**Limitations:** exports are stored in PostgreSQL until Phase 11 object storage; report load testing is Phase 11; scheduled delivery is Phase 09. Details are in the [Phase 08 report](PHASE_08_REPORT.md) and [reports](REPORTS.md).

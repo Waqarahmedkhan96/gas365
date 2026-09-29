@@ -22,6 +22,12 @@ import {
 const FinancePage = lazy(() =>
   import('./FinancePage').then((module) => ({ default: module.FinancePage })),
 );
+const ReportsPage = lazy(() =>
+  import('./ReportsPage').then((module) => ({ default: module.ReportsPage })),
+);
+const Dashboard = lazy(() =>
+  import('./Dashboard').then((module) => ({ default: module.Dashboard })),
+);
 const SalesDraftPage = lazy(() =>
   import('./SalesDraftPage').then((module) => ({
     default: module.SalesDraftPage,
@@ -254,6 +260,20 @@ export function WorkspacePage() {
                 section={tab}
                 timeZone={tenant.timeZone}
               />
+            </Suspense>
+          )}
+          {tab === 'reports' && (
+            <Suspense fallback={<p role="status">Loading reports…</p>}>
+              <ReportsPage
+                user={user}
+                branches={branches}
+                timeZone={tenant.timeZone}
+              />
+            </Suspense>
+          )}
+          {tab === 'overview' && has('reports.view') && (
+            <Suspense fallback={<p role="status">Loading dashboard…</p>}>
+              <Dashboard user={user} timeZone={tenant.timeZone} />
             </Suspense>
           )}
           {tab === 'sales' && (
