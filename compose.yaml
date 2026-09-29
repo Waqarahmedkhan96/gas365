@@ -35,6 +35,8 @@ services:
       Mail__PublicOrigin: http://localhost:${WEB_PORT:-8080}
       # Local development sweeps alerts more often than the 60-second production default.
       Notifications__SweepSeconds: 15
+      # Local platform administrator for development and browser tests; set the real address per environment.
+      Platform__AdminEmails: ${PLATFORM_ADMIN_EMAILS:-platform-admin@test.example}
       ConnectionStrings__Database: Host=postgres;Database=${POSTGRES_DB:-gas365};Username=${POSTGRES_USER:-gas365};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD};Timeout=5
     ports:
       - '127.0.0.1:${API_PORT:-5080}:8080'

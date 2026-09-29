@@ -8,6 +8,9 @@ public sealed class TenantScope
     public Guid SessionId { get; set; }
     public bool IsOwner { get; set; }
     public string[] Permissions { get; set; } = [];
+    // Read-only platform support view of another business; writes are rejected for these requests.
+    public Guid? SupportGrantId { get; set; }
+    public bool Support => SupportGrantId.HasValue;
     public bool Has(string permission) => Permissions.Contains(permission, StringComparer.Ordinal);
 }
 
@@ -33,8 +36,11 @@ public sealed record BranchDto(Guid Id, string Name, bool Active, uint Version);
 public sealed record RoleDto(Guid Id, string Name, bool IsOwner, string[] Permissions, uint Version);
 public sealed record MemberDto(Guid Id, string Name, string Email, Guid RoleId, bool Active, Guid[] BranchIds, uint Version);
 public sealed record WorkspaceDto(Guid MembershipId, Guid TenantId, string Name);
-public sealed record MeDto(Guid UserId, string Name, string Email, Guid TenantId, Guid MembershipId, string[] Permissions, bool IsOwner, WorkspaceDto[] Workspaces);
-public sealed record TenantDto(Guid TenantId, string Name, string TimeZone, int MaxBranches, int MaxUsers, int MaxAdmins, int OverdueCreditDays, TimeOnly ClosingReminder);
+public sealed record SupportViewDto(string TenantName, DateTimeOffset ExpiresAt, bool IncludeFinance);
+public sealed record MeDto(Guid UserId, string Name, string Email, Guid TenantId, Guid MembershipId, string[] Permissions, bool IsOwner, WorkspaceDto[] Workspaces,
+    bool PlatformAdmin = false, SupportViewDto? Support = null);
+public sealed record TenantDto(Guid TenantId, string Name, string TimeZone, int MaxBranches, int MaxUsers, int MaxAdmins, int OverdueCreditDays, TimeOnly ClosingReminder,
+    string SubscriptionStatus = Gas365.Domain.SubscriptionRules.Active, DateTimeOffset? TrialEndsAt = null);
 public sealed record SessionDto(Guid Id, DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt, bool Current);
 public sealed record AuditDto(Guid Id, string Action, Guid? ActorId, Guid? SubjectId, DateTimeOffset OccurredAt);
 

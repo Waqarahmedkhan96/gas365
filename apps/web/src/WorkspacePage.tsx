@@ -7,6 +7,7 @@ import { Button } from './components/ui/button';
 import { Input } from './components/ui/form';
 import { ConfirmButton, Notification } from './components/ui/feedback';
 import { canVisit, pages } from './navigation';
+import { daysLeft } from './platform-types';
 import {
   api,
   ApiError,
@@ -34,6 +35,19 @@ const NotificationsPage = lazy(() =>
   import('./NotificationsPage').then((module) => ({
     default: module.NotificationsPage,
   })),
+);
+const SubscriptionPage = lazy(() =>
+  import('./SubscriptionPage').then((module) => ({
+    default: module.SubscriptionPage,
+  })),
+);
+const OnboardingChecklist = lazy(() =>
+  import('./SubscriptionPage').then((module) => ({
+    default: module.OnboardingChecklist,
+  })),
+);
+const PlatformPage = lazy(() =>
+  import('./PlatformPage').then((module) => ({ default: module.PlatformPage })),
 );
 const Dashboard = lazy(() =>
   import('./Dashboard').then((module) => ({ default: module.Dashboard })),
@@ -243,6 +257,48 @@ export function WorkspacePage() {
         })
       }
     >
+      {user.support && (
+        <div className="support-banner">
+          <strong>Support view of {user.support.tenantName}</strong> — read-only
+          until{' '}
+          {new Date(user.support.expiresAt).toLocaleString('en-PK', {
+            timeZone: tenant.timeZone,
+          })}
+          . Every page you open is recorded for the owner.{' '}
+          <Button
+            variant="secondary"
+            onClick={() =>
+              void run(async () => {
+                await api('/api/platform/support/exit', 'POST');
+                client.clear();
+                window.location.assign('/workspace');
+              })
+            }
+          >
+            Exit support view
+          </Button>
+        </div>
+      )}
+      {!user.support && tenant.subscriptionStatus === 'Expired' && (
+        <div className="subscription-banner">
+          <strong>Read-only:</strong> your trial or plan has ended. Your data is
+          safe and can still be viewed and exported.{' '}
+          {has('tenant.manage') ? (
+            <Link to="/workspace/subscription">Choose a plan</Link>
+          ) : (
+            'Ask the business owner to choose a plan.'
+          )}
+        </div>
+      )}
+      {!user.support &&
+        tenant.subscriptionStatus === 'Trial' &&
+        tenant.trialEndsAt &&
+        has('tenant.manage') && (
+          <div className="subscription-banner">
+            Free trial: {daysLeft(tenant.trialEndsAt)} days left.{' '}
+            <Link to="/workspace/subscription">Choose a plan</Link>
+          </div>
+        )}
       <PageHeading
         title={currentPage?.label || 'Page not found'}
         description={currentPage?.description || 'This page is not available.'}
@@ -287,6 +343,21 @@ export function WorkspacePage() {
           {tab === 'imports' && (
             <Suspense fallback={<p role="status">Loading imports…</p>}>
               <ImportsPage user={user} />
+            </Suspense>
+          )}
+          {tab === 'subscription' && (
+            <Suspense fallback={<p role="status">Loading subscription…</p>}>
+              <SubscriptionPage user={user} timeZone={tenant.timeZone} />
+            </Suspense>
+          )}
+          {tab === 'platform' && (
+            <Suspense fallback={<p role="status">Loading platform…</p>}>
+              <PlatformPage timeZone={tenant.timeZone} />
+            </Suspense>
+          )}
+          {tab === 'overview' && !user.support && (
+            <Suspense fallback={null}>
+              <OnboardingChecklist user={user} />
             </Suspense>
           )}
           {tab === 'overview' && has('reports.view') && (

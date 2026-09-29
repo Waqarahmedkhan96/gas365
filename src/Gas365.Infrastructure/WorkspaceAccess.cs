@@ -20,7 +20,8 @@ public sealed class WorkspaceAccess(Gas365DbContext db, TenantScope scope, UserM
     public async Task<TenantDto> TenantAsync(CancellationToken ct)
     {
         var tenant = await db.Tenants.AsNoTracking().SingleAsync(ct);
-        return new(tenant.TenantId, tenant.Name, tenant.TimeZone, tenant.MaxBranches, tenant.MaxUsers, tenant.MaxAdmins, tenant.OverdueCreditDays, tenant.ClosingReminder);
+        return new(tenant.TenantId, tenant.Name, tenant.TimeZone, tenant.MaxBranches, tenant.MaxUsers, tenant.MaxAdmins, tenant.OverdueCreditDays, tenant.ClosingReminder,
+            SubscriptionRules.Effective(tenant.SubscriptionStatus, tenant.TrialEndsAt, tenant.PaidThrough, DateTimeOffset.UtcNow), tenant.TrialEndsAt);
     }
 
     public async Task UpdateTenantAsync(TenantRequest request, CancellationToken ct)

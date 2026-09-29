@@ -56,6 +56,13 @@ public sealed class Tenant : ITenantOwned
     // Owner-approved defaults (2026-09-29): credit is overdue after 30 days; drawers still open at 21:00 local trigger a reminder.
     public int OverdueCreditDays { get; set; } = 30;
     public TimeOnly ClosingReminder { get; set; } = new(21, 0);
+    public Guid? PlanId { get; set; }
+    public string SubscriptionStatus { get; set; } = SubscriptionRules.Active;
+    public DateTimeOffset? TrialEndsAt { get; set; }
+    public DateTimeOffset? PaidThrough { get; set; }
+    public Guid? RequestedPlanId { get; set; }
+    public bool OnboardingDismissed { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
 public sealed class Branch : ITenantOwned
@@ -104,6 +111,8 @@ public sealed class LoginSession : ITenantOwned
     public DateTimeOffset LastSeenAt { get; set; }
     public bool Revoked { get; set; }
     public string SecurityStamp { get; set; } = "";
+    // Set while a platform administrator views a business through an owner-approved support grant.
+    public Guid? SupportGrantId { get; set; }
 }
 
 public sealed class AuditEvent : ITenantOwned

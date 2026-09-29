@@ -854,6 +854,9 @@ namespace Gas365.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("SupportGrantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("TenantId", "Id");
 
                     b.HasIndex("Id")
@@ -1140,6 +1143,58 @@ namespace Gas365.Infrastructure.Migrations
                     b.ToTable("OpeningBalanceEntries", t =>
                         {
                             t.HasCheckConstraint("CK_OpeningBalanceEntry_Signs", "(\"Kind\" = 'Opening' AND \"Amount\" > 0) OR (\"Kind\" IN ('Allocation','Reversal') AND \"Amount\" < 0) OR (\"Kind\" = 'AllocationReversal' AND \"Amount\" > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("Gas365.Domain.Plan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("MaxAdmins")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxBranches")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxUsers")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("MonthlyPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Plans", t =>
+                        {
+                            t.HasCheckConstraint("CK_Plan_Limits", "\"MaxBranches\" > 0 AND \"MaxUsers\" > 0 AND \"MaxAdmins\" > 0 AND \"MaxAdmins\" <= \"MaxUsers\" AND (\"MonthlyPrice\" IS NULL OR \"MonthlyPrice\" >= 0)");
                         });
                 });
 
@@ -1897,6 +1952,54 @@ namespace Gas365.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Gas365.Domain.SubscriptionEvent", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("TenantId", "OccurredAt");
+
+                    b.ToTable("SubscriptionEvents");
+                });
+
             modelBuilder.Entity("Gas365.Domain.Supplier", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -1936,6 +2039,50 @@ namespace Gas365.Infrastructure.Migrations
                     b.ToTable("Suppliers");
                 });
 
+            modelBuilder.Entity("Gas365.Domain.SupportGrant", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("GrantedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IncludeFinance")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RevokedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TenantId", "Id");
+
+                    b.HasIndex("Id")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "ExpiresAt");
+
+                    b.ToTable("SupportGrants", t =>
+                        {
+                            t.HasCheckConstraint("CK_SupportGrant_Window", "\"ExpiresAt\" > \"CreatedAt\" AND \"ExpiresAt\" <= \"CreatedAt\" + interval '72 hours'");
+                        });
+                });
+
             modelBuilder.Entity("Gas365.Domain.Tenant", b =>
                 {
                     b.Property<Guid>("TenantId")
@@ -1946,6 +2093,11 @@ namespace Gas365.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("time without time zone")
                         .HasDefaultValue(new TimeOnly(21, 0, 0));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<int>("MaxAdmins")
                         .HasColumnType("integer");
@@ -1961,23 +2113,49 @@ namespace Gas365.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<bool>("OnboardingDismissed")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("OverdueCreditDays")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(30);
+
+                    b.Property<DateTimeOffset?>("PaidThrough")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RequestedPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SubscriptionStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<DateTimeOffset?>("TrialEndsAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("TenantId");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("RequestedPlanId");
 
                     b.ToTable("Tenants", t =>
                         {
                             t.HasCheckConstraint("CK_Tenant_Limits", "\"MaxBranches\" > 0 AND \"MaxUsers\" > 0 AND \"MaxAdmins\" > 0 AND \"MaxAdmins\" <= \"MaxUsers\"");
 
                             t.HasCheckConstraint("CK_Tenant_Notifications", "\"OverdueCreditDays\" BETWEEN 1 AND 365");
+
+                            t.HasCheckConstraint("CK_Tenant_Subscription", "\"SubscriptionStatus\" IN ('Trial','Active','Expired') AND (\"SubscriptionStatus\" <> 'Trial' OR \"TrialEndsAt\" IS NOT NULL)");
                         });
                 });
 
@@ -2873,6 +3051,20 @@ namespace Gas365.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Gas365.Domain.SubscriptionEvent", b =>
+                {
+                    b.HasOne("Gas365.Domain.Plan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Gas365.Domain.Supplier", b =>
                 {
                     b.HasOne("Gas365.Domain.Tenant", null)
@@ -2880,6 +3072,28 @@ namespace Gas365.Infrastructure.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.SupportGrant", b =>
+                {
+                    b.HasOne("Gas365.Domain.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Gas365.Domain.Tenant", b =>
+                {
+                    b.HasOne("Gas365.Domain.Plan", null)
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Gas365.Domain.Plan", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedPlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Gas365.Domain.TenantRole", b =>

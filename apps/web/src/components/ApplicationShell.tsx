@@ -18,6 +18,18 @@ function Mark({ name }: { name: string }) {
         <rect x="14" y="14" width="7" height="7" rx="1" />
       </>
     ),
+    subscription: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M3 10h18M7 15h4" />
+      </>
+    ),
+    platform: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+      </>
+    ),
     notifications: (
       <>
         <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Zm4 4h4" />

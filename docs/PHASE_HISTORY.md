@@ -233,3 +233,15 @@ Closed two Phase 07 limitations that no later phase covered: customer advances c
 **Migration impact:** apply `20260929092809_AuditImportsAndNotifications` (additive).
 
 **Limitations:** email and SMS channels and scheduled delivery are not built; no job-health screen yet. Details are in the [Phase 09 report](PHASE_09_REPORT.md) and [operations contract](OPERATIONS.md).
+
+## Phase 10 — Subscriptions, Onboarding and Platform Administration — 2026-09-29
+
+**Delivered:** A plan catalogue (Starter, Business, Enterprise), 14-day trials and a read-only expired state, a manual payment provider behind a payment seam, plan activation that applies limits, and append-only billing history. Also a data-driven onboarding checklist, monthly usage metering, a platform admin console with counts only, and owner-granted, read-only, audited support views.
+
+**Owner decisions:** three plans; 14-day trial then read-only; super admin by server configuration; support access granted by the owner with time limits.
+
+**Verification in the current chat:** 153 backend tests (4 architecture, 63 unit, 86 PostgreSQL/API), 23 frontend and 28/28 browser tests, plus build, formatting, lint, types, OpenAPI, migrations, Compose and dependency audits.
+
+**Migration impact:** apply `20260929142905_SubscriptionsAndPlatform`. It seeds the plans and grandfathers existing businesses.
+
+**Limitations:** manual payments only; transaction limits are metered but not enforced; admin MFA is in Phase 11. Details are in the [Phase 10 report](PHASE_10_REPORT.md) and [platform contract](PLATFORM.md).

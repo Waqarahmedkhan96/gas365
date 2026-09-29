@@ -50,12 +50,17 @@ public sealed class IdentityAccess(Gas365DbContext db, TenantScope scope, UserMa
         await LockEmailAsync(email, ct);
         var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = email, Email = email, DisplayName = name };
         Ensure(await users.CreateAsync(user, request.Password));
+        // New businesses start a trial of the Business plan with that plan's limits (owner decision, 2026-09-29).
+        var plan = await db.Plans.AsNoTracking().SingleAsync(p => p.Id == SubscriptionRules.BusinessId, ct);
         var tenant = new Tenant
         {
             Name = business,
-            MaxBranches = configuration.GetValue("Provisioning:MaxBranches", 3),
-            MaxUsers = configuration.GetValue("Provisioning:MaxUsers", 10),
-            MaxAdmins = configuration.GetValue("Provisioning:MaxAdmins", 3)
+            PlanId = plan.Id,
+            SubscriptionStatus = SubscriptionRules.Trial,
+            TrialEndsAt = DateTimeOffset.UtcNow.AddDays(SubscriptionRules.TrialDays),
+            MaxBranches = plan.MaxBranches,
+            MaxUsers = plan.MaxUsers,
+            MaxAdmins = plan.MaxAdmins
         };
         scope.TenantId = tenant.TenantId;
         scope.UserId = user.Id;
@@ -68,6 +73,7 @@ public sealed class IdentityAccess(Gas365DbContext db, TenantScope scope, UserMa
         db.TenantRoles.AddRange(owner, admin, worker, auditor);
         db.Memberships.Add(member);
         db.Branches.Add(new Branch { TenantId = tenant.TenantId, Name = "Main branch" });
+        db.SubscriptionEvents.Add(new SubscriptionEvent { TenantId = tenant.TenantId, Kind = "TrialStarted", PlanId = plan.Id, PeriodEnd = tenant.TrialEndsAt, ActorId = user.Id });
         Audit("tenant.created", tenant.TenantId);
         await db.SaveChangesAsync(ct);
         await SendConfirmationAsync(user, ct);
@@ -143,9 +149,24 @@ public sealed class IdentityAccess(Gas365DbContext db, TenantScope scope, UserMa
         scope.SessionId = session.Id;
         scope.IsOwner = role.IsOwner;
         scope.Permissions = role.Permissions;
+        if (session.SupportGrantId is { } grantId) await ApplySupportAsync(session.Id, grantId, user, now, ct);
         if (session.LastSeenAt < now.AddMinutes(-5))
             await db.LoginSessions.Where(x => x.Id == session.Id && !x.Revoked).ExecuteUpdateAsync(s => s.SetProperty(x => x.LastSeenAt, now), ct);
         return true;
+    }
+
+    // A support view replaces the scope with the granted business and least-privilege read permissions. It ends
+    // automatically when the grant expires or is revoked, or when the user is no longer a platform administrator.
+    private async Task ApplySupportAsync(Guid sessionId, Guid grantId, ApplicationUser user, DateTimeOffset now, CancellationToken ct)
+    {
+        var grant = await db.SupportGrants.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(g => g.Id == grantId && g.RevokedAt == null && g.ExpiresAt > now, ct);
+        if (grant is null || !PlatformAdmins.Contains(configuration, user.Email))
+        {
+            await db.LoginSessions.IgnoreQueryFilters().Where(s => s.Id == sessionId).ExecuteUpdateAsync(s => s.SetProperty(x => x.SupportGrantId, (Guid?)null), ct);
+            return;
+        }
+        scope.TenantId = grant.TenantId; scope.MembershipId = Guid.Empty; scope.IsOwner = false;
+        scope.Permissions = SubscriptionRules.SupportPermissions(grant.IncludeFinance); scope.SupportGrantId = grant.Id;
     }
 
     public async Task ConfirmAsync(ConfirmRequest request, CancellationToken ct)
@@ -214,11 +235,20 @@ public sealed class IdentityAccess(Gas365DbContext db, TenantScope scope, UserMa
                                 join tenant in db.Tenants.IgnoreQueryFilters() on member.TenantId equals tenant.TenantId
                                 where member.UserId == scope.UserId && member.Active
                                 select new WorkspaceDto(member.Id, tenant.TenantId, tenant.Name)).ToArrayAsync(ct);
-        return new(user.Id, user.DisplayName, user.Email!, scope.TenantId, scope.MembershipId, scope.Permissions, scope.IsOwner, workspaces);
+        SupportViewDto? support = null;
+        if (scope.SupportGrantId is { } grantId)
+        {
+            var grant = await db.SupportGrants.IgnoreQueryFilters().AsNoTracking().SingleAsync(g => g.Id == grantId, ct);
+            var tenantName = await db.Tenants.IgnoreQueryFilters().Where(t => t.TenantId == grant.TenantId).Select(t => t.Name).SingleAsync(ct);
+            support = new(tenantName, grant.ExpiresAt, grant.IncludeFinance);
+        }
+        return new(user.Id, user.DisplayName, user.Email!, scope.TenantId, scope.MembershipId, scope.Permissions, scope.IsOwner, workspaces,
+            user.EmailConfirmed && PlatformAdmins.Contains(configuration, user.Email), support);
     }
 
     public async Task<SessionGrant> SwitchAsync(Guid membershipId, CancellationToken ct)
     {
+        if (scope.Support) throw new AccessException(409, "Exit the support view before switching workspace.");
         var member = await db.Memberships.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(x => x.Id == membershipId && x.UserId == scope.UserId && x.Active, ct)
             ?? throw new AccessException(404, "Workspace not found.");
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
@@ -235,6 +265,9 @@ public sealed class IdentityAccess(Gas365DbContext db, TenantScope scope, UserMa
 
     public async Task RevokeAsync(Guid id, CancellationToken ct)
     {
+        // In a support view the scope belongs to the viewed business, so the own session is revoked directly.
+        if (scope.Support && id == scope.SessionId)
+        { await db.LoginSessions.IgnoreQueryFilters().Where(x => x.Id == id).ExecuteUpdateAsync(x => x.SetProperty(p => p.Revoked, true), ct); return; }
         var session = await db.LoginSessions.SingleOrDefaultAsync(x => x.Id == id && x.MembershipId == scope.MembershipId, ct)
             ?? throw new AccessException(404, "Session not found.");
         session.Revoked = true;

@@ -139,6 +139,20 @@ export const pages = [
     icon: 'audit',
   },
   {
+    id: 'subscription',
+    label: 'Subscription',
+    description: 'Your plan, usage, billing history and support access.',
+    permission: 'tenant.manage',
+    icon: 'subscription',
+  },
+  {
+    id: 'platform',
+    label: 'Platform admin',
+    description: 'Businesses, plans and owner-approved support views.',
+    platformOnly: true,
+    icon: 'platform',
+  },
+  {
     id: 'showcase',
     label: 'Component showcase',
     description: 'Explore the Gas365 interface patterns with sample data.',
@@ -149,7 +163,8 @@ export const pages = [
 export function canVisit(page: (typeof pages)[number], user: Me) {
   return (
     (!('permission' in page) || user.permissions.includes(page.permission)) &&
-    (!('ownerOnly' in page) || user.isOwner)
+    (!('ownerOnly' in page) || user.isOwner) &&
+    (!('platformOnly' in page) || !!user.platformAdmin)
   );
 }
 export function pagePath(id: string) {

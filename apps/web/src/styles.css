@@ -1071,3 +1071,22 @@ h3 {
   padding: 0;
   cursor: pointer;
 }
+
+.support-banner,
+.subscription-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.support-banner {
+  border-left: 4px solid var(--warning-text, #8a5a00);
+}
+.subscription-banner {
+  border-left: 4px solid var(--primary);
+}
