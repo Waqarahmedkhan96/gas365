@@ -124,3 +124,9 @@ Toolchain note: .NET SDK 10.0.401 is installed user-locally at `%LOCALAPPDATA%\G
 ## Phase 07 Git integration completed — 2026-09-28
 
 Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`, pushed successfully to origin. The merged local `feature/phase-07-finance` branch was deleted; no remote feature branch existed. The secondary detached worktree was preserved. Phase 07 is complete; Phase 08 has not started.
+
+## Phase 07 follow-up — 2026-09-29
+
+Advances can settle cylinder charges, and accounts and expense categories can be renamed, retired and reactivated. Both limitations are closed; see the [Phase 07 report](docs/PHASE_07_REPORT.md). Apply migration `20260929072843_FinanceMasterDataAndCylinderAllocation` before API startup. The per-category cash reconciliation is carried into Phase 08.
+
+Owner direction on 2026-09-29: continue through the remaining phases in this chat, one feature branch per phase, merging only after all checks pass. This explicitly supersedes the one-phase-per-chat default for this run. Commit messages must not mention tools or carry attribution IDs.

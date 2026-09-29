@@ -34,6 +34,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
     }
     private async Task CheckOpenAsync(MoneyAccount a, DateOnly date, CancellationToken ct)
     {
+        if (!a.Active) throw new AccessException(409, "Account " + a.Name + " is retired. Reactivate it before posting.");
         if (a.Kind != "Cash") return;
         var last = await db.RegisterEvents.Where(x => x.AccountId == a.Id && x.BusinessDate == date).OrderByDescending(x => x.Sequence).FirstOrDefaultAsync(ct);
         if (last is null || last.Kind == "Close") throw new AccessException(409, "Open or reopen the cash register before posting.");
@@ -43,7 +44,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
         var remaining = e.Kind is "CustomerReceipt" or "SupplierPayment" or "LoanReceived" or "LoanGiven"
             ? e.Amount + await db.FinanceEntries.Where(x => x.ParentId == e.Id || x.ReversesId == e.Id).SumAsync(x => x.Amount, ct) : 0;
         return new(e.Id, e.Sequence, e.BranchId, e.Kind, e.Amount, e.Cash, e.AccountId, e.CustomerId, e.SupplierId, e.CategoryId,
-            e.ParentId, e.ReversesId, e.SaleId, e.PurchaseId, e.Counterparty, e.Reason, e.BusinessDate, e.ActorId, e.PostedAt, remaining);
+            e.ParentId, e.ReversesId, e.SaleId, e.PurchaseId, e.Counterparty, e.Reason, e.BusinessDate, e.ActorId, e.PostedAt, remaining, e.CylinderLoanId);
     }
     public async Task<FinancePartyDto[]> PartiesAsync(bool supplier, CancellationToken ct)
     {
@@ -61,8 +62,8 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
     public async Task<MoneyAccountDto[]> AccountsAsync(Guid branchId, CancellationToken ct)
     {
         Require(Permissions.FinanceView); await BranchAsync(branchId, ct);
-        return await db.MoneyAccounts.Where(x => x.BranchId == branchId).OrderBy(x => x.Name)
-            .Select(x => new MoneyAccountDto(x.Id, x.BranchId, x.Name, x.Kind, x.DefaultCash, db.FinanceEntries.Where(e => e.AccountId == x.Id).Sum(e => e.Cash))).ToArrayAsync(ct);
+        return await db.MoneyAccounts.Where(x => x.BranchId == branchId).OrderByDescending(x => x.Active).ThenBy(x => x.Name)
+            .Select(x => new MoneyAccountDto(x.Id, x.BranchId, x.Name, x.Kind, x.DefaultCash, db.FinanceEntries.Where(e => e.AccountId == x.Id).Sum(e => e.Cash), x.Active, x.Version)).ToArrayAsync(ct);
     }
     public async Task<MoneyAccountDto> CreateAccountAsync(MoneyAccountRequest r, CancellationToken ct)
     {
@@ -98,12 +99,39 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
         return (await AccountsAsync(r.BranchId, ct)).Single(x => x.Id == a.Id);
     }
     public async Task<ExpenseCategoryDto[]> CategoriesAsync(CancellationToken ct)
-    { Require(Permissions.FinanceView); return await db.ExpenseCategories.OrderBy(x => x.Name).Select(x => new ExpenseCategoryDto(x.Id, x.Name, x.Capital)).ToArrayAsync(ct); }
+    { Require(Permissions.FinanceView); return await db.ExpenseCategories.OrderByDescending(x => x.Active).ThenBy(x => x.Name).Select(x => new ExpenseCategoryDto(x.Id, x.Name, x.Capital, x.Active, x.Version)).ToArrayAsync(ct); }
     public async Task<ExpenseCategoryDto> CreateCategoryAsync(ExpenseCategoryRequest r, CancellationToken ct)
     {
         Require(Permissions.FinanceManage);
         var c = new ExpenseCategory { TenantId = scope.TenantId, Name = CatalogAccess.Text(r.Name, 120), Capital = r.Capital };
-        db.Add(c); Audit("finance.category_created", c.Id); await db.SaveChangesAsync(ct); return new(c.Id, c.Name, c.Capital);
+        db.Add(c); Audit("finance.category_created", c.Id); await db.SaveChangesAsync(ct); return new(c.Id, c.Name, c.Capital, c.Active, c.Version);
+    }
+    public async Task<MoneyAccountDto> UpdateAccountAsync(Guid id, MasterUpdateRequest r, CancellationToken ct)
+    {
+        Require(Permissions.FinanceManage);
+        await using var tx = await db.Database.BeginTransactionAsync(ct); await LockAsync(ct);
+        var a = await AccountAsync(id, ct);
+        if (a.Version != r.Version) throw new AccessException(409, "Account changed. Refresh before saving.");
+        if (a.Active && !r.Active)
+        {
+            if (a.DefaultCash) throw new AccessException(409, "The default cash drawer cannot be retired.");
+            if (await db.FinanceEntries.Where(x => x.AccountId == a.Id).SumAsync(x => x.Cash, ct) != 0) throw new AccessException(409, "Transfer the balance out before retiring the account.");
+            var last = await db.RegisterEvents.Where(x => x.AccountId == a.Id).OrderByDescending(x => x.BusinessDate).ThenByDescending(x => x.Sequence).FirstOrDefaultAsync(ct);
+            if (last is not null && last.Kind != "Close") throw new AccessException(409, "Close the register before retiring the account.");
+        }
+        var action = a.Active == r.Active ? "finance.account_renamed" : r.Active ? "finance.account_reactivated" : "finance.account_retired";
+        a.Name = CatalogAccess.Text(r.Name, 120); a.Active = r.Active;
+        Audit(action, a.Id); await db.SaveChangesAsync(ct); await tx.CommitAsync(ct);
+        return (await AccountsAsync(a.BranchId, ct)).Single(x => x.Id == a.Id);
+    }
+    public async Task<ExpenseCategoryDto> UpdateCategoryAsync(Guid id, MasterUpdateRequest r, CancellationToken ct)
+    {
+        Require(Permissions.FinanceManage);
+        var c = await db.ExpenseCategories.SingleOrDefaultAsync(x => x.Id == id, ct) ?? throw new AccessException(404, "Expense category not found.");
+        if (c.Version != r.Version) throw new AccessException(409, "Category changed. Refresh before saving.");
+        var action = c.Active == r.Active ? "finance.category_renamed" : r.Active ? "finance.category_reactivated" : "finance.category_retired";
+        c.Name = CatalogAccess.Text(r.Name, 120); c.Active = r.Active;
+        Audit(action, c.Id); await db.SaveChangesAsync(ct); return new(c.Id, c.Name, c.Capital, c.Active, c.Version);
     }
     public async Task<PageDto<FinanceEntryDto>> EntriesAsync(Guid branchId, int page, CancellationToken ct)
     {
@@ -133,6 +161,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             ParentId = r.ParentId,
             SaleId = r.SaleId,
             PurchaseId = r.PurchaseId,
+            CylinderLoanId = r.CylinderLoanId,
             Counterparty = string.IsNullOrWhiteSpace(r.Counterparty) ? "" : CatalogAccess.Text(r.Counterparty, 120),
             Reason = CatalogAccess.Text(r.Reason, 300),
             ActorId = scope.UserId,
@@ -142,7 +171,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
         };
         if (r.CustomerId.HasValue && !await db.Customers.AnyAsync(x => x.Id == r.CustomerId && x.Active, ct) || r.SupplierId.HasValue && !await db.Suppliers.AnyAsync(x => x.Id == r.SupplierId && x.Active, ct)) throw new AccessException(404, "Counterparty not found.");
         if (r.CustomerId.HasValue && r.SupplierId.HasValue) throw new AccessException(400, "Select one counterparty.");
-        if (r.Kind != "Allocate" && (r.SaleId.HasValue || r.PurchaseId.HasValue)) throw new AccessException(400, "Invoice references apply only to allocations.");
+        if (r.Kind != "Allocate" && (r.SaleId.HasValue || r.PurchaseId.HasValue || r.CylinderLoanId.HasValue)) throw new AccessException(400, "Invoice references apply only to allocations.");
         if (r.Kind != "Expense" && r.CategoryId.HasValue) throw new AccessException(400, "Category applies only to expenses.");
         if (r.Kind is not ("Allocate" or "LoanRepayment") && r.ParentId.HasValue) throw new AccessException(400, "Unexpected parent reference.");
         if (r.Kind != "Transfer" && r.DestinationAccountId.HasValue) throw new AccessException(400, "Unexpected destination account.");
@@ -154,7 +183,8 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             case "SupplierPayment":
                 if (!r.SupplierId.HasValue) throw new AccessException(400, "Select a supplier."); e.Cash = -r.Amount; break;
             case "Expense":
-                if (!await db.ExpenseCategories.AnyAsync(x => x.Id == r.CategoryId, ct)) throw new AccessException(404, "Expense category not found."); e.Cash = -r.Amount; break;
+                var category = await db.ExpenseCategories.SingleOrDefaultAsync(x => x.Id == r.CategoryId, ct) ?? throw new AccessException(404, "Expense category not found.");
+                if (!category.Active) throw new AccessException(409, "Expense category is retired."); e.Cash = -r.Amount; break;
             case "CashAdjustmentIn": Require(Permissions.FinanceManage); e.Cash = r.Amount; break;
             case "CashAdjustmentOut": Require(Permissions.FinanceManage); e.Cash = -r.Amount; break;
             case "OwnerFunds": e.Cash = r.Amount; break;
@@ -205,7 +235,8 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
     }
     private async Task AllocateAsync(FinanceEntry e, bool reverse, CancellationToken ct)
     {
-        if (e.CustomerId.HasValue && e.SaleId.HasValue && !e.PurchaseId.HasValue)
+        if (new[] { e.SaleId, e.PurchaseId, e.CylinderLoanId }.Count(x => x.HasValue) != 1) throw new AccessException(400, "Select one invoice matching the payment counterparty.");
+        if (e.CustomerId.HasValue && e.SaleId.HasValue)
         {
             var doc = await db.SaleDocuments.SingleOrDefaultAsync(x => x.Id == e.SaleId && x.CustomerId == e.CustomerId && x.BranchId == e.BranchId, ct) ?? throw new AccessException(404, "Customer invoice not found.");
             if (await db.SaleEntries.AnyAsync(x => x.SaleId == doc.Id && x.Kind == "Reversal", ct)) throw new AccessException(409, "Invoice is reversed.");
@@ -225,7 +256,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
                 RequestHash = e.RequestHash
             });
         }
-        else if (e.SupplierId.HasValue && e.PurchaseId.HasValue && !e.SaleId.HasValue)
+        else if (e.SupplierId.HasValue && e.PurchaseId.HasValue)
         {
             var doc = await db.PurchaseDocuments.SingleOrDefaultAsync(x => x.Id == e.PurchaseId && x.SupplierId == e.SupplierId && x.BranchId == e.BranchId, ct) ?? throw new AccessException(404, "Supplier invoice not found.");
             if (await db.PurchaseEntries.AnyAsync(x => x.PurchaseId == doc.Id && x.Kind == "Reversal", ct)) throw new AccessException(409, "Invoice is reversed.");
@@ -241,6 +272,28 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
                 Reason = e.Reason,
                 PostedAt = e.PostedAt,
                 BusinessDate = e.BusinessDate,
+                IdempotencyKey = "internal:" + e.Id,
+                RequestHash = e.RequestHash
+            });
+        }
+        else if (e.CustomerId.HasValue && e.CylinderLoanId.HasValue)
+        {
+            var loan = await db.CylinderLoans.SingleOrDefaultAsync(x => x.Id == e.CylinderLoanId && x.CustomerId == e.CustomerId && x.BranchId == e.BranchId, ct) ?? throw new AccessException(404, "Cylinder settlement not found.");
+            var rows = await db.CylinderLoanEntries.Where(x => x.LoanId == loan.Id).ToArrayAsync(ct);
+            if (!rows.Any(x => x.Kind == "Return" && !rows.Any(y => y.ReversesId == x.Id))) throw new AccessException(409, "Return the cylinder before allocating to its charges.");
+            if (!reverse && rows.Sum(x => x.Receivable) < -e.Amount) throw new AccessException(409, "Allocation exceeds the cylinder amount due.");
+            db.CylinderLoanEntries.Add(new CylinderLoanEntry
+            {
+                TenantId = scope.TenantId,
+                BranchId = e.BranchId,
+                LoanId = loan.Id,
+                Kind = reverse ? "AllocationReversal" : "Allocation",
+                Receivable = e.Amount,
+                ActorId = scope.UserId,
+                Reason = e.Reason,
+                PostedAt = e.PostedAt,
+                BusinessDate = e.BusinessDate,
+                ReversesId = reverse ? rows.Single(x => x.IdempotencyKey == "internal:" + e.ReversesId).Id : null,
                 IdempotencyKey = "internal:" + e.Id,
                 RequestHash = e.RequestHash
             });
@@ -271,6 +324,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             ParentId = original.ParentId,
             SaleId = original.SaleId,
             PurchaseId = original.PurchaseId,
+            CylinderLoanId = original.CylinderLoanId,
             Counterparty = original.Counterparty,
             ReversesId = id,
             ActorId = scope.UserId,
@@ -331,6 +385,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             var dates = await db.RegisterEvents.Where(x => x.AccountId == a.Id).GroupBy(x => x.BusinessDate).Select(g => g.OrderByDescending(x => x.Sequence).First()).ToArrayAsync(ct);
             if (dates.Any(x => x.Kind != "Close") || dates.Any(x => x.BusinessDate >= r.BusinessDate)) throw new AccessException(409, "Close earlier sessions and open dates in order.");
         }
+        if (!a.Active) throw new AccessException(409, "Account is retired.");
         if (r.Kind == "Reopen" && await db.RegisterEvents.AnyAsync(x => x.AccountId == a.Id && x.BusinessDate > r.BusinessDate, ct)) throw new AccessException(409, "A later register exists; use a current-date correction to preserve its opening.");
         CatalogAccess.Decimal(r.Counted, 2, 1000000000);
         var e = new RegisterEvent
@@ -362,7 +417,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             foreach (var doc in docs)
             {
                 var rows = entries.Where(x => x.PurchaseId == doc.Id).ToArray(); var invoice = rows.SingleOrDefault(x => x.Kind == "Invoice");
-                if (invoice is not null) lines.Add(new(doc.Id, doc.SupplierName + " / " + doc.Id.ToString()[..8], invoice.BusinessDate, doc.Total, rows.Sum(x => x.Payable), FinanceCalculation.AgingBucket(invoice.BusinessDate, asOf)));
+                if (invoice is not null) lines.Add(new(doc.Id, doc.SupplierName + " / " + doc.Id.ToString()[..8], invoice.BusinessDate, doc.Total, rows.Sum(x => x.Payable), FinanceCalculation.AgingBucket(invoice.BusinessDate, asOf), "Purchase"));
             }
             ledger.AddRange(entries.Select(x => new CreditLedgerLineDto(x.Id, x.Kind, x.BusinessDate, x.Payable, x.Reason)));
         }
@@ -373,7 +428,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             foreach (var doc in docs)
             {
                 var rows = entries.Where(x => x.SaleId == doc.Id).ToArray(); var invoice = rows.SingleOrDefault(x => x.Kind == "Invoice");
-                if (invoice is not null) lines.Add(new(doc.Id, doc.Reference, invoice.BusinessDate, doc.Total, rows.Sum(x => x.Receivable), FinanceCalculation.AgingBucket(invoice.BusinessDate, asOf)));
+                if (invoice is not null) lines.Add(new(doc.Id, doc.Reference, invoice.BusinessDate, doc.Total, rows.Sum(x => x.Receivable), FinanceCalculation.AgingBucket(invoice.BusinessDate, asOf), "Sale"));
             }
             ledger.AddRange(entries.Select(x => new CreditLedgerLineDto(x.Id, x.Kind, x.BusinessDate, x.Receivable, x.Reason)));
             var loans = await db.CylinderLoans.Where(x => x.BranchId == branchId && x.CustomerId == partyId).Select(x => x.Id).ToArrayAsync(ct);
@@ -382,7 +437,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             foreach (var loan in loans)
             {
                 var rows = loanEntries.Where(x => x.LoanId == loan).ToArray(); var due = rows.Where(x => x.Receivable > 0).OrderBy(x => x.Sequence).FirstOrDefault();
-                if (due is not null) lines.Add(new(loan, "Cylinder settlement", due.BusinessDate, due.Receivable, rows.Sum(x => x.Receivable), FinanceCalculation.AgingBucket(due.BusinessDate, asOf)));
+                if (due is not null) lines.Add(new(loan, "Cylinder settlement", due.BusinessDate, due.Receivable, rows.Sum(x => x.Receivable), FinanceCalculation.AgingBucket(due.BusinessDate, asOf), "CylinderLoan"));
             }
         }
         var money = await db.FinanceEntries.Where(x => x.BranchId == branchId && (supplier ? x.SupplierId == partyId : x.CustomerId == partyId) && x.BusinessDate <= asOf).ToArrayAsync(ct);

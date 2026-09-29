@@ -64,6 +64,15 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
             await phase05.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"PurchaseDrafts\" (\"TenantId\", \"Id\", \"BranchId\", \"SupplierId\", \"Content\", \"Snapshot\") VALUES ({tenantId}, {draftId}, {branchId}, {supplierId}, '{{}}'::jsonb, '{{}}'::jsonb)");
             await phase05.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"PurchaseDocuments\" (\"TenantId\", \"Id\", \"BranchId\", \"SupplierId\", \"DraftId\", \"StockDocumentId\", \"SupplierName\", \"Content\", \"Total\") VALUES ({tenantId}, {historicalPurchaseId}, {branchId}, {supplierId}, {draftId}, {stockDocumentId}, 'Retained supplier', '{{}}'::jsonb, 1060)");
         }
+        await context.GetService<IMigrator>().MigrateAsync("20260928120055_FinanceAndRegisters");
+        var accountId = Guid.NewGuid(); var categoryId = Guid.NewGuid();
+        await using (var phase07 = new Gas365DbContext(options, new TenantScope { TenantId = tenantId }))
+        {
+            // Raw SQL: the current model already carries later columns that do not exist at this schema version.
+            var branchId = await phase07.Branches.Select(x => x.Id).SingleAsync();
+            await phase07.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"MoneyAccounts\" (\"TenantId\", \"Id\", \"BranchId\", \"Name\", \"Kind\", \"DefaultCash\", \"CreatedAt\") VALUES ({tenantId}, {accountId}, {branchId}, 'Existing drawer', 'Cash', TRUE, now())");
+            await phase07.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"ExpenseCategories\" (\"TenantId\", \"Id\", \"Name\", \"Capital\") VALUES ({tenantId}, {categoryId}, 'Existing category', FALSE)");
+        }
         await context.Database.MigrateAsync();
         await using (var upgraded = new Gas365DbContext(options, new TenantScope { TenantId = tenantId }))
         {
@@ -83,11 +92,12 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
             Assert.Equal("Retained supplier", (await upgraded.Suppliers.SingleAsync(x => x.Id == supplierId)).Name);
             Assert.Empty(await upgraded.Customers.ToArrayAsync());
             Assert.Empty(await upgraded.PriceLists.ToArrayAsync());
-            Assert.Empty(await upgraded.MoneyAccounts.ToArrayAsync());
+            var account = await upgraded.MoneyAccounts.SingleAsync(); Assert.Equal(accountId, account.Id); Assert.True(account.Active); Assert.True(account.DefaultCash);
+            var category = await upgraded.ExpenseCategories.SingleAsync(); Assert.Equal(categoryId, category.Id); Assert.True(category.Active);
             Assert.Empty(await upgraded.FinanceEntries.ToArrayAsync());
             Assert.Contains(Permissions.FinancePost, (await upgraded.TenantRoles.SingleAsync()).Permissions);
         }
-        Assert.Equal(11, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(12, (await context.Database.GetAppliedMigrationsAsync()).Count());
         await context.Database.MigrateAsync();
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());

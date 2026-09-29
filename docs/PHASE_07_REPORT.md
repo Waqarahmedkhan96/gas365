@@ -71,3 +71,16 @@ Phase 07 is complete. Do not start Phase 08 unless the owner requests it.
 ## Phase 07 Git integration completed — 2026-09-28
 
 Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`, pushed successfully to origin. The merged local `feature/phase-07-finance` branch was deleted; no remote feature branch existed. The secondary detached worktree was preserved. Phase 07 is complete; Phase 08 has not started.
+
+## Follow-up — 2026-09-29
+
+The owner asked whether the three Phase 07 limitations would be covered later. The per-category cash reconciliation belongs to Phase 08 reporting. The other two had no later phase, so they were closed on `feature/finance-follow-up`:
+
+1. **Advances settle cylinder charges.** An allocation names exactly one target: a sale, a purchase or a cylinder loan. A cylinder allocation needs the same customer and branch and an active return, and it cannot exceed either the advance or the amount due. It records a no-cash Allocation in the cylinder journal. The reconciliation constraint exempts only Allocation and AllocationReversal rows, mirroring the Phase 07 sale and purchase exemptions. A return cannot be reversed while an allocation is active. Reversals link to the original.
+2. **Accounts and categories can be renamed, retired and reactivated.** This uses the customer pattern: an Active flag, an `xmin` row version and audit events. Retiring an account requires a zero balance and a closed register, and the default drawer cannot be retired. Retired rows reject postings, transfers, reversals and register actions. The database blocks deletes and changes to identity or classification fields, and the cash guard rejects direct inserts against retired accounts.
+
+The application-level write guard previously listed accounts and categories as fully immutable; it now allows updates while still rejecting deletes. Its error message now names posted and audit records accurately.
+
+**Migration:** `20260929072843_FinanceMasterDataAndCylinderAllocation`. It adds Active columns (defaulting existing rows to active), a cylinder-loan reference and foreign key on finance entries, the replacement cylinder constraint and the guards. The upgrade test seeds an account and category at the Phase 07 schema and asserts both stay active. Downgrade restores the Phase 07 triggers and is destructive for the new columns.
+
+**Verification run in this chat:** backend Release build with 0 warnings; `dotnet format`; 4 architecture, 40 unit and 74 PostgreSQL/API tests (118, including two new finance tests and the extended upgrade test); frontend format, lint, types and 15 component tests; OpenAPI; rebuilt Compose images healthy; 22/22 desktop and mobile browser tests. Migration tests were rerun after the final formatting-only change.

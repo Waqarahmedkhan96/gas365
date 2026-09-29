@@ -1,4 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { expect, it, vi } from 'vitest';
 import { FinancePage } from './FinancePage';
@@ -53,4 +59,74 @@ it('read-only finance access shows server balances without posting or account co
   expect(
     screen.queryByRole('button', { name: 'Add category' }),
   ).not.toBeInTheDocument();
+});
+
+it('finance managers rename or retire accounts with the row version and cannot post to retired accounts', async () => {
+  const calls: { path: string; method?: string; body?: unknown }[] = [];
+  vi.mocked(api).mockImplementation(async (path, method, body) => {
+    calls.push({ path, method, body });
+    if (path.includes('/accounts'))
+      return [
+        {
+          id: 'drawer',
+          name: 'Drawer',
+          kind: 'Cash',
+          defaultCash: true,
+          balance: 0,
+          active: true,
+          version: 7,
+        },
+        {
+          id: 'old-bank',
+          name: 'Old bank',
+          kind: 'Bank',
+          defaultCash: false,
+          balance: 0,
+          active: false,
+          version: 3,
+        },
+      ];
+    if (path.includes('/entries'))
+      return { items: [], total: 0, page: 1, pageSize: 20 };
+    return [];
+  });
+  const user: Me = {
+    userId: 'user',
+    tenantId: 'tenant',
+    membershipId: 'member',
+    name: 'Manager',
+    email: 'manager@example.test',
+    permissions: ['finance.view', 'finance.post', 'finance.manage'],
+    isOwner: false,
+    workspaces: [],
+  };
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <BranchContext.Provider value="branch">
+        <FinancePage user={user} section="loans" timeZone="Asia/Karachi" />
+      </BranchContext.Provider>
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByText(/Old bank.*retired/)).toBeInTheDocument();
+  const payment = screen.getByLabelText('Payment account');
+  expect(
+    within(payment).queryByRole('option', { name: 'Old bank' }),
+  ).not.toBeInTheDocument();
+  expect(
+    within(payment).getByRole('option', { name: 'Drawer' }),
+  ).toBeInTheDocument();
+  const name = screen.getByLabelText(/Name for Drawer/);
+  fireEvent.change(name, { target: { value: 'Front counter' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Drawer' }));
+  await waitFor(() =>
+    expect(calls).toContainEqual({
+      path: '/api/workspace/finance/accounts/drawer',
+      method: 'PUT',
+      body: { name: 'Front counter', active: true, version: 7 },
+    }),
+  );
 });

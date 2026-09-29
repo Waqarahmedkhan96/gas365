@@ -379,7 +379,7 @@ namespace Gas365.Infrastructure.Migrations
 
                     b.ToTable("CylinderLoanEntries", t =>
                         {
-                            t.HasCheckConstraint("CK_CylinderLoanEntry_Reconcile", "\"Cash\" + \"Receivable\" = \"Revenue\" + \"Liability\"");
+                            t.HasCheckConstraint("CK_CylinderLoanEntry_Reconcile", "(\"Kind\" IN ('Allocation','AllocationReversal') AND \"Cash\" = 0 AND \"Revenue\" = 0 AND \"Liability\" = 0 AND \"UsageFee\" = 0 AND \"DamageOrLossCharge\" = 0 AND ((\"Kind\" = 'Allocation' AND \"Receivable\" < 0) OR (\"Kind\" = 'AllocationReversal' AND \"Receivable\" > 0))) OR (\"Kind\" NOT IN ('Allocation','AllocationReversal') AND \"Cash\" + \"Receivable\" = \"Revenue\" + \"Liability\")");
                         });
                 });
 
@@ -437,6 +437,9 @@ namespace Gas365.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("Capital")
                         .HasColumnType("boolean");
 
@@ -444,6 +447,12 @@ namespace Gas365.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("TenantId", "Id");
 
@@ -490,6 +499,9 @@ namespace Gas365.Infrastructure.Migrations
                         .HasColumnType("character varying(120)");
 
                     b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CylinderLoanId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("IdempotencyKey")
@@ -559,6 +571,8 @@ namespace Gas365.Infrastructure.Migrations
                     b.HasIndex("TenantId", "SupplierId");
 
                     b.HasIndex("TenantId", "BranchId", "AccountId");
+
+                    b.HasIndex("TenantId", "BranchId", "CylinderLoanId");
 
                     b.HasIndex("TenantId", "BranchId", "ParentId");
 
@@ -657,6 +671,9 @@ namespace Gas365.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("BranchId")
                         .HasColumnType("uuid");
 
@@ -675,6 +692,12 @@ namespace Gas365.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("TenantId", "Id");
 
@@ -1984,6 +2007,12 @@ namespace Gas365.Infrastructure.Migrations
                     b.HasOne("Gas365.Domain.MoneyAccount", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "BranchId", "AccountId")
+                        .HasPrincipalKey("TenantId", "BranchId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Gas365.Domain.CylinderLoan", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BranchId", "CylinderLoanId")
                         .HasPrincipalKey("TenantId", "BranchId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
 

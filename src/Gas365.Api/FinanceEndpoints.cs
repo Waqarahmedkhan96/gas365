@@ -11,8 +11,10 @@ public static class FinanceEndpoints
         g.MapGet("/open-items", (Guid branchId, IFinanceAccess s, CancellationToken ct) => s.OpenItemsAsync(branchId, ct));
         g.MapGet("/accounts", (Guid branchId, IFinanceAccess s, CancellationToken ct) => s.AccountsAsync(branchId, ct));
         g.MapPost("/accounts", (MoneyAccountRequest r, IFinanceAccess s, CancellationToken ct) => s.CreateAccountAsync(r, ct));
+        g.MapPut("/accounts/{id:guid}", (Guid id, MasterUpdateRequest r, IFinanceAccess s, CancellationToken ct) => s.UpdateAccountAsync(id, r, ct));
         g.MapGet("/categories", (IFinanceAccess s, CancellationToken ct) => s.CategoriesAsync(ct));
         g.MapPost("/categories", (ExpenseCategoryRequest r, IFinanceAccess s, CancellationToken ct) => s.CreateCategoryAsync(r, ct));
+        g.MapPut("/categories/{id:guid}", (Guid id, MasterUpdateRequest r, IFinanceAccess s, CancellationToken ct) => s.UpdateCategoryAsync(id, r, ct));
         g.MapGet("/entries", (Guid branchId, IFinanceAccess s, CancellationToken ct, int page = 1) => s.EntriesAsync(branchId, page, ct));
         g.MapPost("/entries", (FinanceRequest r, IFinanceAccess s, CancellationToken ct) => s.PostAsync(r, ct));
         g.MapPost("/entries/{id:guid}/reverse", (Guid id, FinanceReverseRequest r, IFinanceAccess s, CancellationToken ct) => s.ReverseAsync(id, r, ct));

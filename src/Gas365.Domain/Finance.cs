@@ -8,6 +8,8 @@ public sealed class MoneyAccount : ITenantOwned
     public string Name { get; set; } = "";
     public string Kind { get; set; } = "Cash";
     public bool DefaultCash { get; set; }
+    public bool Active { get; set; } = true;
+    public uint Version { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 public sealed class ExpenseCategory : ITenantOwned
@@ -16,6 +18,8 @@ public sealed class ExpenseCategory : ITenantOwned
     public Guid TenantId { get; set; }
     public string Name { get; set; } = "";
     public bool Capital { get; set; }
+    public bool Active { get; set; } = true;
+    public uint Version { get; set; }
 }
 public sealed class FinanceEntry : ITenantOwned
 {
@@ -31,6 +35,7 @@ public sealed class FinanceEntry : ITenantOwned
     public Guid? ReversesId { get; set; }
     public Guid? SaleId { get; set; }
     public Guid? PurchaseId { get; set; }
+    public Guid? CylinderLoanId { get; set; }
     public Guid? SourceId { get; set; }
     public string Kind { get; set; } = "";
     public decimal Amount { get; set; }

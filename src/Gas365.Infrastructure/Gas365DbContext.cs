@@ -77,8 +77,11 @@ public sealed partial class Gas365DbContext(DbContextOptions<Gas365DbContext> op
             if (scope.TenantId == Guid.Empty || entry.Entity.TenantId != scope.TenantId ||
                 (entry.State != EntityState.Added && entry.Property(nameof(ITenantOwned.TenantId)).OriginalValue is Guid original && original != scope.TenantId))
                 throw new InvalidOperationException("Tenant boundary violation.");
-            if (entry.Entity is (AuditEvent or StockDocument or StockMovement or PurchaseDocument or PurchaseEntry or SaleDocument or SaleEntry or CylinderLoan or CylinderLoanEntry or MoneyAccount or ExpenseCategory or FinanceEntry or RegisterEvent) && entry.State != EntityState.Added)
-                throw new InvalidOperationException("Audit events are append-only.");
+            if (entry.Entity is (AuditEvent or StockDocument or StockMovement or PurchaseDocument or PurchaseEntry or SaleDocument or SaleEntry or CylinderLoan or CylinderLoanEntry or FinanceEntry or RegisterEvent) && entry.State != EntityState.Added)
+                throw new InvalidOperationException("Posted and audit records are append-only.");
+            // Finance master data may be renamed or retired; database guards keep identity fields fixed.
+            if (entry.Entity is (MoneyAccount or ExpenseCategory) && entry.State == EntityState.Deleted)
+                throw new InvalidOperationException("Finance master records cannot be deleted.");
         }
     }
 

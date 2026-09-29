@@ -207,3 +207,7 @@ Phase 07 policy approval on 2026-09-28: owner approved invoice-date aging bucket
 ## Phase 07 Git integration completed — 2026-09-28
 
 Verified implementation checkpoint: `bbd39ee`. Merge commit: `2eb81ba` on `main`, pushed successfully to origin. The merged local `feature/phase-07-finance` branch was deleted; no remote feature branch existed. The secondary detached worktree was preserved. Phase 07 is complete; Phase 08 has not started.
+
+## Phase 07 follow-up — 2026-09-29
+
+Closed two Phase 07 limitations that no later phase covered: customer advances can now settle returned-cylinder charges, and accounts and expense categories can be renamed, retired and reactivated without rewriting history. The per-category cash reconciliation remains Phase 08 reporting scope. Checks run: 118 backend, 15 frontend and 22/22 browser tests, plus build, formatting, lint, types, OpenAPI and Compose. Migration: `20260929072843_FinanceMasterDataAndCylinderAllocation`. Details are in the [Phase 07 report](PHASE_07_REPORT.md) and [finance contracts](FINANCE.md).
