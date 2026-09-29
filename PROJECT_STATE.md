@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 09 — Audit, Imports, Notifications and Corrections: complete and locally verified on 2026-09-29; see the latest checkpoint at the end of this file. Phases 00–08 are complete. Earlier in-progress paragraphs below are historical.
+Phase 10 — Subscriptions, Onboarding and Platform Administration: complete and locally verified on 2026-09-29; see the latest checkpoint at the end of this file. Phases 00–09 are complete. Earlier in-progress paragraphs below are historical.
 
 ## Previous phase checkpoint
 
@@ -138,3 +138,7 @@ Dashboard, 15 reconciled reports and background CSV, XLSX and PDF exports are co
 ## Phase 09 completion checkpoint — 2026-09-29
 
 Audit timeline, corrections explorer, validated and resumable imports, opening balances, notifications and job health are complete and locally verified: 149 backend, 20 frontend and 26/26 browser tests, plus the remaining quality gates. See the [Phase 09 report](docs/PHASE_09_REPORT.md) and [operations contract](docs/OPERATIONS.md). Apply migration `20260929092809_AuditImportsAndNotifications` before API startup. Owner decisions recorded 2026-09-29: imports include openings; overdue after 30 days (adjustable); in-app notifications; closing reminder at 21:00 (adjustable). Next: Phase 10 (subscriptions, onboarding and platform administration).
+
+## Phase 10 completion checkpoint — 2026-09-29
+
+Subscriptions, onboarding, usage metering, platform administration and owner-granted support access are complete and locally verified: 153 backend, 23 frontend and 28/28 browser tests, plus the remaining quality gates. See the [Phase 10 report](docs/PHASE_10_REPORT.md) and [platform contract](docs/PLATFORM.md). Apply migration `20260929142905_SubscriptionsAndPlatform` before API startup. Owner decisions recorded 2026-09-29: three plans with prices set later; 14-day trial then read-only; super admin by server configuration (`Platform:AdminEmails`); owner-granted, time-limited support access. Next: Phase 11 (production hardening and staging). This needs owner decisions on hosting provider, domain and production email, and production deployment requires explicit authorization.

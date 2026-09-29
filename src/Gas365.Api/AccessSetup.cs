@@ -31,6 +31,9 @@ public static class AccessSetup
         builder.Services.AddScoped<INotificationSweeper, NotificationSweeper>();
         builder.Services.AddScoped<IImportAccess, ImportAccess>();
         builder.Services.AddScoped<IAuditAccess, AuditAccess>();
+        builder.Services.AddScoped<ISubscriptionAccess, SubscriptionAccess>();
+        builder.Services.AddScoped<IPlatformAccess, PlatformAccess>();
+        builder.Services.AddSingleton<IPaymentProvider, ManualPaymentProvider>();
         if (builder.Configuration.GetValue("Exports:WorkerEnabled", true)) builder.Services.AddHostedService<ExportWorker>();
         if (builder.Configuration.GetValue("Notifications:WorkerEnabled", true)) builder.Services.AddHostedService<NotificationWorker>();
         builder.Services.AddSingleton<Gas365.Domain.IInventoryCosting, Gas365.Domain.WeightedAverageCosting>();
@@ -125,6 +128,15 @@ public static class AccessSetup
                     var scope = context.RequestServices.GetRequiredService<TenantScope>();
                     if (!Guid.TryParse(context.Request.Headers["X-Workspace"], out var expected) || expected != scope.TenantId)
                     { await Results.Problem(statusCode: 409, title: "Your active workspace changed. Refresh the page.").ExecuteAsync(context); return; }
+                    var subscriptions = context.RequestServices.GetRequiredService<ISubscriptionAccess>();
+                    var write = !HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method);
+                    if (scope.Support)
+                    {
+                        // Support views are strictly read-only and every request is recorded in the business audit log.
+                        if (write) { await Results.Problem(statusCode: 403, title: "Support access is read-only.").ExecuteAsync(context); return; }
+                        await subscriptions.RecordSupportViewAsync(context.RequestAborted);
+                    }
+                    else if (write) await subscriptions.EnsureWritableAsync(context.Request.Path.Value ?? "", context.RequestAborted);
                 }
             }
             await next(context);
@@ -136,5 +148,6 @@ public static class AccessSetup
         app.MapFinanceEndpoints();
         app.MapReportEndpoints();
         app.MapOperationsEndpoints();
+        app.MapPlatformEndpoints();
     }
 }

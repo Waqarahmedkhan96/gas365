@@ -23,7 +23,7 @@ public sealed partial class CustomerTests(DatabaseFixture database) : IClassFixt
         app = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
-            builder.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Database"] = database.ConnectionString }));
+            builder.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Database"] = database.ConnectionString, ["Platform:AdminEmails"] = "admin-platform@test.example; admin-support@test.example" }));
             builder.ConfigureServices(s => { s.RemoveAll<IAccountMessages>(); s.AddSingleton<IAccountMessages>(messages); });
         });
     }
@@ -40,9 +40,9 @@ public sealed partial class CustomerTests(DatabaseFixture database) : IClassFixt
         }
         return await client.SendAsync(request);
     }
-    private async Task<(HttpClient Client, MeDto Me)> Owner()
+    private async Task<(HttpClient Client, MeDto Me)> Owner(string? email = null)
     {
-        var client = Client(); var email = $"stock-{Guid.NewGuid():N}@test.example";
+        var client = Client(); email ??= $"stock-{Guid.NewGuid():N}@test.example";
         (await Send(client, "/api/auth/register", HttpMethod.Post, new RegisterRequest(email, Password, "Inventory owner", "Inventory tenant"))).EnsureSuccessStatusCode();
         (await Send(client, "/api/auth/confirm", HttpMethod.Post, new ConfirmRequest(email, messages.Token(email)))).EnsureSuccessStatusCode();
         (await Send(client, "/api/auth/login", HttpMethod.Post, new LoginRequest(email, Password))).EnsureSuccessStatusCode();

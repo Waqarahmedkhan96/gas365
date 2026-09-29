@@ -7,6 +7,12 @@ export type Me = {
   permissions: string[];
   isOwner: boolean;
   workspaces: { membershipId: string; tenantId: string; name: string }[];
+  platformAdmin?: boolean;
+  support?: {
+    tenantName: string;
+    expiresAt: string;
+    includeFinance: boolean;
+  } | null;
 };
 export type Branch = {
   id: string;
@@ -39,6 +45,8 @@ export type Tenant = {
   maxAdmins: number;
   overdueCreditDays: number;
   closingReminder: string;
+  subscriptionStatus: 'Trial' | 'Active' | 'Expired';
+  trialEndsAt: string | null;
 };
 export type Session = {
   id: string;
