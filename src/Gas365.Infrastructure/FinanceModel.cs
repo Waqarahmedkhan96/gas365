@@ -36,6 +36,7 @@ public sealed partial class Gas365DbContext
         e.HasOne<SaleDocument>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.SaleId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
         e.HasOne<PurchaseDocument>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.PurchaseId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
         e.HasOne<CylinderLoan>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.CylinderLoanId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
+        e.HasOne<OpeningBalance>().WithMany().HasForeignKey(x => new { x.TenantId, x.BranchId, x.OpeningBalanceId }).HasPrincipalKey(x => new { x.TenantId, x.BranchId, x.Id }).OnDelete(DeleteBehavior.Restrict);
         e.Property(x => x.Sequence).ValueGeneratedOnAdd();
         e.HasIndex(x => new { x.TenantId, x.BranchId, x.Sequence });
         e.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();

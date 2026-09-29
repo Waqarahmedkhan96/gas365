@@ -1,4 +1,5 @@
 using Gas365.Application;
+using Gas365.Infrastructure;
 
 namespace Gas365.Api;
 
@@ -11,7 +12,7 @@ public sealed class ExportWorker(IServiceScopeFactory scopes, IConfiguration con
         var nextExpiry = DateTimeOffset.MinValue;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var worked = false;
+            var worked = false; Exception? failure = null;
             try
             {
                 await using var scope = scopes.CreateAsyncScope();
@@ -20,7 +21,11 @@ public sealed class ExportWorker(IServiceScopeFactory scopes, IConfiguration con
                 worked = await processor.ProcessNextAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
-            catch (Exception exception) { logger.LogError(exception, "Export worker iteration failed."); }
+            catch (Exception exception) { failure = exception; logger.LogError(exception, "Export worker iteration failed."); }
+            // Health is recorded only when something happened, not on every idle poll.
+            if (worked || failure is not null)
+                try { await using var health = scopes.CreateAsyncScope(); await JobHealth.RecordAsync(health.ServiceProvider.GetRequiredService<Gas365DbContext>(), "exports", failure, stoppingToken); }
+                catch (Exception exception) when (exception is not OperationCanceledException) { logger.LogWarning(exception, "Could not record job health."); }
             if (!worked) await Task.Delay(idle, stoppingToken).ContinueWith(_ => { }, TaskScheduler.Default);
         }
     }

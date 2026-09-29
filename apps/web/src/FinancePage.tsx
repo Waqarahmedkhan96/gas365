@@ -60,7 +60,7 @@ type Credit = {
     original: number;
     outstanding: number;
     bucket: string;
-    kind: 'Sale' | 'Purchase' | 'CylinderLoan';
+    kind: 'Sale' | 'Purchase' | 'CylinderLoan' | 'Opening';
   }[];
   entries: {
     id: string;
@@ -321,9 +321,11 @@ function FinanceWorkspace({
     const line = credit.data?.invoices.find((x) => x.id === id);
     return line?.kind === 'CylinderLoan'
       ? { cylinderLoanId: id }
-      : line?.kind === 'Sale'
-        ? { saleId: id }
-        : { purchaseId: id };
+      : line?.kind === 'Opening'
+        ? { openingBalanceId: id }
+        : line?.kind === 'Sale'
+          ? { saleId: id }
+          : { purchaseId: id };
   }
   if (!branch) return <p>Select a branch to manage finances.</p>;
   const queryError =
@@ -552,10 +554,16 @@ function FinanceWorkspace({
                 {money(credit.data.unapplied)}
               </p>
               <p>
-                Aging uses invoice dates. Refundable cylinder deposits are
-                separate from receivables.
+                Aging uses invoice dates; opening balances age from their
+                original invoice date. Refundable cylinder deposits are separate
+                from receivables.
               </p>
-              <div className="overflow-x-auto">
+              <div
+                className="overflow-x-auto"
+                role="region"
+                aria-label="Outstanding invoices table"
+                tabIndex={0}
+              >
                 <table>
                   <caption>Outstanding invoices</caption>
                   <thead>
@@ -564,6 +572,7 @@ function FinanceWorkspace({
                       <th>Date</th>
                       <th>Outstanding</th>
                       <th>Age</th>
+                      <th>Correction</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -573,11 +582,95 @@ function FinanceWorkspace({
                         <td>{i.date}</td>
                         <td>{money(i.outstanding)}</td>
                         <td>{i.bucket}</td>
+                        <td>
+                          {i.kind === 'Opening' &&
+                            i.outstanding === i.original &&
+                            has('finance.reverse') &&
+                            has('finance.manage') && (
+                              <form
+                                onSubmit={(event) =>
+                                  submit(
+                                    event,
+                                    (d) =>
+                                      void write(`/openings/${i.id}/reverse`, {
+                                        reason: str(d, 'reason'),
+                                      }),
+                                  )
+                                }
+                              >
+                                <Field
+                                  label={`Reversal reason for ${i.reference}`}
+                                  name="reason"
+                                  required
+                                  maxLength={300}
+                                />
+                                <Button disabled={busy} variant="secondary">
+                                  Reverse opening balance
+                                </Button>
+                              </form>
+                            )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              {has('finance.manage') && (
+                <details>
+                  <summary>Record opening balance</summary>
+                  <form
+                    className="grid gap-3"
+                    onSubmit={(e) =>
+                      submit(
+                        e,
+                        (d) =>
+                          void write('/openings', {
+                            branchId: branch,
+                            customerId: supplier ? null : party,
+                            supplierId: supplier ? party : null,
+                            reference: str(d, 'reference'),
+                            originalDate: str(d, 'originalDate'),
+                            amount: Number(str(d, 'amount')),
+                            reason: str(d, 'reason'),
+                          }),
+                      )
+                    }
+                  >
+                    <p>
+                      Use for credit that existed before Gas365. It moves no
+                      cash; settle it later by recording a payment and
+                      allocating it.
+                    </p>
+                    <Field
+                      label="Original invoice date"
+                      name="originalDate"
+                      type="date"
+                      max={date}
+                      required
+                    />
+                    <Field
+                      label="Opening amount (PKR)"
+                      name="amount"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      required
+                    />
+                    <Field
+                      label="Old reference"
+                      name="reference"
+                      maxLength={120}
+                    />
+                    <Field
+                      label="Reconciliation reason"
+                      name="reason"
+                      required
+                      maxLength={300}
+                    />
+                    <Button disabled={busy}>Record opening balance</Button>
+                  </form>
+                </details>
+              )}
               <details>
                 <summary>Append-only credit history</summary>
                 <ul>
@@ -794,7 +887,12 @@ function FinanceWorkspace({
       <section className="panel grid gap-4">
         <h2>Financial history</h2>
         {entries.data?.items.length === 0 && <p>No financial entries yet.</p>}
-        <div className="overflow-x-auto">
+        <div
+          className="overflow-x-auto"
+          role="region"
+          aria-label="Financial history table"
+          tabIndex={0}
+        >
           <table>
             <caption>Posted entries — page {page}</caption>
             <thead>

@@ -36,6 +36,7 @@ public sealed class FinanceEntry : ITenantOwned
     public Guid? SaleId { get; set; }
     public Guid? PurchaseId { get; set; }
     public Guid? CylinderLoanId { get; set; }
+    public Guid? OpeningBalanceId { get; set; }
     public Guid? SourceId { get; set; }
     public string Kind { get; set; } = "";
     public decimal Amount { get; set; }

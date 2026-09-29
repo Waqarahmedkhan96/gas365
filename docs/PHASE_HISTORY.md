@@ -221,3 +221,15 @@ Closed two Phase 07 limitations that no later phase covered: customer advances c
 **Migration impact:** apply `20260929080123_ReportingAndExports` (additive).
 
 **Limitations:** exports are stored in PostgreSQL until Phase 11 object storage; report load testing is Phase 11; scheduled delivery is Phase 09. Details are in the [Phase 08 report](PHASE_08_REPORT.md) and [reports](REPORTS.md).
+
+## Phase 09 — Audit, Imports, Notifications and Corrections — 2026-09-29
+
+**Delivered:** Opening customer and supplier balances with aging from the original date, settled by allocation. Validated, resumable Excel/CSV imports for master data, opening stock and opening balances, with mapping, preview and error download. Self-resolving low-stock, overdue-credit and open-register alerts. An audit timeline, a cross-ledger corrections explorer and background-job health.
+
+**Owner decisions:** imports include openings; overdue after 30 days; in-app notifications; closing reminder at 21:00. Both settings are adjustable per business.
+
+**Verification in the current chat:** 149 backend tests (4 architecture, 63 unit, 82 PostgreSQL/API), 20 frontend and 26/26 browser tests, plus build, formatting, lint, types, OpenAPI, migrations, Compose and dependency audits. Earlier failing browser runs were superseded after corrections.
+
+**Migration impact:** apply `20260929092809_AuditImportsAndNotifications` (additive).
+
+**Limitations:** email and SMS channels and scheduled delivery are not built; no job-health screen yet. Details are in the [Phase 09 report](PHASE_09_REPORT.md) and [operations contract](OPERATIONS.md).

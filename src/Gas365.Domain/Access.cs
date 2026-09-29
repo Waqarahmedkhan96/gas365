@@ -39,7 +39,8 @@ public static class Permissions
     public const string RegisterReopen = "register.reopen";
     public const string ReportsView = "reports.view";
     public const string ReportsExport = "reports.export";
-    public static readonly string[] All = [ReportsView, ReportsExport, FinanceView, FinancePost, FinanceManage, FinanceReverse, RegisterClose, RegisterReopen, TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage, CustomerView, CustomerManage, PriceManage, SalesView, SalesDraft, SalesDiscount, SalesPost, SalesPay, SalesReverse, SalesProfit, CylinderManage, CylinderWaive, CylinderReturn, CylinderApprove];
+    public const string ImportsManage = "imports.manage";
+    public static readonly string[] All = [ImportsManage, ReportsView, ReportsExport, FinanceView, FinancePost, FinanceManage, FinanceReverse, RegisterClose, RegisterReopen, TenantManage, BranchManage, TeamManage, RoleManage, AuditView, CatalogManage, InventoryView, InventoryPost, InventoryReverse, PurchaseView, PurchaseDraft, PurchasePost, PurchasePay, PurchaseReverse, SupplierManage, CustomerView, CustomerManage, PriceManage, SalesView, SalesDraft, SalesDiscount, SalesPost, SalesPay, SalesReverse, SalesProfit, CylinderManage, CylinderWaive, CylinderReturn, CylinderApprove];
 }
 
 public interface ITenantOwned { Guid TenantId { get; set; } }
@@ -52,6 +53,9 @@ public sealed class Tenant : ITenantOwned
     public int MaxBranches { get; set; } = 3;
     public int MaxUsers { get; set; } = 10;
     public int MaxAdmins { get; set; } = 3;
+    // Owner-approved defaults (2026-09-29): credit is overdue after 30 days; drawers still open at 21:00 local trigger a reminder.
+    public int OverdueCreditDays { get; set; } = 30;
+    public TimeOnly ClosingReminder { get; set; } = new(21, 0);
 }
 
 public sealed class Branch : ITenantOwned

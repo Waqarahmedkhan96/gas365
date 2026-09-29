@@ -44,7 +44,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
         var remaining = e.Kind is "CustomerReceipt" or "SupplierPayment" or "LoanReceived" or "LoanGiven"
             ? e.Amount + await db.FinanceEntries.Where(x => x.ParentId == e.Id || x.ReversesId == e.Id).SumAsync(x => x.Amount, ct) : 0;
         return new(e.Id, e.Sequence, e.BranchId, e.Kind, e.Amount, e.Cash, e.AccountId, e.CustomerId, e.SupplierId, e.CategoryId,
-            e.ParentId, e.ReversesId, e.SaleId, e.PurchaseId, e.Counterparty, e.Reason, e.BusinessDate, e.ActorId, e.PostedAt, remaining, e.CylinderLoanId);
+            e.ParentId, e.ReversesId, e.SaleId, e.PurchaseId, e.Counterparty, e.Reason, e.BusinessDate, e.ActorId, e.PostedAt, remaining, e.CylinderLoanId, e.OpeningBalanceId);
     }
     public async Task<FinancePartyDto[]> PartiesAsync(bool supplier, CancellationToken ct)
     {
@@ -162,6 +162,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             SaleId = r.SaleId,
             PurchaseId = r.PurchaseId,
             CylinderLoanId = r.CylinderLoanId,
+            OpeningBalanceId = r.OpeningBalanceId,
             Counterparty = string.IsNullOrWhiteSpace(r.Counterparty) ? "" : CatalogAccess.Text(r.Counterparty, 120),
             Reason = CatalogAccess.Text(r.Reason, 300),
             ActorId = scope.UserId,
@@ -171,7 +172,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
         };
         if (r.CustomerId.HasValue && !await db.Customers.AnyAsync(x => x.Id == r.CustomerId && x.Active, ct) || r.SupplierId.HasValue && !await db.Suppliers.AnyAsync(x => x.Id == r.SupplierId && x.Active, ct)) throw new AccessException(404, "Counterparty not found.");
         if (r.CustomerId.HasValue && r.SupplierId.HasValue) throw new AccessException(400, "Select one counterparty.");
-        if (r.Kind != "Allocate" && (r.SaleId.HasValue || r.PurchaseId.HasValue || r.CylinderLoanId.HasValue)) throw new AccessException(400, "Invoice references apply only to allocations.");
+        if (r.Kind != "Allocate" && (r.SaleId.HasValue || r.PurchaseId.HasValue || r.CylinderLoanId.HasValue || r.OpeningBalanceId.HasValue)) throw new AccessException(400, "Invoice references apply only to allocations.");
         if (r.Kind != "Expense" && r.CategoryId.HasValue) throw new AccessException(400, "Category applies only to expenses.");
         if (r.Kind is not ("Allocate" or "LoanRepayment") && r.ParentId.HasValue) throw new AccessException(400, "Unexpected parent reference.");
         if (r.Kind != "Transfer" && r.DestinationAccountId.HasValue) throw new AccessException(400, "Unexpected destination account.");
@@ -235,7 +236,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
     }
     private async Task AllocateAsync(FinanceEntry e, bool reverse, CancellationToken ct)
     {
-        if (new[] { e.SaleId, e.PurchaseId, e.CylinderLoanId }.Count(x => x.HasValue) != 1) throw new AccessException(400, "Select one invoice matching the payment counterparty.");
+        if (new[] { e.SaleId, e.PurchaseId, e.CylinderLoanId, e.OpeningBalanceId }.Count(x => x.HasValue) != 1) throw new AccessException(400, "Select one invoice matching the payment counterparty.");
         if (e.CustomerId.HasValue && e.SaleId.HasValue)
         {
             var doc = await db.SaleDocuments.SingleOrDefaultAsync(x => x.Id == e.SaleId && x.CustomerId == e.CustomerId && x.BranchId == e.BranchId, ct) ?? throw new AccessException(404, "Customer invoice not found.");
@@ -298,7 +299,110 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
                 RequestHash = e.RequestHash
             });
         }
+        else if (e.OpeningBalanceId.HasValue)
+        {
+            var doc = await db.OpeningBalances.SingleOrDefaultAsync(x => x.Id == e.OpeningBalanceId && x.BranchId == e.BranchId
+                && (e.CustomerId.HasValue ? x.CustomerId == e.CustomerId : x.SupplierId == e.SupplierId), ct) ?? throw new AccessException(404, "Opening balance not found.");
+            var rows = await db.OpeningBalanceEntries.Where(x => x.OpeningBalanceId == doc.Id).ToArrayAsync(ct);
+            if (rows.Any(x => x.Kind == "Reversal")) throw new AccessException(409, "Opening balance is reversed.");
+            if (!reverse && rows.Sum(x => x.Amount) < -e.Amount) throw new AccessException(409, "Allocation exceeds the opening balance.");
+            db.OpeningBalanceEntries.Add(new OpeningBalanceEntry
+            {
+                TenantId = scope.TenantId,
+                BranchId = e.BranchId,
+                OpeningBalanceId = doc.Id,
+                Kind = reverse ? "AllocationReversal" : "Allocation",
+                Amount = e.Amount,
+                ReversesId = reverse ? rows.Single(x => x.IdempotencyKey == "internal:" + e.ReversesId).Id : null,
+                ActorId = scope.UserId,
+                Reason = e.Reason,
+                PostedAt = e.PostedAt,
+                BusinessDate = e.BusinessDate,
+                IdempotencyKey = "internal:" + e.Id,
+                RequestHash = e.RequestHash
+            });
+        }
         else throw new AccessException(400, "Select one invoice matching the payment counterparty.");
+    }
+
+    // Opening balances carry pre-Gas365 receivables and payables. They move no cash and age from the original date.
+    public async Task<OpeningBalanceDto> CreateOpeningAsync(OpeningBalanceRequest r, CancellationToken ct)
+    {
+        Require(Permissions.FinanceManage); var hash = Hash(r); Key(r.IdempotencyKey);
+        await using var tx = await db.Database.BeginTransactionAsync(ct); await LockAsync(ct); await BranchAsync(r.BranchId, ct);
+        var prior = await db.OpeningBalanceEntries.SingleOrDefaultAsync(x => x.IdempotencyKey == r.IdempotencyKey, ct);
+        if (prior is not null) { if (prior.RequestHash != hash) throw new AccessException(409, "Command key already used for different contents."); return await OpeningAsync(prior.OpeningBalanceId, ct); }
+        if (r.CustomerId.HasValue == r.SupplierId.HasValue) throw new AccessException(400, "Select one customer or supplier.");
+        if (r.CustomerId.HasValue ? !await db.Customers.AnyAsync(x => x.Id == r.CustomerId && x.Active, ct) : !await db.Suppliers.AnyAsync(x => x.Id == r.SupplierId && x.Active, ct))
+            throw new AccessException(404, "Counterparty not found.");
+        CatalogAccess.Decimal(r.Amount, 2, 1000000000); if (r.Amount <= 0) throw new AccessException(400, "Amount must be positive.");
+        var today = await TodayAsync(ct);
+        if (r.OriginalDate > today || r.OriginalDate < new DateOnly(2000, 1, 1)) throw new AccessException(400, "The original invoice date must be in the past and after 2000.");
+        var doc = new OpeningBalance
+        {
+            TenantId = scope.TenantId,
+            BranchId = r.BranchId,
+            CustomerId = r.CustomerId,
+            SupplierId = r.SupplierId,
+            Reference = string.IsNullOrWhiteSpace(r.Reference) ? "" : CatalogAccess.Text(r.Reference, 120),
+            OriginalDate = r.OriginalDate,
+            Amount = r.Amount
+        };
+        db.OpeningBalances.Add(doc);
+        db.OpeningBalanceEntries.Add(new OpeningBalanceEntry
+        {
+            TenantId = scope.TenantId,
+            BranchId = r.BranchId,
+            OpeningBalanceId = doc.Id,
+            Kind = "Opening",
+            Amount = r.Amount,
+            ActorId = scope.UserId,
+            Reason = CatalogAccess.Text(r.Reason, 300),
+            BusinessDate = today,
+            IdempotencyKey = r.IdempotencyKey,
+            RequestHash = hash
+        });
+        Audit("finance.opening_balance", doc.Id); await db.SaveChangesAsync(ct); await tx.CommitAsync(ct);
+        return await OpeningAsync(doc.Id, ct);
+    }
+
+    public async Task<OpeningBalanceDto> ReverseOpeningAsync(Guid id, FinanceReverseRequest r, CancellationToken ct)
+    {
+        Require(Permissions.FinanceReverse); Require(Permissions.FinanceManage); var hash = Hash(new { id, r }); Key(r.IdempotencyKey);
+        await using var tx = await db.Database.BeginTransactionAsync(ct); await LockAsync(ct);
+        var prior = await db.OpeningBalanceEntries.SingleOrDefaultAsync(x => x.IdempotencyKey == r.IdempotencyKey, ct);
+        if (prior is not null) { if (prior.RequestHash != hash) throw new AccessException(409, "Command key already used for different contents."); return await OpeningAsync(prior.OpeningBalanceId, ct); }
+        var doc = await db.OpeningBalances.SingleOrDefaultAsync(x => x.Id == id, ct) ?? throw new AccessException(404, "Opening balance not found.");
+        await BranchAsync(doc.BranchId, ct);
+        var rows = await db.OpeningBalanceEntries.Where(x => x.OpeningBalanceId == id).ToArrayAsync(ct);
+        if (rows.Any(x => x.Kind == "Reversal")) throw new AccessException(409, "Opening balance already reversed.");
+        if (rows.Sum(x => x.Amount) != doc.Amount) throw new AccessException(409, "Reverse allocations to this opening balance first.");
+        var opening = rows.Single(x => x.Kind == "Opening");
+        db.OpeningBalanceEntries.Add(new OpeningBalanceEntry
+        {
+            TenantId = scope.TenantId,
+            BranchId = doc.BranchId,
+            OpeningBalanceId = id,
+            Kind = "Reversal",
+            Amount = -doc.Amount,
+            ReversesId = opening.Id,
+            ActorId = scope.UserId,
+            Reason = CatalogAccess.Text(r.Reason, 300),
+            BusinessDate = await TodayAsync(ct),
+            IdempotencyKey = r.IdempotencyKey,
+            RequestHash = hash
+        });
+        Audit("finance.opening_reversed", id); await db.SaveChangesAsync(ct); await tx.CommitAsync(ct);
+        return await OpeningAsync(id, ct);
+    }
+
+    private async Task<OpeningBalanceDto> OpeningAsync(Guid id, CancellationToken ct)
+    {
+        var doc = await db.OpeningBalances.AsNoTracking().SingleAsync(x => x.Id == id, ct);
+        var rows = await db.OpeningBalanceEntries.AsNoTracking().Where(x => x.OpeningBalanceId == id).ToArrayAsync(ct);
+        var outstanding = rows.Sum(x => x.Amount);
+        var status = rows.Any(x => x.Kind == "Reversal") ? "Reversed" : outstanding == 0 ? "Settled" : outstanding < doc.Amount ? "Partly settled" : "Outstanding";
+        return new(doc.Id, doc.BranchId, doc.CustomerId, doc.SupplierId, doc.Reference, doc.OriginalDate, doc.Amount, outstanding, status);
     }
     public async Task<FinanceEntryDto> ReverseAsync(Guid id, FinanceReverseRequest r, CancellationToken ct)
     {
@@ -325,6 +429,7 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
             SaleId = original.SaleId,
             PurchaseId = original.PurchaseId,
             CylinderLoanId = original.CylinderLoanId,
+            OpeningBalanceId = original.OpeningBalanceId,
             Counterparty = original.Counterparty,
             ReversesId = id,
             ActorId = scope.UserId,
@@ -440,6 +545,16 @@ public sealed class FinanceAccess(Gas365DbContext db, TenantScope scope) : IFina
                 if (due is not null) lines.Add(new(loan, "Cylinder settlement", due.BusinessDate, due.Receivable, rows.Sum(x => x.Receivable), FinanceCalculation.AgingBucket(due.BusinessDate, asOf), "CylinderLoan"));
             }
         }
+        var openings = await db.OpeningBalances.Where(x => x.BranchId == branchId && (supplier ? x.SupplierId == partyId : x.CustomerId == partyId)).ToArrayAsync(ct);
+        var openingIds = openings.Select(x => x.Id).ToArray();
+        var openingEntries = await db.OpeningBalanceEntries.Where(x => openingIds.Contains(x.OpeningBalanceId) && x.BusinessDate <= asOf).ToArrayAsync(ct);
+        foreach (var doc in openings)
+        {
+            var rows = openingEntries.Where(x => x.OpeningBalanceId == doc.Id).ToArray();
+            if (rows.Any(x => x.Kind == "Opening"))
+                lines.Add(new(doc.Id, "Opening balance" + (doc.Reference.Length > 0 ? " · " + doc.Reference : ""), doc.OriginalDate, doc.Amount, rows.Sum(x => x.Amount), FinanceCalculation.AgingBucket(doc.OriginalDate, asOf), "Opening"));
+        }
+        ledger.AddRange(openingEntries.Select(x => new CreditLedgerLineDto(x.Id, "Opening " + x.Kind, x.BusinessDate, x.Amount, x.Reason)));
         var money = await db.FinanceEntries.Where(x => x.BranchId == branchId && (supplier ? x.SupplierId == partyId : x.CustomerId == partyId) && x.BusinessDate <= asOf).ToArrayAsync(ct);
         var unapplied = money.Sum(x => x.Amount);
         // Allocation entries in invoice journals already reduce their balance. Their finance counterpart releases unapplied credit.

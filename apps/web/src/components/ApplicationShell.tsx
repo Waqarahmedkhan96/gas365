@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { BranchContext } from './branch-context';
 import { Input } from './ui/form';
 import { Modal, ConfirmButton } from './ui/feedback';
+import { NotificationBell } from '../NotificationsPage';
 
 function Mark({ name }: { name: string }) {
   const paths: Record<string, ReactNode> = {
@@ -15,6 +16,16 @@ function Mark({ name }: { name: string }) {
         <rect x="14" y="3" width="7" height="7" rx="1" />
         <rect x="3" y="14" width="7" height="7" rx="1" />
         <rect x="14" y="14" width="7" height="7" rx="1" />
+      </>
+    ),
+    notifications: (
+      <>
+        <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Zm4 4h4" />
+      </>
+    ),
+    imports: (
+      <>
+        <path d="M12 3v12m-5-5 5 5 5-5M4 21h16" />
       </>
     ),
     reports: (
@@ -149,27 +160,11 @@ export function ApplicationShell({
               <span>{page.label}</span>
             </NavLink>
           ))}
-        <p className="nav-group mt-6">OPERATIONS</p>
-        <p className="nav-help">
-          Operational modules will appear here as they become available.
-        </p>
         {user.isOwner && (
-          <details className="upcoming-nav">
+          <details className="upcoming-nav mt-6">
             <summary>Upcoming modules</summary>
             <ul>
-              {[
-                'Dashboard',
-                'Sales',
-                'Purchases',
-                'Customers',
-                'Suppliers',
-                'Credit / Udhaar',
-                'Cash & banking',
-                'Expenses & loans',
-                'Deliveries',
-                'Reports',
-                'Billing',
-              ].map((label) => (
+              {['Deliveries', 'Subscription and billing'].map((label) => (
                 <li key={label}>{label}</li>
               ))}
             </ul>
@@ -328,6 +323,7 @@ export function ApplicationShell({
                 </p>
               )}
             </Modal>
+            <NotificationBell user={user} />
             <span className="user-name">{user.name}</span>
             <ConfirmButton
               title="Sign out of Gas365?"
