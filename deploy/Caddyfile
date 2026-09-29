@@ -1,0 +1,9 @@
+# Automatic HTTPS (Let's Encrypt) for the configured domain; HTTP is redirected to HTTPS.
+{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	reverse_proxy web:8080
+}

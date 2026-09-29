@@ -31,15 +31,27 @@ builder.Logging.AddJsonConsole();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.AddAccess();
+// The API sits behind the web proxy (and TLS proxy in production). Only private-network proxies are trusted,
+// so client addresses used for rate limiting and audit come from the edge, not from spoofable headers.
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = builder.Configuration.GetValue("ForwardedHeaders:Limit", 2);
+    options.KnownIPNetworks.Clear(); options.KnownProxies.Clear();
+    foreach (var network in new[] { "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8", "::1/128", "fc00::/7" })
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+});
 
 builder.Services.AddSingleton(services => NpgsqlDataSource.Create(
     services.GetRequiredService<IConfiguration>().GetConnectionString("Database")
     ?? throw new InvalidOperationException("ConnectionStrings:Database must be configured.")));
 builder.Services.AddDbContext<Gas365DbContext>((services, options) =>
     options.UseNpgsql(services.GetRequiredService<NpgsqlDataSource>()));
-builder.Services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgres", tags: ["ready"]);
+builder.Services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgres", tags: ["ready"]).AddCheck<JobsHealthCheck>("jobs", tags: ["ready"]);
 
 var app = builder.Build();
+// Validated on the final configuration from every source, before the API serves any request.
+ProductionConfiguration.Validate(app.Configuration, app.Environment);
 _ = app.Services.GetRequiredService<NpgsqlDataSource>();
 if (args.Contains("--migrate"))
 {
@@ -47,6 +59,7 @@ if (args.Contains("--migrate"))
     await migrationScope.ServiceProvider.GetRequiredService<Gas365DbContext>().Database.MigrateAsync();
     return;
 }
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseAccess();
 app.Use(async (context, next) =>
@@ -65,7 +78,7 @@ app.MapGet("/api/health", async (HealthCheckService healthChecks, CancellationTo
 {
     var report = await healthChecks.CheckHealthAsync(cancellationToken);
     return Results.Json(HealthResponse.From(report), statusCode:
-        report.Status == HealthStatus.Healthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+        report.Status == HealthStatus.Unhealthy ? StatusCodes.Status503ServiceUnavailable : StatusCodes.Status200OK);
 })
     .WithName("GetPlatformHealth")
     .WithSummary("Check API and PostgreSQL readiness")

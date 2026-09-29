@@ -21,6 +21,8 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for the secret scan.
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
@@ -62,6 +64,12 @@ jobs:
           pnpm audit --audit-level high
           dotnet list package --vulnerable --include-transitive --format json > artifacts/nuget-audit.json
           node scripts/check-nuget-audit.mjs
+      - name: Container and secret scans
+        run: |
+          for image in gas365-api gas365-web; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.67.2 image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$image:$IMAGE_TAG"
+          done
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.28.0 git /repo --no-banner --redact
       - name: Capture service status
         if: always()
         run: |

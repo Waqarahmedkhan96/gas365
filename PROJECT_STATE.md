@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 10 — Subscriptions, Onboarding and Platform Administration: complete and locally verified on 2026-09-29; see the latest checkpoint at the end of this file. Phases 00–09 are complete. Earlier in-progress paragraphs below are historical.
+Phase 11 — Production Hardening and Staging: prepared and locally verified on 2026-09-29, not deployed; see the latest checkpoint at the end of this file. Phases 00–10 are complete. Earlier in-progress paragraphs below are historical.
 
 ## Previous phase checkpoint
 
@@ -142,3 +142,9 @@ Audit timeline, corrections explorer, validated and resumable imports, opening b
 ## Phase 10 completion checkpoint — 2026-09-29
 
 Subscriptions, onboarding, usage metering, platform administration and owner-granted support access are complete and locally verified: 153 backend, 23 frontend and 28/28 browser tests, plus the remaining quality gates. See the [Phase 10 report](docs/PHASE_10_REPORT.md) and [platform contract](docs/PLATFORM.md). Apply migration `20260929142905_SubscriptionsAndPlatform` before API startup. Owner decisions recorded 2026-09-29: three plans with prices set later; 14-day trial then read-only; super admin by server configuration (`Platform:AdminEmails`); owner-granted, time-limited support access. Next: Phase 11 (production hardening and staging). This needs owner decisions on hosting provider, domain and production email, and production deployment requires explicit authorization.
+
+## Phase 11 completion checkpoint — 2026-09-29
+
+Hardening and staging preparation are complete and locally verified: 157 backend, 23 frontend and 30/30 browser tests; load, restore, scan and accessibility evidence. See the [Phase 11 report](docs/PHASE_11_REPORT.md), [deployment runbook](docs/DEPLOYMENT.md) and [launch readiness](docs/LAUNCH_READINESS.md). No deployment was performed. Chosen setup (owner delegated, 2026-09-29): one portable Docker Compose stack with Caddy HTTPS on a Linux VPS; EU staging (Denmark testing) first, a Pakistani production server later; domain `gas365.pk` to be purchased.
+
+Next action: the owner provisions the staging server, domain, SMTP, off-site backup storage and GitHub environments following the runbook; then the first staging deployment and staging acceptance. Production requires explicit authorization through the approval-gated workflow. Phase 12 (pilot) follows staging acceptance and needs pilot businesses.

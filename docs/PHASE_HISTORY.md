@@ -245,3 +245,13 @@ Closed two Phase 07 limitations that no later phase covered: customer advances c
 **Migration impact:** apply `20260929142905_SubscriptionsAndPlatform`. It seeds the plans and grandfathers existing businesses.
 
 **Limitations:** manual payments only; transaction limits are metered but not enforced; admin MFA is in Phase 11. Details are in the [Phase 10 report](PHASE_10_REPORT.md) and [platform contract](PLATFORM.md).
+
+## Phase 11 — Production Hardening and Staging Preparation — 2026-09-29
+
+**Delivered:** Security headers; trusted forwarded headers; a per-user API rate limit; fail-fast production configuration; a data-retention job; degraded-readiness job health; a portable production Compose stack with Caddy HTTPS; deploy, backup and restore scripts with automatic rollback; CI image and secret scans; and an approval-gated release workflow. Also a restore-verification tool, a load-test tool and a full-site accessibility audit. Nothing was deployed.
+
+**Findings fixed:** imports over 32 KB blocked at the proxy; rate limits keyed on the proxy address; 62 fixable image vulnerabilities (now 0); degraded jobs returning 503.
+
+**Verification in the current chat:** 157 backend, 23 frontend and 30/30 browser tests; load p95 ≤ 235 ms at 12 concurrent users; restore of 243 businesses verified; Trivy, gitleaks and dependency audits clean; deployment definitions validated.
+
+**Next:** owner provisioning (servers, domain, SMTP, backups, GitHub environments) for a staging deployment, then Phase 12 pilot. Details are in the [Phase 11 report](PHASE_11_REPORT.md), [deployment runbook](DEPLOYMENT.md) and [launch readiness](LAUNCH_READINESS.md).

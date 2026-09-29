@@ -21,7 +21,16 @@ public sealed class PlatformTests(DatabaseFixture database) : IClassFixture<Data
         {
             builder.UseEnvironment(environment);
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
-                new Dictionary<string, string?> { ["ConnectionStrings:Database"] = connection ?? database.ConnectionString }));
+                new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:Database"] = connection ?? database.ConnectionString,
+                    // Non-development environments require complete settings to start.
+                    ["DataProtection:KeyPath"] = Path.Combine(Path.GetTempPath(), "gas365-test-keys"),
+                    ["Mail:Host"] = "smtp.example.test",
+                    ["Mail:From"] = "noreply@example.test",
+                    ["Mail:PublicOrigin"] = "https://gas365.example.test",
+                    ["Platform:AdminEmails"] = "admin@example.test"
+                }));
         });
 
     [Fact]

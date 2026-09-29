@@ -22,3 +22,6 @@ test-results/
 *.log
 artifacts/
 *.tsbuildinfo
+
+# Server-side database backups
+deploy/backups/
