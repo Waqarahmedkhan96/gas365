@@ -51,6 +51,9 @@ public sealed class PlatformAccess(Gas365DbContext db, TenantScope scope, UserMa
         return (await db.Plans.AsNoTracking().OrderBy(p => p.SortOrder).ToArrayAsync(ct)).Select(SubscriptionAccess.Dto).ToArray();
     }
 
+    public async Task<PlanDto[]> PublicPlansAsync(CancellationToken ct) =>
+        (await db.Plans.AsNoTracking().Where(p => p.Active).OrderBy(p => p.SortOrder).ToArrayAsync(ct)).Select(SubscriptionAccess.Dto).ToArray();
+
     public async Task<PlanDto> UpdatePlanAsync(Guid id, PlanUpdateRequest r, CancellationToken ct)
     {
         await RequireAdminAsync();

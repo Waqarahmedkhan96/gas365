@@ -69,6 +69,18 @@ public sealed partial class CustomerTests
     }
 
     [Fact]
+    public async Task PublicPlanCatalogueIsAnonymousReadOnlyAndCarriesServerYearlyPrices()
+    {
+        using var client = Client();
+        var plans = await Read<PlanDto[]>(await client.GetAsync("/api/public/plans"));
+        Assert.NotEmpty(plans);
+        Assert.All(plans, p => Assert.True(p.Active));
+        Assert.All(plans, p => Assert.Equal(SubscriptionRules.YearlyPrice(p.MonthlyPrice), p.YearlyPrice));
+        using var write = await client.PostAsync("/api/public/plans", null);
+        Assert.False(write.IsSuccessStatusCode);
+    }
+
+    [Fact]
     public async Task YearlyRequestsChargeTenMonthsForTwelveAndReachTheAdministrator()
     {
         var owner = await Owner(); using var oc = owner.Client;

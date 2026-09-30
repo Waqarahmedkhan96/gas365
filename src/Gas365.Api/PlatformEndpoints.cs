@@ -15,6 +15,9 @@ public static class PlatformEndpoints
         workspace.MapGet("/onboarding", (ISubscriptionAccess s, CancellationToken ct) => s.OnboardingAsync(ct));
         workspace.MapPut("/onboarding", async (OnboardingRequest r, ISubscriptionAccess s, CancellationToken ct) => { await s.SetOnboardingAsync(r, ct); return Results.NoContent(); });
 
+        // Anonymous, read-only plan catalogue for the public website; covered by the global per-address rate limit.
+        app.MapGet("/api/public/plans", (IPlatformAccess s, CancellationToken ct) => s.PublicPlansAsync(ct)).WithTags("Public website").AllowAnonymous();
+
         // Platform routes carry no X-Workspace header; the service authorizes the platform administrator itself.
         var platform = app.MapGroup("/api/platform").WithTags("Platform administration").RequireAuthorization();
         platform.MapGet("/tenants", (IPlatformAccess s, CancellationToken ct, string? search = null, int page = 1) => s.TenantsAsync(search, page, ct));
