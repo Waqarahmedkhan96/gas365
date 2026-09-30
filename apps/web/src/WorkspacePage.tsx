@@ -302,6 +302,7 @@ export function WorkspacePage() {
       <PageHeading
         title={currentPage?.label || 'Page not found'}
         description={currentPage?.description || 'This page is not available.'}
+        icon={currentPage?.icon}
       />
       {!currentPage ? (
         <PageState

@@ -173,7 +173,9 @@ test('component showcase covers confirmation, form errors, pagination and access
     page.getByRole('textbox', { name: /Sample name/ }),
   ).toHaveAttribute('aria-invalid', 'true');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await expect(page.getByText('Page 2 of 2 · 3 records')).toBeVisible();
+  await expect(
+    page.getByText('Showing 3–3 of 3 records · Page 2 of 2'),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Preview confirmation' }).click();
   await expect(
     page.getByRole('button', { name: 'Cancel', exact: true }),

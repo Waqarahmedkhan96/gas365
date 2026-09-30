@@ -1,106 +1,40 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import { DropdownMenu } from 'radix-ui';
+import {
+  Building2,
+  ChevronDown,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+} from 'lucide-react';
 import type { Branch, Me, Tenant } from '../access-api';
-import { canVisit, pages, pagePath } from '../navigation';
+import {
+  canVisit,
+  groupOrder,
+  pageGroups,
+  pages,
+  pagePath,
+} from '../navigation';
 import { Button } from './ui/button';
 import { BranchContext } from './branch-context';
 import { Input } from './ui/form';
-import { Modal, ConfirmButton } from './ui/feedback';
+import { ConfirmDialog, Modal } from './ui/feedback';
+import { BrandMark, PageIcon } from './icons';
 import { NotificationBell } from '../NotificationsPage';
 
-function Mark({ name }: { name: string }) {
-  const paths: Record<string, ReactNode> = {
-    overview: (
-      <>
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </>
-    ),
-    subscription: (
-      <>
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="M3 10h18M7 15h4" />
-      </>
-    ),
-    platform: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
-      </>
-    ),
-    notifications: (
-      <>
-        <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Zm4 4h4" />
-      </>
-    ),
-    imports: (
-      <>
-        <path d="M12 3v12m-5-5 5 5 5-5M4 21h16" />
-      </>
-    ),
-    reports: (
-      <>
-        <path d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
-      </>
-    ),
-    branches: (
-      <>
-        <path d="M4 21V8l8-5 8 5v13M2 21h20M9 21v-7h6v7M8 9h1m6 0h1" />
-      </>
-    ),
-    team: (
-      <>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3 21v-3a6 6 0 0 1 12 0v3M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5" />
-      </>
-    ),
-    roles: (
-      <>
-        <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" />
-        <path d="m8 12 3 3 5-6" />
-      </>
-    ),
-    sessions: (
-      <>
-        <rect x="3" y="4" width="18" height="13" rx="2" />
-        <path d="M8 21h8m-4-4v4" />
-      </>
-    ),
-    audit: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 6v6l4 3" />
-      </>
-    ),
-    settings: (
-      <>
-        <path d="M4 7h16M4 17h16" />
-        <circle cx="9" cy="7" r="3" />
-        <circle cx="16" cy="17" r="3" />
-      </>
-    ),
-    showcase: (
-      <>
-        <path d="m12 2 10 6-10 6L2 8l10-6Zm-10 11 10 6 10-6M2 18l10 5 10-5" />
-      </>
-    ),
-  };
+const collapsedKey = 'gas365:sidebar-collapsed';
+
+function initials(name: string) {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {paths[name] || paths.overview}
-    </svg>
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]!.toUpperCase())
+      .join('') || '?'
   );
 }
 
@@ -127,7 +61,15 @@ export function ApplicationShell({
   const previousPath = useRef(location.pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(collapsedKey) === '1';
+    } catch {
+      return false;
+    }
+  });
   const available = pages.filter((page) => canVisit(page, user));
   const activeBranches = branches.filter((b) => b.active);
   const [branchId, setBranchId] = useState(() => {
@@ -141,6 +83,7 @@ export function ApplicationShell({
     activeBranches.find((b) => b.id === branchId)?.id ||
     activeBranches[0]?.id ||
     '';
+  const can = (permission: string) => user.permissions.includes(permission);
   useEffect(() => {
     const page = pages.find((p) => pagePath(p.id) === location.pathname);
     document.title = `${page?.label || 'Workspace'} · Gas365`;
@@ -160,78 +103,88 @@ export function ApplicationShell({
     return () => window.removeEventListener('keydown', shortcut);
   }, []);
 
+  function toggleSidebar() {
+    setCollapsed((value) => {
+      try {
+        localStorage.setItem(collapsedKey, value ? '0' : '1');
+      } catch {
+        /* The preference stays in memory for this visit. */
+      }
+      return !value;
+    });
+  }
+
   function navigation(close?: () => void) {
+    const order = (id: string, group: string) => {
+      const index = groupOrder[group]?.indexOf(id) ?? -1;
+      return index < 0 ? 99 : index;
+    };
     return (
       <nav aria-label="Workspace navigation" className="shell-nav">
-        <p className="nav-group">WORKSPACE</p>
-        {available
-          .filter((p) => p.id !== 'showcase')
-          .map((page) => (
-            <NavLink key={page.id} end to={pagePath(page.id)} onClick={close}>
-              <Mark name={page.icon} />
-              <span>{page.label}</span>
-            </NavLink>
-          ))}
-        {user.isOwner && (
-          <details className="upcoming-nav mt-6">
-            <summary>Upcoming modules</summary>
-            <ul>
-              {['Deliveries', 'Subscription and billing'].map((label) => (
-                <li key={label}>{label}</li>
-              ))}
-            </ul>
-          </details>
-        )}
-        {user.isOwner && (
-          <>
-            <p className="nav-group mt-6">RESOURCES</p>
-            <NavLink to="/workspace/showcase" onClick={close}>
-              <Mark name="showcase" />
-              <span>Component showcase</span>
-            </NavLink>
-          </>
-        )}
+        {pageGroups.map((group) => {
+          const items = available
+            .filter((page) => page.group === group.id)
+            .sort((a, b) => order(a.id, group.id) - order(b.id, group.id));
+          if (!items.length) return null;
+          const headingId = `nav-group-${group.id}${close ? '-drawer' : ''}`;
+          return (
+            <div key={group.id} className="nav-section">
+              <p className="nav-group" id={headingId}>
+                {group.label}
+              </p>
+              <ul aria-labelledby={headingId}>
+                {items.map((page) => (
+                  <li key={page.id}>
+                    <NavLink
+                      end
+                      to={pagePath(page.id)}
+                      onClick={close}
+                      title={collapsed && !close ? page.label : undefined}
+                    >
+                      <PageIcon name={page.icon} />
+                      <span className="nav-label">{page.label}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
     );
   }
 
   return (
-    <div className="application-shell">
+    <div
+      className="application-shell"
+      data-sidebar={collapsed ? 'collapsed' : 'expanded'}
+    >
       <a className="skip-link" href="#workspace-content">
         Skip to main content
       </a>
-      <aside className="desktop-sidebar">
-        <Link to="/workspace" className="shell-brand">
-          Gas<span>365</span>
-          <small>BUSINESS WORKSPACE</small>
+      <aside className="desktop-sidebar" id="workspace-sidebar">
+        <Link to="/workspace" className="shell-brand" aria-label="Gas365 home">
+          <BrandMark />
+          <span className="brand-word" aria-hidden="true">
+            Gas<span>365</span>
+          </span>
         </Link>
+        {navigation()}
         <div className="sidebar-business">
           <span className="business-monogram" aria-hidden="true">
             {tenant.name.slice(0, 1).toUpperCase()}
           </span>
-          <div>
+          <div className="sidebar-business-text">
             <strong>{tenant.name}</strong>
             <span>{user.isOwner ? 'Owner workspace' : 'Team workspace'}</span>
           </div>
         </div>
-        {navigation()}
-        <div className="sidebar-footer">
-          Built around your business.
-          <br />
-          <Link to="/">Platform status</Link>
-        </div>
       </aside>
       <div className="shell-body">
-        <section className="mobile-topline" aria-label="Business identity">
-          <Link to="/workspace">
-            Gas<span>365</span>
-          </Link>
-          <strong>{tenant.name}</strong>
-        </section>
         <header className="shell-header">
           <div className="mobile-menu">
             <Modal
-              title="Your workspace"
+              title="Gas365"
               description={tenant.name}
               open={mobileOpen}
               onOpenChange={setMobileOpen}
@@ -242,57 +195,89 @@ export function ApplicationShell({
                   size="icon"
                   aria-label="Open navigation"
                 >
-                  ☰
+                  <Menu aria-hidden="true" size={20} />
                 </Button>
               }
             >
               {navigation(() => setMobileOpen(false))}
             </Modal>
           </div>
-          <label className="branch-picker">
-            Active branch
-            <select
-              aria-describedby="branch-context-note"
-              value={selectedBranch}
-              disabled={!activeBranches.length}
-              onChange={(event) => {
-                setBranchId(event.target.value);
-                try {
-                  sessionStorage.setItem(
-                    `branch:${tenant.tenantId}`,
-                    event.target.value,
-                  );
-                } catch {
-                  /* Selection remains available in memory. */
-                }
-              }}
-            >
-              {activeBranches.length ? (
-                activeBranches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))
-              ) : (
-                <option value="">No assigned branches</option>
-              )}
-            </select>
-          </label>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sidebar-toggle"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-controls="workspace-sidebar"
+            aria-expanded={!collapsed}
+            onClick={toggleSidebar}
+          >
+            {collapsed ? (
+              <PanelLeftOpen aria-hidden="true" size={20} />
+            ) : (
+              <PanelLeftClose aria-hidden="true" size={20} />
+            )}
+          </Button>
+          <div className="header-business">
+            <span className="header-business-icon" aria-hidden="true">
+              <Building2 size={20} />
+            </span>
+            <div>
+              <strong>{tenant.name}</strong>
+              <span>{tenant.timeZone} · PKR</span>
+            </div>
+          </div>
           <div className="shell-header-actions">
+            <label className="branch-picker">
+              <span>Active branch</span>
+              <select
+                aria-describedby="branch-context-note"
+                value={selectedBranch}
+                disabled={!activeBranches.length}
+                onChange={(event) => {
+                  setBranchId(event.target.value);
+                  try {
+                    sessionStorage.setItem(
+                      `branch:${tenant.tenantId}`,
+                      event.target.value,
+                    );
+                  } catch {
+                    /* Selection remains available in memory. */
+                  }
+                }}
+              >
+                {activeBranches.length ? (
+                  activeBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No assigned branches</option>
+                )}
+              </select>
+            </label>
             <Modal
               title="Go to a page"
               onOpenAutoFocus={(event) => {
                 event.preventDefault();
                 searchInput.current?.focus();
               }}
-              description="Search the pages you can access. Business record search will be added with operational modules."
+              description="Search the pages you can access."
               open={searchOpen}
               onOpenChange={setSearchOpen}
               trigger={
-                <Button variant="outline" aria-label="Search pages">
-                  <span aria-hidden="true">⌕</span>
-                  <span className="search-label">Search pages</span>
-                  <kbd className="search-label">Ctrl K</kbd>
+                <Button
+                  variant="outline"
+                  className="search-trigger"
+                  aria-label="Search pages"
+                >
+                  <Search aria-hidden="true" size={18} />
+                  <span className="search-label" aria-hidden="true">
+                    Search
+                  </span>
+                  <kbd className="search-label" aria-hidden="true">
+                    Ctrl K
+                  </kbd>
                 </Button>
               }
             >
@@ -320,9 +305,8 @@ export function ApplicationShell({
                           setQuery('');
                         }}
                       >
-                        <Mark name={page.icon} />
+                        <PageIcon name={page.icon} />
                         {page.label}
-                        <span aria-hidden="true">↗</span>
                       </Link>
                     </li>
                   ))}
@@ -336,15 +320,70 @@ export function ApplicationShell({
               )}
             </Modal>
             <NotificationBell user={user} />
-            <span className="user-name">{user.name}</span>
-            <ConfirmButton
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  type="button"
+                  className="account-trigger"
+                  aria-label={`${user.name}, account menu`}
+                  disabled={busy}
+                >
+                  <span className="avatar" aria-hidden="true">
+                    {initials(user.name)}
+                  </span>
+                  <span className="account-name" aria-hidden="true">
+                    {user.name}
+                  </span>
+                  <ChevronDown aria-hidden="true" size={16} />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  className="menu-panel"
+                  align="end"
+                  sideOffset={8}
+                >
+                  <DropdownMenu.Label className="menu-identity">
+                    <strong>{user.name}</strong>
+                    <span>{user.email}</span>
+                  </DropdownMenu.Label>
+                  <DropdownMenu.Separator className="menu-separator" />
+                  <DropdownMenu.Item asChild className="menu-item">
+                    <Link to="/workspace/sessions">
+                      <PageIcon name="sessions" /> Sessions
+                    </Link>
+                  </DropdownMenu.Item>
+                  {can('tenant.manage') && (
+                    <>
+                      <DropdownMenu.Item asChild className="menu-item">
+                        <Link to="/workspace/subscription">
+                          <PageIcon name="subscription" /> Subscription
+                        </Link>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item asChild className="menu-item">
+                        <Link to="/workspace/settings">
+                          <PageIcon name="settings" /> Business settings
+                        </Link>
+                      </DropdownMenu.Item>
+                    </>
+                  )}
+                  <DropdownMenu.Separator className="menu-separator" />
+                  <DropdownMenu.Item
+                    className="menu-item danger"
+                    onSelect={() => setSignOutOpen(true)}
+                  >
+                    <LogOut aria-hidden="true" size={18} /> Sign out
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+            <ConfirmDialog
               title="Sign out of Gas365?"
               description="This session will end. You can sign in again whenever you need."
+              open={signOutOpen}
+              onOpenChange={setSignOutOpen}
               onConfirm={onSignOut}
-              disabled={busy}
-            >
-              Sign out
-            </ConfirmButton>
+            />
           </div>
         </header>
         {user.workspaces.length > 1 && (
@@ -380,7 +419,7 @@ export function ApplicationShell({
             Inventory follows the active branch. Business settings apply to the
             whole workspace.
           </span>
-          <span>{tenant.timeZone} · PKR</span>
+          <span>Gas365</span>
         </footer>
       </div>
     </div>

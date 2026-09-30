@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { Bell } from 'lucide-react';
 import { api, type Me } from './access-api';
 import { Button } from './components/ui/button';
 import type { Notification } from './operations-types';
@@ -32,7 +33,7 @@ export function NotificationBell({ user }: { user: Me }) {
       className="notification-bell"
       aria-label={`Notifications, ${unread} unread`}
     >
-      <span aria-hidden="true">🔔</span>
+      <Bell aria-hidden="true" size={20} />
       {unread > 0 && (
         <span className="notification-count" aria-hidden="true">
           {unread > 99 ? '99+' : unread}
