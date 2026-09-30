@@ -389,7 +389,11 @@ export function WorkspacePage() {
           )}
           {(tab === 'purchases' || tab === 'suppliers') && (
             <Suspense fallback={<p role="status">Loading purchasing…</p>}>
-              <PurchasingPage user={user} suppliersOnly={tab === 'suppliers'} />
+              <PurchasingPage
+                user={user}
+                suppliersOnly={tab === 'suppliers'}
+                timeZone={tenant.timeZone}
+              />
             </Suspense>
           )}
           {tab === 'inventory' && (

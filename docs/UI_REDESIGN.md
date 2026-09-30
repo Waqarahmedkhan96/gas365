@@ -10,7 +10,7 @@ The owner approved the plan on 2026-09-30. Work runs on `feature/ui-redesign` in
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | 1. Foundation        | Grouped, collapsible sidebar; top bar with business, branch, search, alerts and account menu; page header with icon and actions; summary cards, status chips, section titles, cards, list toolbar, empty/error states; table footer; sign-in and registration pages | Complete    |
 | 2. Core daily work   | Dashboard; sales list, full-page sale entry with summary panel, sale details and receipt; customers list and profile                                                                                                                                                | Complete    |
-| 3. Stock and buying  | Inventory, price lists, purchases, suppliers                                                                                                                                                                                                                        | Not started |
+| 3. Stock and buying  | Inventory, price lists, purchases, suppliers                                                                                                                                                                                                                        | Complete    |
 | 4. Money             | Cash register, expenses, udhaar, loans and owner funds                                                                                                                                                                                                              | Not started |
 | 5. Reports and admin | Reports (profit and loss layout, day-end cash), subscription plan cards, settings, branches, team, roles, sessions, notifications, imports, activity, platform admin                                                                                                | Not started |
 
@@ -38,6 +38,18 @@ These are not included unless the owner asks, because each needs new functionali
 - `/workspace/sales?new=1` opens the draft editor directly (used by Overview quick actions and the customer profile).
 - Customers: search toolbar, customer cards, add/edit in a dialog, and a full-page profile with balance cards from the server credit ledger (users with finance access; positive means the customer owes), plus tabs for sales, borrowed cylinders and details.
 - Shared helpers moved to `lib/ui-helpers.ts`: `statusTone` (status word to chip tone) and `useViewFocus` (moves focus to a newly opened full-page view).
+
+## Batch 3 notes
+
+- Inventory: summary cards (items, branch warehouses, reorder alerts from the server dashboard, units), a search toolbar, a status-chip table and a full-page item view with warehouse balance cards, the movement ledger and cylinder assets. Setup, item and posting dialogs use two-column forms.
+- Price lists open as a full page with an add/edit price dialog.
+- Purchases mirror Sales: summary cards, a list, a full-page draft editor with a summary panel, and a full-page purchase view with totals, received items, history and side actions (post, pay, pay costs, reverse, replacement draft).
+- Suppliers use cards, a dialog editor and a profile with balance cards and a ledger timeline.
+- `Field` renders checkboxes inline with their label.
+
+## Test changes in Batch 3
+
+- The supplier balance check reads the labelled "Supplier balance" cards instead of a sentence. The figure checked is unchanged.
 
 ## Test changes in Batch 2
 

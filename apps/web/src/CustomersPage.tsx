@@ -256,6 +256,19 @@ export function CustomersPage({
         {editorDialog}
       </>
     );
+  if (pricesOnly && selected)
+    return (
+      <PriceEditor
+        key={`${selected.id}:${selected.version}`}
+        user={user}
+        list={selected}
+        canEdit={canEdit}
+        close={() => {
+          setSelected(null);
+          setNotice('');
+        }}
+      />
+    );
   const total = rows.data?.total ?? 0;
   return (
     <div className="grid gap-6">
@@ -309,7 +322,10 @@ export function CustomersPage({
                 <button
                   type="button"
                   className="table-link"
-                  onClick={() => setSelected(row.original)}
+                  onClick={() => {
+                    setSelected(row.original);
+                    setNotice('');
+                  }}
                 >
                   {row.original.name}
                 </button>
@@ -336,7 +352,9 @@ export function CustomersPage({
                         variant="outline"
                         onClick={() => startEdit(row.original)}
                       >
-                        Edit {row.original.name}
+                        <Pencil aria-hidden="true" size={16} />
+                        Edit
+                        <span className="sr-only"> {row.original.name}</span>
                       </Button>
                     ),
                   },
@@ -439,15 +457,6 @@ export function CustomersPage({
             }
           />
         </section>
-      )}
-      {pricesOnly && selected && (
-        <PriceEditor
-          key={`${selected.id}:${selected.version}`}
-          user={user}
-          list={selected}
-          canEdit={canEdit}
-          close={() => setSelected(null)}
-        />
       )}
     </div>
   );
@@ -641,6 +650,7 @@ function PriceEditor({
   close: () => void;
 }) {
   const cache = useQueryClient();
+  const heading = useViewFocus<HTMLHeadingElement>();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [editor, setEditor] = useState<Price | 'new' | null>(null);
   const [itemSearch, setItemSearch] = useState('');
@@ -697,136 +707,160 @@ function PriceEditor({
     }
   }
   return (
-    <section className="panel grid gap-4" aria-label="Price list prices">
-      <h2>{list.name} — prices</h2>
-      <p>
-        PKR selling price per catalog unit for gas and parts; per cylinder for
-        cylinder modes. Borrowed-cylinder gas prices exclude refundable
-        deposits.
-      </p>
-      <div className="flex flex-wrap gap-3">
+    <section className="detail-page" aria-label="Price list prices">
+      <BackButton onClick={close}>Back to price lists</BackButton>
+      <div className="detail-header">
+        <div>
+          <h2 ref={heading} tabIndex={-1}>
+            {list.name} — prices{' '}
+            <StatusChip tone={list.active ? 'success' : 'neutral'}>
+              {list.active ? 'Active' : 'Inactive'}
+            </StatusChip>
+          </h2>
+          <p>
+            PKR selling price per catalog unit for gas and parts; per cylinder
+            for cylinder modes. Borrowed-cylinder gas prices exclude refundable
+            deposits.
+          </p>
+        </div>
         {canEdit && list.active && (
-          <Button
-            onClick={() => {
-              setEditor('new');
-              setItem(null);
-              setError('');
-            }}
-          >
-            Add price
-          </Button>
-        )}
-        <Button variant="outline" onClick={close}>
-          Close prices
-        </Button>
-      </div>
-      {error && <p role="alert">{error}</p>}
-      {editor && (
-        <form
-          aria-label="Sale price editor"
-          className="grid gap-4"
-          onSubmit={save}
-        >
-          {editor === 'new' ? (
-            <>
-              <Field
-                label="Find item"
-                value={itemSearch}
-                onChange={(e) => {
-                  setItemSearch(e.target.value);
-                  setItemPage(1);
-                }}
-              />
-              {items.isPending && <p role="status">Loading items…</p>}
-              {items.error && <p role="alert">{items.error.message}</p>}
-              <div className="flex flex-wrap gap-2">
-                {items.data?.items
-                  .filter((x) => x.active)
-                  .map((x) => (
-                    <Button
-                      type="button"
-                      key={x.id}
-                      variant={item?.id === x.id ? 'default' : 'outline'}
-                      onClick={() => setItem(x)}
-                    >
-                      {x.sku} — {x.name}
-                    </Button>
-                  ))}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={itemPage === 1}
-                  onClick={() => setItemPage((x) => x - 1)}
-                >
-                  Previous items
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={itemPage * 20 >= (items.data?.total ?? 0)}
-                  onClick={() => setItemPage((x) => x + 1)}
-                >
-                  Next items
-                </Button>
-              </div>
-              {item && (
-                <div className="grid gap-2">
-                  <label htmlFor="sale-price-mode">Sale mode</label>
-                  <select
-                    id="sale-price-mode"
-                    key={item.id}
-                    name="mode"
-                    required
-                  >
-                    {modes[item.kind]?.map((mode) => (
-                      <option key={mode} value={mode}>
-                        {labels[mode]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </>
-          ) : (
-            <p>
-              {editor.sku} — {labels[editor.mode]}
-            </p>
-          )}
-          <Field
-            key={editor === 'new' ? 'new' : editor.id}
-            label="Unit price (PKR)"
-            name="price"
-            type="number"
-            min="0"
-            max="1000000"
-            step="0.000001"
-            required
-            defaultValue={editor === 'new' ? '' : editor.unitPrice}
-          />
-          <Field
-            key={`active-${editor === 'new' ? 'new' : editor.id}`}
-            label="Price active"
-            name="active"
-            type="checkbox"
-            defaultChecked={editor === 'new' || editor.active}
-          />
-          <div className="flex gap-3">
-            <Button disabled={busy || (editor === 'new' && !item)}>
-              Save price
-            </Button>
+          <div className="detail-actions">
             <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => setEditor(null)}
+              onClick={() => {
+                setEditor('new');
+                setItem(null);
+                setError('');
+              }}
             >
-              Cancel price
+              <Plus aria-hidden="true" size={16} /> Add price
             </Button>
           </div>
-        </form>
-      )}
+        )}
+      </div>
+      {!editor && error && <p role="alert">{error}</p>}
+      <Modal
+        title={editor === 'new' ? 'Add price' : 'Edit price'}
+        description="Prices are versioned. Drafts keep the price they were prepared with."
+        open={!!editor}
+        onOpenChange={(open) => {
+          if (!open) setEditor(null);
+        }}
+      >
+        {editor && (
+          <form
+            aria-label="Sale price editor"
+            className="grid gap-4"
+            onSubmit={save}
+          >
+            {editor === 'new' ? (
+              <>
+                <Field
+                  label="Find item"
+                  value={itemSearch}
+                  placeholder="Search by SKU or name"
+                  onChange={(e) => {
+                    setItemSearch(e.target.value);
+                    setItemPage(1);
+                  }}
+                />
+                {items.isPending && <p role="status">Loading items…</p>}
+                {items.error && <p role="alert">{items.error.message}</p>}
+                <div className="option-grid">
+                  {items.data?.items
+                    .filter((x) => x.active)
+                    .map((x) => (
+                      <Button
+                        type="button"
+                        key={x.id}
+                        variant="outline"
+                        className="option-button"
+                        aria-pressed={item?.id === x.id}
+                        onClick={() => setItem(x)}
+                      >
+                        {x.sku} — {x.name}
+                      </Button>
+                    ))}
+                </div>
+                {(items.data?.total ?? 0) > 20 && (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={itemPage === 1}
+                      onClick={() => setItemPage((x) => x - 1)}
+                    >
+                      Previous items
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={itemPage * 20 >= (items.data?.total ?? 0)}
+                      onClick={() => setItemPage((x) => x + 1)}
+                    >
+                      Next items
+                    </Button>
+                  </div>
+                )}
+                {item && (
+                  <div className="grid gap-2">
+                    <label htmlFor="sale-price-mode">Sale mode</label>
+                    <select
+                      id="sale-price-mode"
+                      key={item.id}
+                      name="mode"
+                      required
+                    >
+                      {modes[item.kind]?.map((mode) => (
+                        <option key={mode} value={mode}>
+                          {labels[mode]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="muted-text">
+                {editor.sku} — {labels[editor.mode]}
+              </p>
+            )}
+            <Field
+              key={editor === 'new' ? 'new' : editor.id}
+              label="Unit price (PKR)"
+              name="price"
+              type="number"
+              min="0"
+              max="1000000"
+              step="0.000001"
+              required
+              defaultValue={editor === 'new' ? '' : editor.unitPrice}
+            />
+            <label className="check">
+              <input
+                key={`active-${editor === 'new' ? 'new' : editor.id}`}
+                type="checkbox"
+                name="active"
+                defaultChecked={editor === 'new' || editor.active}
+              />
+              Price active
+            </label>
+            {error && <p role="alert">{error}</p>}
+            <div className="dialog-actions">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setEditor(null)}
+              >
+                Cancel price
+              </Button>
+              <Button disabled={busy || (editor === 'new' && !item)}>
+                Save price
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
       <DataTable
         title="Selling prices"
         data={prices.data?.items ?? []}
@@ -837,15 +871,35 @@ function PriceEditor({
         error={prices.error?.message}
         retry={() => void prices.refetch()}
         columns={[
-          { header: 'Item', accessorKey: 'itemName' },
+          {
+            header: 'Item',
+            cell: ({ row }) => (
+              <>
+                <strong>{row.original.itemName}</strong>
+                <span className="cell-note">{row.original.sku}</span>
+              </>
+            ),
+          },
           {
             header: 'Mode',
             cell: ({ row }) => labels[row.original.mode] ?? row.original.mode,
           },
-          { header: 'Price', cell: ({ row }) => money(row.original.unitPrice) },
+          {
+            header: 'Price',
+            cell: ({ row }) => (
+              <strong>
+                {money(row.original.unitPrice)}
+                <span className="cell-note">per {row.original.unit}</span>
+              </strong>
+            ),
+          },
           {
             header: 'Status',
-            cell: ({ row }) => (row.original.active ? 'Active' : 'Inactive'),
+            cell: ({ row }) => (
+              <StatusChip tone={row.original.active ? 'success' : 'neutral'}>
+                {row.original.active ? 'Active' : 'Inactive'}
+              </StatusChip>
+            ),
           },
           ...(canEdit && list.active
             ? [
@@ -859,7 +913,12 @@ function PriceEditor({
                         setError('');
                       }}
                     >
-                      Edit price for {row.original.sku}
+                      <Pencil aria-hidden="true" size={16} />
+                      Edit
+                      <span className="sr-only">
+                        {' '}
+                        price for {row.original.sku}
+                      </span>
                     </Button>
                   ),
                 },
