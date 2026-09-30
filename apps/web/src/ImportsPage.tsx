@@ -106,8 +106,16 @@ export function ImportsPage({ user }: { user: Me }) {
     batch && ['Validated', 'PartiallyCommitted'].includes(batch.status);
   return (
     <div className="grid gap-6">
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert">{error}</p>}
+      {message && (
+        <p role="status" className="notice-banner">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="error-banner">
+          {error}
+        </p>
+      )}
       <section className="panel grid gap-4">
         <h2>1. Choose what to import</h2>
         {types.error && <p role="alert">{types.error.message}</p>}

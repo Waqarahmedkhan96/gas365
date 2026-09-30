@@ -2,7 +2,12 @@ import { lazy, Suspense, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ApplicationShell } from './components/ApplicationShell';
-import { KeyValues, PageHeading, PageState } from './components/page';
+import {
+  KeyValues,
+  PageHeading,
+  PageState,
+  StatusChip,
+} from './components/page';
 import { PageIcon } from './components/icons';
 import { PageActionsSlot } from './components/page-actions';
 import { Button } from './components/ui/button';
@@ -492,277 +497,366 @@ export function WorkspacePage() {
                 </div>
               )}
               {tab === 'settings' && has('tenant.manage') && (
-                <form
-                  className="status-card stack"
-                  onSubmit={(e) => {
-                    const f = data(e);
-                    void run(() =>
-                      mutate('tenant', 'PUT', {
-                        name: f.get('name'),
-                        timeZone: f.get('timeZone'),
-                        overdueCreditDays: Number(f.get('overdueCreditDays')),
-                        closingReminder: f.get('closingReminder'),
-                      }),
-                    );
-                  }}
-                >
-                  <h2>Business settings</h2>
-                  <label>
-                    Business name
-                    <Input
-                      name="name"
-                      defaultValue={tenant.name}
-                      maxLength={120}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Time zone
-                    <Input
-                      name="timeZone"
-                      defaultValue={tenant.timeZone}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Credit is overdue after (days)
-                    <Input
-                      name="overdueCreditDays"
-                      type="number"
-                      min={1}
-                      max={365}
-                      defaultValue={tenant.overdueCreditDays}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Remind to close open registers at
-                    <Input
-                      name="closingReminder"
-                      type="time"
-                      defaultValue={tenant.closingReminder.slice(0, 5)}
-                      required
-                    />
-                  </label>
-                  <Button disabled={busy}>Save business settings</Button>
-                </form>
-              )}
-            </>
-          )}
-          {tab === 'branches' && (
-            <>
-              <section className="status-card">
-                <h2>Branches</h2>
-                <p>Branch access is assigned by a team administrator.</p>
-                {branches.length === 0 && (
-                  <p>No branches have been assigned to you.</p>
-                )}
-                {branches.map((branch) => (
+                <div className="settings-layout">
                   <form
-                    key={`${branch.id}-${branch.version}`}
-                    className="record-row"
+                    className="card grid gap-4"
                     onSubmit={(e) => {
                       const f = data(e);
                       void run(() =>
-                        mutate(`branches/${branch.id}`, 'PUT', {
+                        mutate('tenant', 'PUT', {
                           name: f.get('name'),
-                          active: f.has('active'),
-                          version: branch.version,
+                          timeZone: f.get('timeZone'),
+                          overdueCreditDays: Number(f.get('overdueCreditDays')),
+                          closingReminder: f.get('closingReminder'),
                         }),
                       );
                     }}
                   >
-                    <label>
-                      Branch name
-                      <Input
-                        name="name"
-                        defaultValue={branch.name}
-                        disabled={!has('branches.manage')}
-                        required
-                        maxLength={120}
-                      />
-                    </label>
-                    <label className="check">
-                      <Input
-                        type="checkbox"
-                        name="active"
-                        defaultChecked={branch.active}
-                        disabled={!has('branches.manage')}
-                      />
-                      Active
-                    </label>
-                    {has('branches.manage') && (
-                      <Button disabled={busy}>Save branch</Button>
-                    )}
+                    <h2 className="card-title">Business settings</h2>
+                    <p className="section-help">
+                      These details apply to every branch in this workspace.
+                    </p>
+                    <div className="form-grid">
+                      <label>
+                        Business name
+                        <Input
+                          name="name"
+                          defaultValue={tenant.name}
+                          maxLength={120}
+                          required
+                        />
+                      </label>
+                      <label>
+                        Time zone
+                        <Input
+                          name="timeZone"
+                          defaultValue={tenant.timeZone}
+                          required
+                        />
+                      </label>
+                      <label>
+                        Credit is overdue after (days)
+                        <Input
+                          name="overdueCreditDays"
+                          type="number"
+                          min={1}
+                          max={365}
+                          defaultValue={tenant.overdueCreditDays}
+                          required
+                        />
+                      </label>
+                      <label>
+                        Remind to close open registers at
+                        <Input
+                          name="closingReminder"
+                          type="time"
+                          defaultValue={tenant.closingReminder.slice(0, 5)}
+                          required
+                        />
+                      </label>
+                    </div>
+                    <div>
+                      <Button disabled={busy}>Save business settings</Button>
+                    </div>
                   </form>
-                ))}
+                </div>
+              )}
+            </>
+          )}
+          {tab === 'branches' && (
+            <div className="split-layout">
+              <section
+                className="grid gap-4 content-start"
+                aria-labelledby="branches-heading"
+              >
+                <div className="section-title">
+                  <h2 id="branches-heading">Branches</h2>
+                  <span className="toolbar-count">
+                    {branches.filter((b) => b.active).length} active of{' '}
+                    {tenant.maxBranches} allowed
+                  </span>
+                </div>
+                <p className="section-help">
+                  Branch access is assigned by a team administrator.
+                </p>
+                {branches.length === 0 && (
+                  <PageState
+                    kind="empty"
+                    title="No branches"
+                    description="No branches have been assigned to you."
+                  />
+                )}
+                <ul className="entity-grid">
+                  {branches.map((branch) => (
+                    <li
+                      key={`${branch.id}-${branch.version}`}
+                      className="entity-card"
+                    >
+                      <form
+                        className="grid gap-3"
+                        onSubmit={(e) => {
+                          const f = data(e);
+                          void run(() =>
+                            mutate(`branches/${branch.id}`, 'PUT', {
+                              name: f.get('name'),
+                              active: f.has('active'),
+                              version: branch.version,
+                            }),
+                          );
+                        }}
+                      >
+                        <div className="entity-card-top">
+                          <span
+                            className="header-business-icon"
+                            aria-hidden="true"
+                          >
+                            <PageIcon name="branches" size={20} />
+                          </span>
+                          <StatusChip
+                            tone={branch.active ? 'success' : 'neutral'}
+                          >
+                            {branch.active ? 'Active' : 'Inactive'}
+                          </StatusChip>
+                        </div>
+                        <label>
+                          Branch name
+                          <Input
+                            name="name"
+                            defaultValue={branch.name}
+                            disabled={!has('branches.manage')}
+                            required
+                            maxLength={120}
+                          />
+                        </label>
+                        <label className="check">
+                          <Input
+                            type="checkbox"
+                            name="active"
+                            defaultChecked={branch.active}
+                            disabled={!has('branches.manage')}
+                          />
+                          Active
+                        </label>
+                        {has('branches.manage') && (
+                          <div className="entity-actions">
+                            <Button variant="outline" disabled={busy}>
+                              Save branch
+                            </Button>
+                          </div>
+                        )}
+                      </form>
+                    </li>
+                  ))}
+                </ul>
               </section>
               {has('branches.manage') && (
+                <aside className="grid gap-6 content-start">
+                  <form
+                    className="card accent-card grid gap-4"
+                    onSubmit={(e) => {
+                      const f = data(e);
+                      void run(() =>
+                        mutate('branches', 'POST', { name: f.get('name') }),
+                      );
+                    }}
+                  >
+                    <h2 className="card-title">Add a branch</h2>
+                    <label>
+                      New branch name
+                      <Input name="name" maxLength={120} required />
+                    </label>
+                    <Button disabled={busy} className="w-full">
+                      Add branch
+                    </Button>
+                  </form>
+                </aside>
+              )}
+            </div>
+          )}
+          {tab === 'team' && (
+            <div className="split-layout">
+              <section
+                className="grid gap-4 content-start"
+                aria-labelledby="team-heading"
+              >
+                <div className="section-title">
+                  <h2 id="team-heading">Your team</h2>
+                  <span className="toolbar-count">
+                    {members.filter((m) => m.active).length} active of{' '}
+                    {tenant.maxUsers} allowed
+                  </span>
+                </div>
+                <ul className="member-list">
+                  {members.map((member) => (
+                    <li key={`${member.id}-${member.version}`}>
+                      <MemberForm
+                        member={member}
+                        branches={branches}
+                        roles={roles}
+                        me={user}
+                        busy={busy}
+                        save={(body) =>
+                          run(() => mutate(`members/${member.id}`, 'PUT', body))
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              <aside className="grid gap-6 content-start">
                 <form
-                  className="status-card stack"
+                  className="card accent-card grid gap-4"
                   onSubmit={(e) => {
                     const f = data(e);
-                    void run(() =>
-                      mutate('branches', 'POST', { name: f.get('name') }),
+                    void run(
+                      () =>
+                        mutate('members', 'POST', {
+                          email: f.get('email'),
+                          name: f.get('name'),
+                          roleId: f.get('roleId'),
+                          branchIds: f.getAll('branchIds'),
+                        }),
+                      'Team member added. An account email has been sent.',
                     );
                   }}
                 >
-                  <h2>Add a branch</h2>
+                  <h2 className="card-title">Invite a team member</h2>
                   <label>
-                    New branch name
+                    Name
                     <Input name="name" maxLength={120} required />
                   </label>
-                  <Button disabled={busy}>Add branch</Button>
-                </form>
-              )}
-            </>
-          )}
-          {tab === 'team' && (
-            <>
-              <form
-                className="status-card stack"
-                onSubmit={(e) => {
-                  const f = data(e);
-                  void run(
-                    () =>
-                      mutate('members', 'POST', {
-                        email: f.get('email'),
-                        name: f.get('name'),
-                        roleId: f.get('roleId'),
-                        branchIds: f.getAll('branchIds'),
-                      }),
-                    'Team member added. An account email has been sent.',
-                  );
-                }}
-              >
-                <h2>Invite a team member</h2>
-                <label>
-                  Name
-                  <Input name="name" maxLength={120} required />
-                </label>
-                <label>
-                  Email address
-                  <Input name="email" type="email" required />
-                </label>
-                <label>
-                  Role
-                  <select
-                    name="roleId"
-                    defaultValue={roles.find((r) => r.name === 'Worker')?.id}
-                  >
-                    {roles
-                      .filter(
-                        (r) =>
-                          !r.isOwner &&
-                          r.permissions.every((p) =>
-                            user.permissions.includes(p),
-                          ),
-                      )
-                      .map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
+                  <label>
+                    Email address
+                    <Input name="email" type="email" required />
+                  </label>
+                  <label>
+                    Role
+                    <select
+                      name="roleId"
+                      defaultValue={roles.find((r) => r.name === 'Worker')?.id}
+                    >
+                      {roles
+                        .filter(
+                          (r) =>
+                            !r.isOwner &&
+                            r.permissions.every((p) =>
+                              user.permissions.includes(p),
+                            ),
+                        )
+                        .map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <fieldset className="check-group">
+                    <legend>Branch access</legend>
+                    {branches
+                      .filter((b) => b.active)
+                      .map((b) => (
+                        <label className="check" key={b.id}>
+                          <Input
+                            name="branchIds"
+                            type="checkbox"
+                            value={b.id}
+                          />
+                          {b.name}
+                        </label>
                       ))}
-                  </select>
-                </label>
-                <fieldset>
-                  <legend>Branch access</legend>
-                  {branches
-                    .filter((b) => b.active)
-                    .map((b) => (
-                      <label className="check" key={b.id}>
-                        <Input name="branchIds" type="checkbox" value={b.id} />
-                        {b.name}
-                      </label>
-                    ))}
-                </fieldset>
-                <Button disabled={busy}>Send invitation</Button>
-              </form>
-              <section className="status-card">
-                <h2>Your team</h2>
-                {members.map((member) => (
-                  <MemberForm
-                    key={`${member.id}-${member.version}`}
-                    member={member}
-                    branches={branches}
-                    roles={roles}
-                    me={user}
-                    busy={busy}
-                    save={(body) =>
-                      run(() => mutate(`members/${member.id}`, 'PUT', body))
-                    }
-                  />
-                ))}
-              </section>
-            </>
+                  </fieldset>
+                  <Button disabled={busy} className="w-full">
+                    Send invitation
+                  </Button>
+                </form>
+              </aside>
+            </div>
           )}
           {tab === 'roles' && (
-            <section className="status-card stack">
-              <h2>Roles and permissions</h2>
-              <p>
+            <section className="grid gap-4" aria-labelledby="roles-heading">
+              <div className="section-title">
+                <h2 id="roles-heading">Roles and permissions</h2>
+              </div>
+              <p className="section-help">
                 Permissions are enforced by the server. Only the owner can
                 define roles.
               </p>
-              {roles.map((role) => (
-                <RoleForm
-                  key={`${role.id}-${role.version}`}
-                  role={role}
-                  editable={user.isOwner && !role.isOwner}
-                  busy={busy}
-                  save={(body) =>
-                    run(() => mutate(`roles/${role.id}`, 'PUT', body))
-                  }
-                />
-              ))}
-              {user.isOwner && (
-                <RoleForm
-                  editable
-                  busy={busy}
-                  save={(body) => run(() => mutate('roles', 'POST', body))}
-                />
-              )}
+              <div className="role-grid">
+                {roles.map((role) => (
+                  <RoleForm
+                    key={`${role.id}-${role.version}`}
+                    role={role}
+                    editable={user.isOwner && !role.isOwner}
+                    busy={busy}
+                    save={(body) =>
+                      run(() => mutate(`roles/${role.id}`, 'PUT', body))
+                    }
+                  />
+                ))}
+                {user.isOwner && (
+                  <RoleForm
+                    editable
+                    busy={busy}
+                    save={(body) => run(() => mutate('roles', 'POST', body))}
+                  />
+                )}
+              </div>
             </section>
           )}
           {tab === 'sessions' && (
-            <section className="status-card">
-              <h2>Your sessions in this workspace</h2>
-              <p>
+            <section className="card" aria-labelledby="sessions-heading">
+              <h2 id="sessions-heading" className="card-title">
+                Your sessions in this workspace
+              </h2>
+              <p className="section-help">
                 Sessions expire after 30 minutes of inactivity or eight hours.
                 You can end them here.
               </p>
-              {sessions.map((session) => (
-                <div className="record-row" key={session.id}>
-                  <div>
-                    <strong>
-                      {session.current ? 'Current session' : 'Another session'}
-                    </strong>
-                    <p>
-                      Started{' '}
-                      {new Date(session.createdAt).toLocaleString(undefined, {
-                        timeZone: tenant.timeZone,
-                      })}
-                    </p>
-                  </div>
-                  <ConfirmButton
-                    title="End this session?"
-                    description="The device using this session will need to sign in again."
-                    destructive
-
-                    disabled={busy}
-                    onConfirm={() =>
-                      void run(async () => {
-                        await api(`/api/auth/sessions/${session.id}`, 'DELETE');
-                        if (session.current) {
-                          client.clear();
-                          window.location.assign('/login');
-                        }
-                      })
-                    }
-                  >
-                    End session
-                  </ConfirmButton>
-                </div>
-              ))}
+              <ul className="session-list">
+                {sessions.map((session) => (
+                  <li key={session.id}>
+                    <span className="header-business-icon" aria-hidden="true">
+                      <PageIcon name="sessions" size={20} />
+                    </span>
+                    <div className="session-text">
+                      <strong>
+                        {session.current
+                          ? 'Current session'
+                          : 'Another session'}
+                      </strong>
+                      <span>
+                        Started{' '}
+                        {new Date(session.createdAt).toLocaleString(undefined, {
+                          timeZone: tenant.timeZone,
+                        })}
+                      </span>
+                    </div>
+                    {session.current && (
+                      <StatusChip tone="success">This device</StatusChip>
+                    )}
+                    <ConfirmButton
+                      title="End this session?"
+                      description="The device using this session will need to sign in again."
+                      destructive
+                      disabled={busy}
+                      onConfirm={() =>
+                        void run(async () => {
+                          await api(
+                            `/api/auth/sessions/${session.id}`,
+                            'DELETE',
+                          );
+                          if (session.current) {
+                            client.clear();
+                            window.location.assign('/login');
+                          }
+                        })
+                      }
+                    >
+                      End session
+                    </ConfirmButton>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
           {tab === 'audit' && (
@@ -815,7 +909,7 @@ function MemberForm({
     currentRole?.permissions.every((p) => me.permissions.includes(p));
   return (
     <form
-      className="record-editor"
+      className="member-card"
       onSubmit={(e) => {
         const f = data(e);
         void save({
@@ -826,8 +920,23 @@ function MemberForm({
         });
       }}
     >
-      <h3>{member.name}</h3>
-      <p>{member.email}</p>
+      <div className="member-head">
+        <span className="avatar large" aria-hidden="true">
+          {member.name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0]!.toUpperCase())
+            .join('')}
+        </span>
+        <div className="member-identity">
+          <h3>{member.name}</h3>
+          <p>{member.email}</p>
+        </div>
+        <StatusChip tone={member.active ? 'success' : 'neutral'}>
+          {member.active ? currentRole?.name || 'Active' : 'Inactive'}
+        </StatusChip>
+      </div>
       <label>
         Role
         <select name="roleId" defaultValue={member.roleId} disabled={!editable}>
@@ -845,7 +954,7 @@ function MemberForm({
             ))}
         </select>
       </label>
-      <fieldset disabled={!editable}>
+      <fieldset disabled={!editable} className="check-group">
         <legend>Branch access</legend>
         {branches
           .filter((b) => b.active)
@@ -870,7 +979,13 @@ function MemberForm({
         />
         Active member
       </label>
-      {editable && <Button disabled={busy}>Save member</Button>}
+      {editable && (
+        <div>
+          <Button variant="outline" disabled={busy}>
+            Save member
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
@@ -888,7 +1003,7 @@ function RoleForm({
 }) {
   return (
     <form
-      className="record-editor stack"
+      className={role ? 'role-card' : 'role-card new-role'}
       onSubmit={(e) => {
         const f = data(e);
         void save({
@@ -898,7 +1013,13 @@ function RoleForm({
         });
       }}
     >
-      <h3>{role ? role.name : 'Create a role'}</h3>
+      <div className="member-head">
+        <span className="header-business-icon" aria-hidden="true">
+          <PageIcon name="roles" size={20} />
+        </span>
+        <h3>{role ? role.name : 'Create a role'}</h3>
+        {role?.isOwner && <StatusChip tone="info">Owner</StatusChip>}
+      </div>
       <label>
         Role name
         <Input
@@ -909,7 +1030,7 @@ function RoleForm({
           disabled={!editable}
         />
       </label>
-      <fieldset disabled={!editable}>
+      <fieldset disabled={!editable} className="check-group permission-grid">
         <legend>Permissions</legend>
         {permissions.map((p) => (
           <label key={p} className="check">

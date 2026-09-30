@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api, type Me } from './access-api';
 import { Button } from './components/ui/button';
+import { StatusChip } from './components/page';
 import { money } from './report-types';
 import {
   dateText,
@@ -140,14 +141,22 @@ export function SubscriptionPage({
   const limits = s?.plan;
   return (
     <div className="grid gap-6">
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert">{error}</p>}
+      {message && (
+        <p role="status" className="notice-banner">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="error-banner">
+          {error}
+        </p>
+      )}
       {subscription.error && <p role="alert">{subscription.error.message}</p>}
       {s && (
         <>
-          <section className="panel grid gap-3">
+          <section className="panel plan-hero grid gap-3">
             <h2>Your plan</h2>
-            <p>
+            <p className="plan-hero-line">
               <strong>{s.plan?.name ?? 'No plan'}</strong> ·{' '}
               {statusText[s.status]}
               {s.status === 'Trial' &&
@@ -218,25 +227,32 @@ export function SubscriptionPage({
           </section>
           <section className="panel grid gap-3">
             <h2>Plans</h2>
-            <ul className="grid gap-3 lg:grid-cols-3">
+            <ul className="plan-grid">
               {s.plans.map((p) => (
-                <li key={p.id} className="status-card grid gap-2">
+                <li
+                  key={p.id}
+                  className={
+                    s.plan?.id === p.id ? 'plan-card current' : 'plan-card'
+                  }
+                >
                   <h3>{p.name}</h3>
-                  <p>
+                  <p className="plan-price">
                     {p.monthlyPrice === null
                       ? 'Price on request'
                       : `${money(p.monthlyPrice)} per month`}
                   </p>
-                  <p>
-                    {p.maxBranches} branches · {p.maxUsers} users ·{' '}
-                    {p.maxAdmins} administrators
-                  </p>
+                  <ul className="plan-features">
+                    <li>{p.maxBranches} branches</li>
+                    <li>{p.maxUsers} users</li>
+                    <li>{p.maxAdmins} administrators</li>
+                  </ul>
                   {s.plan?.id === p.id && s.status === 'Active' ? (
                     <p>
-                      <strong>Current plan</strong>
+                      <StatusChip tone="success">Current plan</StatusChip>
                     </p>
                   ) : (
                     <Button
+                      className="w-full"
                       disabled={busy || s.requestedPlan?.id === p.id}
                       onClick={() =>
                         void run(async () => {
@@ -264,7 +280,7 @@ export function SubscriptionPage({
           </section>
           <section className="panel grid gap-3">
             <h2>Billing history</h2>
-            <ul className="grid gap-2">
+            <ul className="setup-list">
               {s.history.map((h) => (
                 <li key={h.id}>
                   {dateText(h.occurredAt, timeZone)} ·{' '}
@@ -281,7 +297,7 @@ export function SubscriptionPage({
       )}
       <section className="panel grid gap-3">
         <h2>Support access</h2>
-        <p>
+        <p className="section-help">
           The Gas365 team can only look inside your business when you allow it.
           Access is read-only, ends automatically, and every page they view is
           recorded in your activity log.

@@ -2,6 +2,16 @@ import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type Me } from './access-api';
 import { Button } from './components/ui/button';
+import { CheckCircle2, Download, FileBarChart, FileDown } from 'lucide-react';
+import {
+  Card,
+  PageState,
+  StatCard,
+  StatGrid,
+  StatusChip,
+  type Tone,
+} from './components/page';
+import { PageActions } from './components/page-actions';
 import {
   businessDate,
   formatCell,
@@ -18,6 +28,14 @@ const statusText: Record<ExportJob['status'], string> = {
   Completed: 'Ready to download',
   Failed: 'Failed',
   Expired: 'Expired',
+};
+
+const exportTone: Record<ExportJob['status'], Tone> = {
+  Queued: 'neutral',
+  Running: 'info',
+  Completed: 'success',
+  Failed: 'danger',
+  Expired: 'warning',
 };
 
 export function ReportsPage({
@@ -125,15 +143,93 @@ export function ReportsPage({
   }
 
   const titles = new Map(definitions.data?.map((d) => [d.key, d.title]));
-  if (definitions.error) return <p role="alert">{definitions.error.message}</p>;
-  if (!definitions.data) return <p role="status">Loading reports…</p>;
-  if (!definition) return <p>Your role does not include any reports yet.</p>;
+  if (definitions.error)
+    return (
+      <PageState
+        kind="error"
+        title="Reports unavailable"
+        description={definitions.error.message}
+        retry={() => void definitions.refetch()}
+      />
+    );
+  if (!definitions.data)
+    return (
+      <PageState
+        kind="loading"
+        title="Loading reports"
+        description="Please wait while your reports are loaded."
+      />
+    );
+  if (!definition)
+    return (
+      <PageState
+        kind="denied"
+        title="No reports available"
+        description="Your role does not include any reports yet."
+      />
+    );
   const data = report.data;
+  const presets = [
+    {
+      label: 'Today',
+      from: businessDate(timeZone),
+      to: businessDate(timeZone),
+    },
+    {
+      label: 'Last 7 days',
+      from: businessDate(timeZone, -6),
+      to: businessDate(timeZone),
+    },
+    {
+      label: 'This month',
+      from: businessDate(timeZone).slice(0, 8) + '01',
+      to: businessDate(timeZone),
+    },
+    {
+      label: 'Last 30 days',
+      from: businessDate(timeZone, -29),
+      to: businessDate(timeZone),
+    },
+    {
+      label: 'This year',
+      from: businessDate(timeZone).slice(0, 5) + '01-01',
+      to: businessDate(timeZone),
+    },
+  ];
+  // Headline cards repeat the server's own totals row; nothing is summed in the browser.
+  const headline = data
+    ? data.columns
+        .map((c, i) => ({ column: c, total: data.totals[i] }))
+        .filter((x, i) => i > 0 && x.total !== null && isNumeric(x.column.type))
+        .slice(0, 4)
+    : [];
   return (
     <div className="grid gap-6">
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert">{error}</p>}
-      <section className="panel grid gap-4">
+      {canExport && (
+        <PageActions>
+          {(['csv', 'xlsx', 'pdf'] as const).map((f) => (
+            <Button
+              key={f}
+              variant={f === 'pdf' ? 'default' : 'outline'}
+              onClick={() => void requestExport(f)}
+            >
+              <Download aria-hidden="true" size={16} />
+              Export {f.toUpperCase()}
+            </Button>
+          ))}
+        </PageActions>
+      )}
+      {message && (
+        <p role="status" className="notice-banner">
+          <CheckCircle2 aria-hidden="true" size={18} /> {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="error-banner">
+          {error}
+        </p>
+      )}
+      <section className="filter-bar report-filters">
         <div
           className="flex flex-wrap items-end gap-4"
           role="group"
@@ -220,6 +316,30 @@ export function ReportsPage({
             </label>
           )}
         </div>
+        {definition.dateRange && (
+          <div className="preset-row" role="group" aria-label="Quick periods">
+            {presets.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                className="preset-pill"
+                aria-pressed={from === p.from && to === p.to}
+                onClick={() => {
+                  setFrom(p.from);
+                  setTo(p.to);
+                  setPage(1);
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+      <div className="report-intro">
+        <span className="report-intro-icon" aria-hidden="true">
+          <FileBarChart size={22} />
+        </span>
         <div>
           <h2>{definition.title}</h2>
           <p>{definition.definition}</p>
@@ -227,21 +347,20 @@ export function ReportsPage({
             Reconciliation: {definition.reconciliation}
           </p>
         </div>
-        {canExport && (
-          <div className="flex flex-wrap gap-3" aria-label="Export">
-            {(['csv', 'xlsx', 'pdf'] as const).map((f) => (
-              <Button
-                key={f}
-                variant="secondary"
-                onClick={() => void requestExport(f)}
-              >
-                Export {f.toUpperCase()}
-              </Button>
-            ))}
-          </div>
-        )}
-      </section>
-      <section className="panel grid gap-4" aria-busy={report.isFetching}>
+      </div>
+      {headline.length > 0 && (
+        <StatGrid label="Report totals">
+          {headline.map(({ column, total }) => (
+            <StatCard
+              key={column.key}
+              label={column.label}
+              value={formatCell(total, column.type)}
+              note="Total for these filters"
+            />
+          ))}
+        </StatGrid>
+      )}
+      <section className="card grid gap-4" aria-busy={report.isFetching}>
         {report.error && <p role="alert">{report.error.message}</p>}
         {report.isPending && <p role="status">Loading report…</p>}
         {data && (
@@ -253,7 +372,11 @@ export function ReportsPage({
               })}
             </p>
             {data.totalRows === 0 ? (
-              <p>No activity for these filters.</p>
+              <PageState
+                kind="empty"
+                title="No activity"
+                description="No activity for these filters."
+              />
             ) : (
               // Focusable so keyboard users can scroll wide tables on small screens.
               <div
@@ -324,14 +447,14 @@ export function ReportsPage({
             {data.totalRows > data.pageSize && (
               <div className="flex gap-3">
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   disabled={page === 1}
                   onClick={() => setPage(page - 1)}
                 >
                   Previous
                 </Button>
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   disabled={page * data.pageSize >= data.totalRows}
                   onClick={() => setPage(page + 1)}
                 >
@@ -343,34 +466,41 @@ export function ReportsPage({
         )}
       </section>
       {canExport && (
-        <section className="panel grid gap-3">
-          <h2>Your exports</h2>
+        <Card title="Your exports" icon={FileDown}>
           <p className="section-help">
             Files are private to you and expire 24 hours after they are ready.
           </p>
-          {exports.data?.items.length === 0 && <p>No exports yet.</p>}
-          <ul className="grid gap-2">
+          {exports.data?.items.length === 0 && (
+            <p className="muted-text pt-3">No exports yet.</p>
+          )}
+          <ul className="export-list">
             {exports.data?.items.map((job) => (
               <li key={job.id}>
-                {titles.get(job.reportKey) ?? job.reportKey} ·{' '}
-                {job.format.toUpperCase()} · {statusText[job.status]}
-                {job.status === 'Completed' && (
-                  <>
-                    {' '}
-                    ·{' '}
+                <div>
+                  <strong>{titles.get(job.reportKey) ?? job.reportKey}</strong>
+                  <span className="cell-note">
+                    {job.format.toUpperCase()}
+                    {job.error ? ` · ${job.error}` : ''}
+                  </span>
+                </div>
+                <div className="export-actions">
+                  <StatusChip tone={exportTone[job.status]}>
+                    {statusText[job.status]}
+                  </StatusChip>
+                  {job.status === 'Completed' && (
                     <Button
-                      variant="secondary"
+                      variant="outline"
                       onClick={() => void download(job)}
                     >
+                      <Download aria-hidden="true" size={16} />
                       Download {job.fileName}
                     </Button>
-                  </>
-                )}
-                {job.error && ` · ${job.error}`}
+                  )}
+                </div>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       )}
     </div>
   );
