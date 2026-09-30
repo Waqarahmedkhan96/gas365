@@ -80,3 +80,7 @@ These are not included unless the owner asks, because each needs new functionali
 
 - The identity journey signs out through the account menu (`… account menu` → menu item `Sign out` → `Confirm`), because Sign out moved into that menu.
 - The showcase pagination expectation now reads `Showing 3–3 of 3 records · Page 2 of 2`.
+
+## Guided business setup (2026-09-30)
+
+New owners see a "Set up your business in 4 steps" banner on the overview until a warehouse and a cash drawer exist. `/workspace/setup` (owners with business-settings permission; not in the sidebar) walks through business details, branch and store, cash drawer with a counted opening balance, and plan choice with the shared `PlanChooser`. Every step uses the existing workspace APIs and can be skipped; no new business rules. Covered by `tests/Gas365.E2E/onboarding.spec.ts` on desktop and mobile.

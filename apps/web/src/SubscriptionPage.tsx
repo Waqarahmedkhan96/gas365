@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api, type Me } from './access-api';
 import { Button } from './components/ui/button';
-import { StatusChip } from './components/page';
+import { PlanChooser } from './PlanChooser';
 import { money } from './report-types';
 import {
   dateText,
@@ -11,7 +11,6 @@ import {
   type Onboarding,
   type Subscription,
   type SupportGrant,
-  type BillingPeriod,
 } from './platform-types';
 
 const statusText = {
@@ -36,47 +35,66 @@ export function OnboardingChecklist({ user }: { user: Me }) {
   const data = onboarding.data;
   if (!data || data.dismissed || data.steps.every((s) => s.done)) return null;
   const done = data.steps.filter((s) => s.done).length;
+  const basicsDone = data.steps
+    .filter((s) => s.key === 'warehouse' || s.key === 'cash')
+    .every((s) => s.done);
   return (
-    <section className="panel grid gap-3" aria-label="Getting started">
-      <h2>Getting started</h2>
-      <p className="section-help">
-        {done} of {data.steps.length} steps done. Steps complete themselves as
-        you set up the business.
-      </p>
-      <ol className="grid gap-2">
-        {data.steps.map((s) => (
-          <li key={s.key}>
-            <strong>{s.done ? 'Done' : 'To do'}</strong> ·{' '}
-            {s.done ? (
-              s.label
-            ) : (
-              <Link to={`/workspace/${s.page}`}>{s.label}</Link>
-            )}
-          </li>
-        ))}
-      </ol>
-      {user.permissions.includes('tenant.manage') && (
-        <div>
-          <Button
-            variant="secondary"
-            onClick={() =>
-              void api(
-                '/api/workspace/onboarding',
-                'PUT',
-                { dismissed: true },
-                user.tenantId,
-              ).then(() =>
-                cache.invalidateQueries({
-                  queryKey: ['onboarding', user.tenantId],
-                }),
-              )
-            }
-          >
-            Hide checklist
+    <>
+      {!basicsDone && user.permissions.includes('tenant.manage') && (
+        <section className="setup-hero" aria-labelledby="setup-hero-title">
+          <div>
+            <h2 id="setup-hero-title">Set up your business in 4 steps</h2>
+            <p>
+              Business details, your branch and store, the cash drawer and a
+              plan. It takes about five minutes and every step can be skipped.
+            </p>
+          </div>
+          <Button asChild>
+            <Link to="/workspace/setup">Start setup</Link>
           </Button>
-        </div>
+        </section>
       )}
-    </section>
+      <section className="panel grid gap-3" aria-label="Getting started">
+        <h2>Getting started</h2>
+        <p className="section-help">
+          {done} of {data.steps.length} steps done. Steps complete themselves as
+          you set up the business.
+        </p>
+        <ol className="grid gap-2">
+          {data.steps.map((s) => (
+            <li key={s.key}>
+              <strong>{s.done ? 'Done' : 'To do'}</strong> ·{' '}
+              {s.done ? (
+                s.label
+              ) : (
+                <Link to={`/workspace/${s.page}`}>{s.label}</Link>
+              )}
+            </li>
+          ))}
+        </ol>
+        {user.permissions.includes('tenant.manage') && (
+          <div>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                void api(
+                  '/api/workspace/onboarding',
+                  'PUT',
+                  { dismissed: true },
+                  user.tenantId,
+                ).then(() =>
+                  cache.invalidateQueries({
+                    queryKey: ['onboarding', user.tenantId],
+                  }),
+                )
+              }
+            >
+              Hide checklist
+            </Button>
+          </div>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -91,7 +109,6 @@ export function SubscriptionPage({
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [period, setPeriod] = useState<BillingPeriod | null>(null);
   const get = <T,>(path: string) =>
     api<T>('/api/workspace' + path, 'GET', undefined, user.tenantId);
   const subscription = useQuery({
@@ -141,8 +158,6 @@ export function SubscriptionPage({
   }
   const s = subscription.data;
   const limits = s?.plan;
-  const billing: BillingPeriod =
-    period ?? s?.requestedBillingPeriod ?? 'Monthly';
   return (
     <div className="grid gap-6">
       {message && (
@@ -233,93 +248,7 @@ export function SubscriptionPage({
             </div>
           </section>
           <section className="panel grid gap-3">
-            <div className="plans-header">
-              <h2>Plans</h2>
-              <div
-                className="billing-toggle"
-                role="radiogroup"
-                aria-label="Billing period"
-              >
-                {(['Monthly', 'Yearly'] as const).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={billing === value}
-                    onClick={() => setPeriod(value)}
-                  >
-                    {value}
-                    {value === 'Yearly' && (
-                      <span className="billing-badge">2 months free</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <ul className="plan-grid">
-              {s.plans.map((p) => (
-                <li
-                  key={p.id}
-                  className={
-                    s.plan?.id === p.id ? 'plan-card current' : 'plan-card'
-                  }
-                >
-                  <h3>{p.name}</h3>
-                  <p className="plan-price">
-                    {p.monthlyPrice === null
-                      ? 'Price on request'
-                      : billing === 'Yearly' && p.yearlyPrice !== null
-                        ? `${money(p.yearlyPrice)} per year`
-                        : `${money(p.monthlyPrice)} per month`}
-                  </p>
-                  {billing === 'Yearly' && p.yearlySaving !== null && (
-                    <p className="plan-saving">
-                      You save {money(p.yearlySaving)} (2 months free)
-                    </p>
-                  )}
-                  <ul className="plan-features">
-                    <li>{p.maxBranches} branches</li>
-                    <li>{p.maxUsers} users</li>
-                    <li>{p.maxAdmins} administrators</li>
-                  </ul>
-                  {s.plan?.id === p.id && s.status === 'Active' ? (
-                    <p>
-                      <StatusChip tone="success">Current plan</StatusChip>
-                    </p>
-                  ) : (
-                    <Button
-                      className="w-full"
-                      disabled={
-                        busy ||
-                        (s.requestedPlan?.id === p.id &&
-                          s.requestedBillingPeriod === billing)
-                      }
-                      onClick={() =>
-                        void run(async () => {
-                          const r = await api<{ instructions: string }>(
-                            '/api/workspace/subscription/request',
-                            'POST',
-                            { planId: p.id, billingPeriod: billing },
-                            user.tenantId,
-                          );
-                          setMessage(r.instructions);
-                        }, '')
-                      }
-                    >
-                      {s.requestedPlan?.id === p.id &&
-                      s.requestedBillingPeriod === billing
-                        ? 'Requested'
-                        : billing === 'Yearly'
-                          ? `Choose ${p.name} yearly`
-                          : `Choose ${p.name}`}
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p className="section-help">
-              Payments are confirmed by the Gas365 team ({s.paymentProvider}).
-            </p>
+            <PlanChooser user={user} />
           </section>
           <section className="panel grid gap-3">
             <h2>Billing history</h2>

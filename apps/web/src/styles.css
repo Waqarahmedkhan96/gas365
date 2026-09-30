@@ -2876,3 +2876,140 @@ kbd {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ---------- Guided setup ---------- */
+.setup-wizard {
+  display: grid;
+  gap: 20px;
+  max-width: 860px;
+}
+.stepper {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+.stepper li {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.stepper li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 17px;
+  left: calc(50% + 22px);
+  right: calc(-50% + 22px);
+  height: 2px;
+  background: var(--border);
+}
+.stepper li.done:not(:last-child)::after {
+  background: var(--primary);
+}
+.stepper-dot {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--input);
+  border-radius: 50%;
+  background: var(--surface);
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+.stepper li.current .stepper-dot,
+.stepper li.done .stepper-dot {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.stepper li.current {
+  color: var(--primary);
+  font-weight: 600;
+}
+.setup-step {
+  display: grid;
+  gap: 18px;
+}
+.setup-step-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.setup-step-head .section-help {
+  margin-top: 4px;
+}
+.setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.setup-actions.center {
+  justify-content: center;
+}
+.setup-done {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 36px 24px;
+  text-align: center;
+}
+.setup-done svg {
+  color: var(--blue-600);
+}
+.setup-done h2 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--primary);
+}
+.setup-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--navy-800), var(--blue-600));
+  color: #fff;
+}
+.setup-hero h2 {
+  margin: 0 0 6px;
+  font-size: 19px;
+  color: #fff;
+}
+.setup-hero p {
+  margin: 0;
+  max-width: 560px;
+  color: #e6eef6;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.setup-hero a {
+  background: #fff;
+  color: var(--primary);
+  text-decoration: none;
+}
+.setup-hero a:hover {
+  background: var(--secondary);
+}
+@media (max-width: 640px) {
+  .stepper-label {
+    font-size: 11px;
+  }
+  .stepper li:not(:last-child)::after {
+    display: none;
+  }
+}
+.setup-hero {
+  margin-bottom: 16px;
+}

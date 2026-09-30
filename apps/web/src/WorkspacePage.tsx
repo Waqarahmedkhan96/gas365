@@ -53,6 +53,9 @@ const OnboardingChecklist = lazy(() =>
     default: module.OnboardingChecklist,
   })),
 );
+const SetupWizard = lazy(() =>
+  import('./SetupWizard').then((module) => ({ default: module.SetupWizard })),
+);
 const PlatformPage = lazy(() =>
   import('./PlatformPage').then((module) => ({ default: module.PlatformPage })),
 );
@@ -363,6 +366,11 @@ export function WorkspacePage() {
           {tab === 'platform' && (
             <Suspense fallback={<p role="status">Loading platform…</p>}>
               <PlatformPage timeZone={tenant.timeZone} />
+            </Suspense>
+          )}
+          {tab === 'setup' && (
+            <Suspense fallback={<p role="status">Loading setup…</p>}>
+              <SetupWizard user={user} tenant={tenant} branches={branches} />
             </Suspense>
           )}
           {tab === 'overview' && !user.support && (
