@@ -84,3 +84,7 @@ These are not included unless the owner asks, because each needs new functionali
 ## Guided business setup (2026-09-30)
 
 New owners see a "Set up your business in 4 steps" banner on the overview until a warehouse and a cash drawer exist. `/workspace/setup` (owners with business-settings permission; not in the sidebar) walks through business details, branch and store, cash drawer with a counted opening balance, and plan choice with the shared `PlanChooser`. Every step uses the existing workspace APIs and can be skipped; no new business rules. Covered by `tests/Gas365.E2E/onboarding.spec.ts` on desktop and mobile.
+
+## Public website (2026-09-30)
+
+`/` is now the public Gas365 website (hero, problems and solutions, features, how it works, live pricing with the monthly/yearly switch, security, FAQ, final call to action and footer). The system status page moved to `/status`. Copy is original; no testimonials, reviews, customer counts or ratings are shown. The hero preview is labelled as sample data. Plans and prices come from the anonymous read-only endpoint `GET /api/public/plans` (active plans only). Contact details live in `apps/web/src/site-config.ts`; empty values are hidden, so the owner must fill them in before launch. Covered by `tests/Gas365.E2E/marketing.spec.ts`.

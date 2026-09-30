@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { setNonce } from 'get-nonce';
 import { App } from './App';
+import { MarketingPage } from './MarketingPage';
 import { AuthPage } from './AuthPage';
 import { WorkspacePage } from './WorkspacePage';
 import './styles.css';
@@ -23,7 +24,8 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<App />} />
+          <Route path="/" element={<MarketingPage />} />
+          <Route path="/status" element={<App />} />
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/workspace/:section" element={<WorkspacePage />} />
           {(
@@ -47,7 +49,7 @@ createRoot(document.getElementById('root')!).render(
             element={
               <main>
                 <h1>Page not found</h1>
-                <a href="/">Return to platform status</a>
+                <a href="/">Return to the Gas365 home page</a>
               </main>
             }
           />

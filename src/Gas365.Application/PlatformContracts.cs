@@ -41,6 +41,8 @@ public interface IPlatformAccess
 {
     Task<PageDto<TenantSummaryDto>> TenantsAsync(string? search, int page, CancellationToken ct);
     Task<PlanDto[]> PlansAsync(CancellationToken ct);
+    // Public catalogue for the marketing site: active plans, prices and limits only.
+    Task<PlanDto[]> PublicPlansAsync(CancellationToken ct);
     Task<PlanDto> UpdatePlanAsync(Guid id, PlanUpdateRequest request, CancellationToken ct);
     Task<TenantSummaryDto> ActivateAsync(Guid tenantId, ActivationRequest request, CancellationToken ct);
     Task<TenantSummaryDto> ExtendTrialAsync(Guid tenantId, TrialExtensionRequest request, CancellationToken ct);

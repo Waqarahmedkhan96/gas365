@@ -44,3 +44,9 @@ Status on 2026-09-29: the software is **ready for a staging deployment**. It is 
 5. Run `backup.sh`, then `restore.sh` into a scratch database, and compare counts.
 6. Run `scripts/load-test.mjs` against staging with `WEB_URL`, in a quiet window.
 7. Record results in the next phase report. Only then consider a production release, through the approval-gated workflow.
+
+## Public website before launch
+
+- Fill in WhatsApp number, phone, email and city in `apps/web/src/site-config.ts` (hidden while empty).
+- Set plan prices in Platform admin; the website shows "Price on request" until then.
+- Add privacy policy and terms pages reviewed for Pakistan before collecting sign-ups from the public.
