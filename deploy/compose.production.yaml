@@ -15,6 +15,9 @@ x-api-environment: &api-environment
   Mail__From: ${MAIL_FROM}
   Mail__PublicOrigin: https://${DOMAIN}
   Platform__AdminEmails: ${PLATFORM_ADMIN_EMAILS}
+  # Optional. Google sign-in stays off while either value is empty.
+  Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+  Authentication__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
   ForwardedHeaders__Limit: 2
 
 services:

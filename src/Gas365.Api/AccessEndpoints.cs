@@ -8,7 +8,7 @@ namespace Gas365.Api;
 
 public static class AccessEndpoints
 {
-    private static async Task SignIn(HttpContext context, SessionGrant grant)
+    internal static async Task SignInAsync(HttpContext context, SessionGrant grant)
     {
         var principal = new ClaimsPrincipal(new ClaimsIdentity([
             new Claim(ClaimTypes.NameIdentifier, grant.UserId.ToString()), new Claim("session", grant.SessionId.ToString())
@@ -28,7 +28,7 @@ public static class AccessEndpoints
         auth.MapPost("/register", async (RegisterRequest request, IIdentityAccess service, CancellationToken ct) =>
         { await service.RegisterAsync(request, ct); return Results.NoContent(); });
         auth.MapPost("/login", async (LoginRequest request, IIdentityAccess service, HttpContext context, CancellationToken ct) =>
-        { await SignIn(context, await service.LoginAsync(request, ct)); return Results.NoContent(); });
+        { await SignInAsync(context, await service.LoginAsync(request, ct)); return Results.NoContent(); });
         auth.MapPost("/confirm", async (ConfirmRequest request, IIdentityAccess service, CancellationToken ct) =>
         { await service.ConfirmAsync(request, ct); return Results.NoContent(); });
         auth.MapPost("/forgot", async (EmailRequest request, IIdentityAccess service, CancellationToken ct) =>
@@ -39,7 +39,8 @@ public static class AccessEndpoints
         { await service.ResetAsync(request, ct); return Results.NoContent(); });
         auth.MapGet("/me", (IIdentityAccess service, CancellationToken ct) => service.MeAsync(ct)).RequireAuthorization().RequireRateLimiting("session");
         auth.MapPost("/switch", async (SwitchRequest request, IIdentityAccess service, HttpContext context, CancellationToken ct) =>
-        { await SignIn(context, await service.SwitchAsync(request.MembershipId, ct)); return Results.NoContent(); }).RequireAuthorization();
+        { await SignInAsync(context, await service.SwitchAsync(request.MembershipId, ct)); return Results.NoContent(); }).RequireAuthorization();
+        auth.MapExternalSignIn(app.Configuration);
         auth.MapPost("/logout", async (IIdentityAccess service, TenantScope scope, HttpContext context, CancellationToken ct) =>
         { await service.RevokeAsync(scope.SessionId, ct); await context.SignOutAsync(); return Results.NoContent(); }).RequireAuthorization();
         auth.MapGet("/sessions", (IIdentityAccess service, CancellationToken ct) => service.SessionsAsync(ct)).RequireAuthorization().RequireRateLimiting("session");

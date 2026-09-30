@@ -6,6 +6,7 @@ import { setNonce } from 'get-nonce';
 import { App } from './App';
 import { MarketingPage } from './MarketingPage';
 import { AuthPage } from './AuthPage';
+import { GoogleSignupPage } from './GoogleSignupPage';
 import { WorkspacePage } from './WorkspacePage';
 import './styles.css';
 import '@fontsource/inter/400.css';
@@ -26,6 +27,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<MarketingPage />} />
           <Route path="/status" element={<App />} />
+          <Route path="/register/google" element={<GoogleSignupPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/workspace/:section" element={<WorkspacePage />} />
           {(

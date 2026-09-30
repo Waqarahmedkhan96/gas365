@@ -21,6 +21,10 @@ public sealed class AccessException(int statusCode, string message) : Exception(
 
 public sealed record RegisterRequest(string Email, string Password, string Name, string BusinessName);
 public sealed record LoginRequest(string Email, string Password);
+// An identity already verified by an external provider (Google). Only verified emails are accepted.
+public sealed record ExternalIdentity(string Provider, string ProviderKey, string Email, bool EmailVerified, string Name);
+public sealed record ExternalRegisterRequest(string Name, string BusinessName);
+public sealed record ExternalPendingDto(string Email, string Name);
 public sealed record EmailRequest(string Email);
 public sealed record ConfirmRequest(string Email, string Token);
 public sealed record ResetRequest(string Email, string Token, string Password);
@@ -53,6 +57,9 @@ public interface IIdentityAccess
 {
     Task RegisterAsync(RegisterRequest request, CancellationToken ct);
     Task<SessionGrant> LoginAsync(LoginRequest request, CancellationToken ct);
+    // Signs in a linked or matching verified account; returns null when a new business must be created first.
+    Task<SessionGrant?> ExternalLoginAsync(ExternalIdentity identity, CancellationToken ct);
+    Task<SessionGrant> ExternalRegisterAsync(ExternalIdentity identity, ExternalRegisterRequest request, CancellationToken ct);
     Task<bool> ValidateSessionAsync(Guid sessionId, Guid userId, CancellationToken ct);
     Task ConfirmAsync(ConfirmRequest request, CancellationToken ct);
     Task ForgotAsync(EmailRequest request, CancellationToken ct);

@@ -50,6 +50,13 @@ public sealed class IdentityAccess(Gas365DbContext db, TenantScope scope, UserMa
         await LockEmailAsync(email, ct);
         var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = email, Email = email, DisplayName = name };
         Ensure(await users.CreateAsync(user, request.Password));
+        await CreateBusinessAsync(user, business, ct);
+        await SendConfirmationAsync(user, ct);
+        await transaction.CommitAsync(ct);
+    }
+
+    private async Task<Membership> CreateBusinessAsync(ApplicationUser user, string business, CancellationToken ct)
+    {
         // New businesses start a trial of the Business plan with that plan's limits (owner decision, 2026-09-29).
         var plan = await db.Plans.AsNoTracking().SingleAsync(p => p.Id == SubscriptionRules.BusinessId, ct);
         var tenant = new Tenant
@@ -76,8 +83,58 @@ public sealed class IdentityAccess(Gas365DbContext db, TenantScope scope, UserMa
         db.SubscriptionEvents.Add(new SubscriptionEvent { TenantId = tenant.TenantId, Kind = "TrialStarted", PlanId = plan.Id, PeriodEnd = tenant.TrialEndsAt, ActorId = user.Id });
         Audit("tenant.created", tenant.TenantId);
         await db.SaveChangesAsync(ct);
-        await SendConfirmationAsync(user, ct);
+        return member;
+    }
+
+    private static void Verified(ExternalIdentity identity)
+    {
+        if (!identity.EmailVerified || string.IsNullOrWhiteSpace(identity.ProviderKey))
+            throw new AccessException(401, "Google did not confirm this email address. Sign in with email and password instead.");
+    }
+
+    public async Task<SessionGrant?> ExternalLoginAsync(ExternalIdentity identity, CancellationToken ct)
+    {
+        Verified(identity);
+        var email = Email(identity.Email);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await LockEmailAsync(email, ct);
+        var user = await users.FindByLoginAsync(identity.Provider, identity.ProviderKey);
+        if (user is null)
+        {
+            user = await users.FindByEmailAsync(email);
+            if (user is null) { await transaction.CommitAsync(ct); return null; }
+            // The provider verified ownership of this address, so the existing account is linked to it.
+            Ensure(await users.AddLoginAsync(user, new UserLoginInfo(identity.Provider, identity.ProviderKey, identity.Provider)));
+            if (!user.EmailConfirmed) { user.EmailConfirmed = true; Ensure(await users.UpdateAsync(user)); }
+        }
+        var membership = await db.Memberships.IgnoreQueryFilters().Where(x => x.UserId == user.Id && x.Active).OrderBy(x => x.Id).FirstOrDefaultAsync(ct);
+        if (membership is null || await users.IsLockedOutAsync(user))
+            throw new AccessException(401, "Unable to sign in. Ask your business owner to check your access.");
+        scope.TenantId = membership.TenantId; scope.UserId = user.Id;
+        Audit("login.external", user.Id);
+        var grant = await GrantAsync(user, membership, ct);
         await transaction.CommitAsync(ct);
+        return grant;
+    }
+
+    public async Task<SessionGrant> ExternalRegisterAsync(ExternalIdentity identity, ExternalRegisterRequest request, CancellationToken ct)
+    {
+        Verified(identity);
+        var email = Email(identity.Email);
+        var name = Text(request.Name);
+        var business = Text(request.BusinessName);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await LockEmailAsync(email, ct);
+        if (await users.FindByLoginAsync(identity.Provider, identity.ProviderKey) is not null || await users.FindByEmailAsync(email) is not null)
+            throw new AccessException(409, "An account already uses this email. Sign in with Google instead.");
+        // No password: the account signs in through the provider until the owner sets one with "Forgot password".
+        var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = email, Email = email, DisplayName = name, EmailConfirmed = true };
+        Ensure(await users.CreateAsync(user));
+        Ensure(await users.AddLoginAsync(user, new UserLoginInfo(identity.Provider, identity.ProviderKey, identity.Provider)));
+        var membership = await CreateBusinessAsync(user, business, ct);
+        var grant = await GrantAsync(user, membership, ct);
+        await transaction.CommitAsync(ct);
+        return grant;
     }
 
     private async Task SendConfirmationAsync(ApplicationUser user, CancellationToken ct)
