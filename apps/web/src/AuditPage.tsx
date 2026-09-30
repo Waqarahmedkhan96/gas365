@@ -4,6 +4,7 @@ import { api, type Me } from './access-api';
 import { Button } from './components/ui/button';
 import type { AuditEntry, Correction } from './operations-types';
 import { businessDate, money } from './report-types';
+import { tr } from './i18n';
 
 const areas = [
   'access',
@@ -40,14 +41,14 @@ function Pager({
         disabled={page === 1}
         onClick={() => onPage(page - 1)}
       >
-        Previous
+        {tr('Previous')}
       </Button>
       <Button
         variant="secondary"
         disabled={page * data.pageSize >= data.total}
         onClick={() => onPage(page + 1)}
       >
-        Next
+        {tr('Next')}
       </Button>
     </div>
   );
@@ -97,30 +98,34 @@ export function AuditPage({
   const query = view === 'timeline' ? timeline : corrections;
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap gap-3" role="group" aria-label="View">
+      <div
+        className="flex flex-wrap gap-3"
+        role="group"
+        aria-label={tr('View')}
+      >
         <Button
           variant={view === 'timeline' ? 'default' : 'secondary'}
           aria-pressed={view === 'timeline'}
           onClick={() => reset(setView)('timeline')}
         >
-          Activity timeline
+          {tr('Activity timeline')}
         </Button>
         <Button
           variant={view === 'corrections' ? 'default' : 'secondary'}
           aria-pressed={view === 'corrections'}
           onClick={() => reset(setView)('corrections')}
         >
-          Corrections and reversals
+          {tr('Corrections and reversals')}
         </Button>
       </div>
       <section className="panel grid gap-4">
         <div
           className="flex flex-wrap items-end gap-4"
           role="group"
-          aria-label="Filters"
+          aria-label={tr('Filters')}
         >
           <label className="grid gap-1">
-            From
+            {tr('From')}
             <input
               type="date"
               value={from}
@@ -129,7 +134,7 @@ export function AuditPage({
             />
           </label>
           <label className="grid gap-1">
-            To
+            {tr('To')}
             <input
               type="date"
               value={to}
@@ -138,12 +143,12 @@ export function AuditPage({
           </label>
           {view === 'timeline' ? (
             <label className="grid gap-1">
-              Area
+              {tr('Area')}
               <select
                 value={area}
                 onChange={(e) => reset(setArea)(e.target.value)}
               >
-                <option value="">All areas</option>
+                <option value="">{tr('All areas')}</option>
                 {areas.map((a) => (
                   <option key={a} value={a}>
                     {a[0].toUpperCase() + a.slice(1)}
@@ -154,12 +159,12 @@ export function AuditPage({
           ) : (
             <>
               <label className="grid gap-1">
-                Module
+                {tr('Module')}
                 <select
                   value={module}
                   onChange={(e) => reset(setModule)(e.target.value)}
                 >
-                  <option value="">All modules</option>
+                  <option value="">{tr('All modules')}</option>
                   {modules.map((m) => (
                     <option key={m} value={m}>
                       {m[0].toUpperCase() + m.slice(1)}
@@ -168,12 +173,12 @@ export function AuditPage({
                 </select>
               </label>
               <label className="grid gap-1">
-                Branch
+                {tr('Branch')}
                 <select
                   value={branch}
                   onChange={(e) => reset(setBranch)(e.target.value)}
                 >
-                  <option value="">All accessible branches</option>
+                  <option value="">{tr('All accessible branches')}</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -185,11 +190,11 @@ export function AuditPage({
           )}
         </div>
         {query.error && <p role="alert">{query.error.message}</p>}
-        {query.isPending && <p role="status">Loading…</p>}
+        {query.isPending && <p role="status">{tr('Loading…')}</p>}
         {view === 'timeline' && timeline.data && (
           <>
             <p className="section-help">
-              {timeline.data.total} events in this period.
+              {timeline.data.total} {tr('events in this period.')}
             </p>
             <ul className="grid gap-2">
               {timeline.data.items.map((e) => (
@@ -215,34 +220,36 @@ export function AuditPage({
         {view === 'corrections' && corrections.data && (
           <>
             <p className="section-help">
-              Posted records are never edited. Each correction below is a
-              separate reversal with its reason and the person who made it.
+              {tr(
+                'Posted records are never edited. Each correction below is a separate reversal with its reason and the person who made it.',
+              )}
             </p>
             {corrections.data.items.length === 0 ? (
-              <p>No corrections in this period.</p>
+              <p>{tr('No corrections in this period.')}</p>
             ) : (
               <div
                 className="data-table report-table overflow-x-auto"
                 role="region"
-                aria-label="Corrections table"
+                aria-label={tr('Corrections table')}
                 tabIndex={0}
               >
                 <table>
                   <caption>
-                    Corrections — {corrections.data.total} in period
+                    {tr('Corrections —')} {corrections.data.total}{' '}
+                    {tr('in period')}
                   </caption>
                   <thead>
                     <tr>
-                      <th scope="col">Date</th>
-                      <th scope="col">Module</th>
-                      <th scope="col">Correction</th>
-                      <th scope="col">Branch</th>
+                      <th scope="col">{tr('Date')}</th>
+                      <th scope="col">{tr('Module')}</th>
+                      <th scope="col">{tr('Correction')}</th>
+                      <th scope="col">{tr('Branch')}</th>
                       <th scope="col" className="text-right">
-                        Amount
+                        {tr('Amount')}
                       </th>
-                      <th scope="col">Reason</th>
-                      <th scope="col">By</th>
-                      <th scope="col">Original record</th>
+                      <th scope="col">{tr('Reason')}</th>
+                      <th scope="col">{tr('By')}</th>
+                      <th scope="col">{tr('Original record')}</th>
                     </tr>
                   </thead>
                   <tbody>

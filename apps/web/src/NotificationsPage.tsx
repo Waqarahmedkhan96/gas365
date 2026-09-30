@@ -14,6 +14,7 @@ import { PageActions } from './components/page-actions';
 import { api, type Me } from './access-api';
 import { Button } from './components/ui/button';
 import type { Notification } from './operations-types';
+import { tr } from './i18n';
 
 const targets: Record<Notification['kind'], string> = {
   LowStock: '/workspace/inventory',
@@ -94,13 +95,14 @@ export function NotificationsPage({
       {items.some((n) => !n.read) && (
         <PageActions>
           <Button variant="outline" onClick={() => void mark('/read-all')}>
-            <CheckCheck aria-hidden="true" size={18} /> Mark all as read
+            <CheckCheck aria-hidden="true" size={18} /> {tr('Mark all as read')}
           </Button>
         </PageActions>
       )}
       <p className="section-help">
-        Alerts clear themselves when the condition is resolved: stock is
-        replenished, credit is collected or the register is closed.
+        {tr(
+          'Alerts clear themselves when the condition is resolved: stock is replenished, credit is collected or the register is closed.',
+        )}
       </p>
       {error && (
         <p role="alert" className="error-banner">
@@ -112,12 +114,14 @@ export function NotificationsPage({
           {list.error.message}
         </p>
       )}
-      {list.isPending && <p role="status">Loading notifications…</p>}
+      {list.isPending && <p role="status">{tr('Loading notifications…')}</p>}
       {list.data && items.length === 0 && (
         <PageState
           kind="empty"
-          title="You are all caught up"
-          description="No open alerts. Everything needing attention will appear here."
+          title={tr('You are all caught up')}
+          description={tr(
+            'No open alerts. Everything needing attention will appear here.',
+          )}
         />
       )}
       {items.length > 0 && (
@@ -131,12 +135,12 @@ export function NotificationsPage({
                 </span>
                 <div className="alert-body">
                   <strong>
-                    {n.read ? '' : 'New · '}
+                    {n.read ? '' : tr('New · ')}
                     {n.title}
                   </strong>
                   <span>{n.body}</span>
                   <time dateTime={n.createdAt}>
-                    Raised{' '}
+                    {tr('Raised')}{' '}
                     {new Date(n.createdAt).toLocaleString('en-PK', {
                       timeZone,
                     })}
@@ -144,14 +148,14 @@ export function NotificationsPage({
                 </div>
                 <div className="alert-actions">
                   <Button variant="outline" asChild>
-                    <Link to={targets[n.kind]}>Open</Link>
+                    <Link to={targets[n.kind]}>{tr('Open')}</Link>
                   </Button>
                   {!n.read && (
                     <Button
                       variant="ghost"
                       onClick={() => void mark(`/${n.id}/read`)}
                     >
-                      Mark as read
+                      {tr('Mark as read')}
                     </Button>
                   )}
                 </div>
@@ -167,14 +171,14 @@ export function NotificationsPage({
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
           >
-            Previous
+            {tr('Previous')}
           </Button>
           <Button
             variant="outline"
             disabled={page * list.data.pageSize >= list.data.total}
             onClick={() => setPage(page + 1)}
           >
-            Next
+            {tr('Next')}
           </Button>
         </div>
       )}

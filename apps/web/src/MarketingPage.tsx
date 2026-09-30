@@ -32,6 +32,8 @@ import { BrandMark } from './components/icons';
 import { money } from './report-types';
 import { hasContact, siteConfig } from './site-config';
 import type { BillingPeriod, Plan } from './platform-types';
+import { tr } from './i18n';
+import { LanguageToggle } from './components/LanguageToggle';
 
 const problems: {
   icon: LucideIcon;
@@ -235,16 +237,17 @@ function Pricing() {
       aria-labelledby="pricing-title"
     >
       <div className="mk-heading">
-        <p className="mk-eyebrow">Pricing</p>
-        <h2 id="pricing-title">Simple plans in rupees</h2>
+        <p className="mk-eyebrow">{tr('Pricing')}</p>
+        <h2 id="pricing-title">{tr('Simple plans in rupees')}</h2>
         <p>
-          Every plan starts with a 14-day free trial. Pay monthly, or yearly and
-          get two months free.
+          {tr(
+            'Every plan starts with a 14-day free trial. Pay monthly, or yearly and get two months free.',
+          )}
         </p>
         <div
           className="billing-toggle"
           role="radiogroup"
-          aria-label="Billing period"
+          aria-label={tr('Billing period')}
         >
           {(['Monthly', 'Yearly'] as const).map((value) => (
             <button
@@ -256,13 +259,13 @@ function Pricing() {
             >
               {value}
               {value === 'Yearly' && (
-                <span className="billing-badge">2 months free</span>
+                <span className="billing-badge">{tr('2 months free')}</span>
               )}
             </button>
           ))}
         </div>
       </div>
-      {plans.isPending && <p role="status">Loading plans…</p>}
+      {plans.isPending && <p role="status">{tr('Loading plans…')}</p>}
       {plans.error && (
         <p role="alert" className="mk-center">
           {plans.error.message}
@@ -275,13 +278,15 @@ function Pricing() {
               <h3>{p.name}</h3>
               <p className="plan-price">
                 {p.monthlyPrice === null
-                  ? 'Price on request'
+                  ? tr('Price on request')
                   : period === 'Yearly' && p.yearlyPrice !== null
                     ? `${money(p.yearlyPrice)} per year`
                     : `${money(p.monthlyPrice)} per month`}
               </p>
               {period === 'Yearly' && p.yearlySaving !== null && (
-                <p className="plan-saving">You save {money(p.yearlySaving)}</p>
+                <p className="plan-saving">
+                  {tr('You save')} {money(p.yearlySaving)}
+                </p>
               )}
               <ul className="plan-features">
                 <li>
@@ -290,10 +295,10 @@ function Pricing() {
                 <li>
                   {p.maxUsers} {p.maxUsers === 1 ? 'user' : 'users'}
                 </li>
-                <li>All features included</li>
+                <li>{tr('All features included')}</li>
               </ul>
               <Link className="mk-button" to="/register">
-                Start free trial
+                {tr('Start free trial')}
               </Link>
             </li>
           ))}
@@ -318,13 +323,14 @@ export function MarketingPage() {
   return (
     <div className="marketing">
       <a className="skip-link" href="#main">
-        Skip to main content
+        {tr('Skip to main content')}
       </a>
       <header className="mk-header">
-        <Link to="/" className="mk-brand" aria-label="Gas365 home">
+        <Link to="/" className="mk-brand" aria-label={tr('Gas365 home')}>
           <BrandMark size={34} />
           <span aria-hidden="true">
-            Gas<span>365</span>
+            Gas
+            <span>365</span>
           </span>
         </Link>
         <button
@@ -332,7 +338,7 @@ export function MarketingPage() {
           className="mk-menu-button"
           aria-expanded={menu}
           aria-controls="mk-nav"
-          aria-label={menu ? 'Close menu' : 'Open menu'}
+          aria-label={menu ? tr('Close menu') : tr('Open menu')}
           onClick={() => setMenu((m) => !m)}
         >
           {menu ? (
@@ -343,24 +349,25 @@ export function MarketingPage() {
         </button>
         <nav
           id="mk-nav"
-          aria-label="Website"
+          aria-label={tr('Website')}
           className={menu ? 'mk-nav open' : 'mk-nav'}
         >
           <ul>
             {nav.map(([href, label]) => (
               <li key={href}>
                 <a href={href} onClick={() => setMenu(false)}>
-                  {label}
+                  {tr(label)}
                 </a>
               </li>
             ))}
           </ul>
           <div className="mk-nav-actions">
+            <LanguageToggle />
             <Link className="mk-button outline" to="/login">
-              Sign in
+              {tr('Sign in')}
             </Link>
             <Link className="mk-button" to="/register">
-              Start free trial
+              {tr('Start free trial')}
             </Link>
           </div>
         </nav>
@@ -368,58 +375,64 @@ export function MarketingPage() {
       <main id="main" className="mk-main">
         <section className="mk-hero" aria-labelledby="hero-title">
           <div className="mk-hero-copy">
-            <p className="mk-pill">Built for LPG retailers and distributors</p>
-            <h1 id="hero-title">Run your LPG business from one clear screen</h1>
+            <p className="mk-pill">
+              {tr('Built for LPG retailers and distributors')}
+            </p>
+            <h1 id="hero-title">
+              {tr('Run your LPG business from one clear screen')}
+            </h1>
             <p className="mk-lead">
-              Sales, cylinders, stock, udhaar and daily cash closing for gas
-              shops and distributors across Pakistan. Every rupee and every
-              cylinder accounted for.
+              {tr(
+                'Sales, cylinders, stock, udhaar and daily cash closing for gas shops and distributors across Pakistan. Every rupee and every cylinder accounted for.',
+              )}
             </p>
             <div className="mk-cta">
               <Link className="mk-button large" to="/register">
-                Start 14-day free trial
+                {tr('Start 14-day free trial')}
                 <ArrowRight aria-hidden="true" size={18} />
               </Link>
               <a className="mk-button large outline" href="#pricing">
-                See pricing
+                {tr('See pricing')}
               </a>
             </div>
             <ul className="mk-trust">
               <li>
-                <CheckCircle2 aria-hidden="true" size={18} /> No card needed
+                <CheckCircle2 aria-hidden="true" size={18} />{' '}
+                {tr('No card needed')}
               </li>
               <li>
-                <CheckCircle2 aria-hidden="true" size={18} /> Prices in PKR
+                <CheckCircle2 aria-hidden="true" size={18} />{' '}
+                {tr('Prices in PKR')}
               </li>
               <li>
-                <CheckCircle2 aria-hidden="true" size={18} /> Works on phone and
-                computer
+                <CheckCircle2 aria-hidden="true" size={18} />{' '}
+                {tr('Works on phone and computer')}
               </li>
             </ul>
           </div>
           <figure className="mk-preview">
             <figcaption className="sr-only">
-              Illustration of the Gas365 overview with sample figures
+              {tr('Illustration of the Gas365 overview with sample figures')}
             </figcaption>
             <div className="mk-preview-bar" aria-hidden="true">
               <span />
               <span />
               <span />
-              <strong>Overview</strong>
+              <strong>{tr('Overview')}</strong>
             </div>
             <div className="mk-preview-body" aria-hidden="true">
               <div className="mk-preview-cards">
                 <div>
-                  <small>Net revenue</small>
-                  <strong>PKR 84,500</strong>
+                  <small>{tr('Net revenue')}</small>
+                  <strong>{tr('PKR 84,500')}</strong>
                 </div>
                 <div>
-                  <small>Cash in drawer</small>
-                  <strong>PKR 48,250</strong>
+                  <small>{tr('Cash in drawer')}</small>
+                  <strong>{tr('PKR 48,250')}</strong>
                 </div>
                 <div>
-                  <small>Udhaar</small>
-                  <strong>PKR 12,300</strong>
+                  <small>{tr('Udhaar')}</small>
+                  <strong>{tr('PKR 12,300')}</strong>
                 </div>
               </div>
               <div className="mk-preview-chart">
@@ -429,29 +442,33 @@ export function MarketingPage() {
               </div>
               <ul className="mk-preview-list">
                 <li>
-                  <span>INV-021 · Hotel customer</span>
-                  <em>Paid</em>
+                  <span>{tr('INV-021 · Hotel customer')}</span>
+                  <em>{tr('Paid')}</em>
                 </li>
                 <li>
-                  <span>INV-022 · Walk-in refill</span>
-                  <em>Paid</em>
+                  <span>{tr('INV-022 · Walk-in refill')}</span>
+                  <em>{tr('Paid')}</em>
                 </li>
                 <li>
-                  <span>INV-023 · Restaurant</span>
-                  <em className="due">Udhaar</em>
+                  <span>{tr('INV-023 · Restaurant')}</span>
+                  <em className="due">{tr('Udhaar')}</em>
                 </li>
               </ul>
             </div>
-            <p className="mk-sample">Sample data for illustration</p>
+            <p className="mk-sample">{tr('Sample data for illustration')}</p>
           </figure>
         </section>
 
         <section className="mk-section" aria-labelledby="problems-title">
           <div className="mk-heading">
-            <p className="mk-eyebrow">Why Gas365</p>
-            <h2 id="problems-title">From paper registers to clear records</h2>
+            <p className="mk-eyebrow">{tr('Why Gas365')}</p>
+            <h2 id="problems-title">
+              {tr('From paper registers to clear records')}
+            </h2>
             <p>
-              The everyday problems of an LPG business, solved in one place.
+              {tr(
+                'The everyday problems of an LPG business, solved in one place.',
+              )}
             </p>
           </div>
           <ul className="mk-grid four">
@@ -461,12 +478,12 @@ export function MarketingPage() {
                   <Icon size={22} />
                 </span>
                 <p className="mk-before">
-                  <XCircle aria-hidden="true" size={16} /> {before}
+                  <XCircle aria-hidden="true" size={16} /> {tr(before)}
                 </p>
                 <h3>
-                  <CheckCircle2 aria-hidden="true" size={18} /> {after}
+                  <CheckCircle2 aria-hidden="true" size={18} /> {tr(after)}
                 </h3>
-                <p>{text}</p>
+                <p>{tr(text)}</p>
               </li>
             ))}
           </ul>
@@ -478,9 +495,13 @@ export function MarketingPage() {
           aria-labelledby="features-title"
         >
           <div className="mk-heading">
-            <p className="mk-eyebrow">Features</p>
-            <h2 id="features-title">Everything an LPG business needs</h2>
-            <p>Made for how gas shops and distributors actually work.</p>
+            <p className="mk-eyebrow">{tr('Features')}</p>
+            <h2 id="features-title">
+              {tr('Everything an LPG business needs')}
+            </h2>
+            <p>
+              {tr('Made for how gas shops and distributors actually work.')}
+            </p>
           </div>
           <ul className="mk-grid four">
             {features.map(({ icon: Icon, title, points }) => (
@@ -488,11 +509,11 @@ export function MarketingPage() {
                 <span className="mk-icon" aria-hidden="true">
                   <Icon size={22} />
                 </span>
-                <h3>{title}</h3>
+                <h3>{tr(title)}</h3>
                 <ul className="mk-points">
                   {points.map((p) => (
                     <li key={p}>
-                      <CheckCircle2 aria-hidden="true" size={16} /> {p}
+                      <CheckCircle2 aria-hidden="true" size={16} /> {tr(p)}
                     </li>
                   ))}
                 </ul>
@@ -503,8 +524,8 @@ export function MarketingPage() {
 
         <section id="how" className="mk-section" aria-labelledby="how-title">
           <div className="mk-heading">
-            <p className="mk-eyebrow">How it works</p>
-            <h2 id="how-title">Up and running in four steps</h2>
+            <p className="mk-eyebrow">{tr('How it works')}</p>
+            <h2 id="how-title">{tr('Up and running in four steps')}</h2>
           </div>
           <ol className="mk-steps">
             {steps.map((s, i) => (
@@ -512,14 +533,14 @@ export function MarketingPage() {
                 <span className="mk-step-number" aria-hidden="true">
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <h3>{s.title}</h3>
-                <p>{s.text}</p>
+                <h3>{tr(s.title)}</h3>
+                <p>{tr(s.text)}</p>
               </li>
             ))}
           </ol>
           <div className="mk-center">
             <Link className="mk-button large" to="/register">
-              Create your account
+              {tr('Create your account')}
             </Link>
           </div>
         </section>
@@ -528,8 +549,8 @@ export function MarketingPage() {
 
         <section className="mk-section alt" aria-labelledby="security-title">
           <div className="mk-heading">
-            <p className="mk-eyebrow">Security</p>
-            <h2 id="security-title">Your business data stays yours</h2>
+            <p className="mk-eyebrow">{tr('Security')}</p>
+            <h2 id="security-title">{tr('Your business data stays yours')}</h2>
           </div>
           <ul className="mk-grid three">
             {security.map(({ icon: Icon, title, text }) => (
@@ -537,8 +558,8 @@ export function MarketingPage() {
                 <span className="mk-icon" aria-hidden="true">
                   <Icon size={20} />
                 </span>
-                <h3>{title}</h3>
-                <p>{text}</p>
+                <h3>{tr(title)}</h3>
+                <p>{tr(text)}</p>
               </li>
             ))}
           </ul>
@@ -546,28 +567,30 @@ export function MarketingPage() {
 
         <section id="faq" className="mk-section" aria-labelledby="faq-title">
           <div className="mk-heading">
-            <p className="mk-eyebrow">Questions</p>
-            <h2 id="faq-title">Frequently asked questions</h2>
+            <p className="mk-eyebrow">{tr('Questions')}</p>
+            <h2 id="faq-title">{tr('Frequently asked questions')}</h2>
           </div>
           <div className="mk-faq">
             {faqs.map((f) => (
               <details key={f.q}>
-                <summary>{f.q}</summary>
-                <p>{f.a}</p>
+                <summary>{tr(f.q)}</summary>
+                <p>{tr(f.a)}</p>
               </details>
             ))}
           </div>
         </section>
 
         <section className="mk-final" aria-labelledby="final-title">
-          <h2 id="final-title">Ready to go digital?</h2>
+          <h2 id="final-title">{tr('Ready to go digital?')}</h2>
           <p>
-            Start your 14-day free trial today. No card needed, and your data is
-            always yours to export.
+            {tr(
+              'Start your 14-day free trial today. No card needed, and your data is always yours to export.',
+            )}
           </p>
           <div className="mk-cta center">
             <Link className="mk-button large light" to="/register">
-              Start free trial <ArrowRight aria-hidden="true" size={18} />
+              {tr('Start free trial')}{' '}
+              <ArrowRight aria-hidden="true" size={18} />
             </Link>
             {siteConfig.whatsappNumber && (
               <a
@@ -576,7 +599,8 @@ export function MarketingPage() {
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                <MessageCircle aria-hidden="true" size={18} /> WhatsApp us
+                <MessageCircle aria-hidden="true" size={18} />{' '}
+                {tr('WhatsApp us')}
               </a>
             )}
           </div>
@@ -585,36 +609,43 @@ export function MarketingPage() {
       <footer className="mk-footer">
         <div className="mk-footer-grid">
           <div>
-            <Link to="/" className="mk-brand light" aria-label="Gas365 home">
+            <Link
+              to="/"
+              className="mk-brand light"
+              aria-label={tr('Gas365 home')}
+            >
               <BrandMark size={30} />
               <span aria-hidden="true">
-                Gas<span>365</span>
+                Gas
+                <span>365</span>
               </span>
             </Link>
             <p>
-              LPG business software for retailers and distributors in Pakistan.
+              {tr(
+                'LPG business software for retailers and distributors in Pakistan.',
+              )}
             </p>
           </div>
-          <nav aria-label="Footer">
-            <h2>Product</h2>
+          <nav aria-label={tr('Footer')}>
+            <h2>{tr('Product')}</h2>
             <ul>
               <li>
-                <a href="#features">Features</a>
+                <a href="#features">{tr('Features')}</a>
               </li>
               <li>
-                <a href="#pricing">Pricing</a>
+                <a href="#pricing">{tr('Pricing')}</a>
               </li>
               <li>
-                <Link to="/login">Sign in</Link>
+                <Link to="/login">{tr('Sign in')}</Link>
               </li>
               <li>
-                <Link to="/status">System status</Link>
+                <Link to="/status">{tr('System status')}</Link>
               </li>
             </ul>
           </nav>
           {hasContact() && (
             <div id="contact">
-              <h2>Contact</h2>
+              <h2>{tr('Contact')}</h2>
               <ul>
                 {siteConfig.email && (
                   <li>
@@ -641,7 +672,7 @@ export function MarketingPage() {
           )}
         </div>
         <p className="mk-copyright">
-          © {new Date().getFullYear()} Gas365. All rights reserved.
+          © {new Date().getFullYear()} {tr('Gas365. All rights reserved.')}
         </p>
       </footer>
     </div>

@@ -46,6 +46,7 @@ import { statusTone, useViewFocus } from './lib/ui-helpers';
 import { businessDate, type Dashboard } from './report-types';
 import type { Page, Item, Warehouse } from './inventory-types';
 import type { Purchase, Supplier, SupplierProfile } from './purchasing-types';
+import { tr } from './i18n';
 
 const root = '/api/workspace/purchasing';
 const money = (value: number) =>
@@ -220,7 +221,8 @@ function PurchasingWorkspace({
     <>
       {error && (
         <p role="alert" className="error-banner">
-          {error} For an uncertain response, retry without changing the command.
+          {error}{' '}
+          {tr('For an uncertain response, retry without changing the command.')}
         </p>
       )}
       {notice && (
@@ -232,8 +234,8 @@ function PurchasingWorkspace({
   );
   const supplierDialog = (
     <Modal
-      title={supplierEdit === 'new' ? 'Add supplier' : 'Edit supplier'}
-      description="Supplier details appear on purchases and vouchers."
+      title={supplierEdit === 'new' ? tr('Add supplier') : tr('Edit supplier')}
+      description={tr('Supplier details appear on purchases and vouchers.')}
       open={!!supplierEdit}
       onOpenChange={(value) => {
         if (!value) setSupplierEdit(null);
@@ -247,7 +249,7 @@ function PurchasingWorkspace({
               : `${supplierEdit.id}:${supplierEdit.version}`
           }
           className="grid gap-4"
-          aria-label="Supplier editor"
+          aria-label={tr('Supplier editor')}
           onSubmit={(e) => {
             const d = form(e);
             void run(async () => {
@@ -270,21 +272,21 @@ function PurchasingWorkspace({
           }}
         >
           <Field
-            label="Supplier name"
+            label={tr('Supplier name')}
             name="name"
             required
             maxLength={120}
             defaultValue={supplierEdit === 'new' ? '' : supplierEdit.name}
           />
           <Field
-            label="Phone"
+            label={tr('Phone')}
             name="phone"
             maxLength={80}
             inputMode="tel"
             defaultValue={supplierEdit === 'new' ? '' : supplierEdit.phone}
           />
           <Field
-            label="Address"
+            label={tr('Address')}
             name="address"
             maxLength={300}
             defaultValue={supplierEdit === 'new' ? '' : supplierEdit.address}
@@ -295,7 +297,7 @@ function PurchasingWorkspace({
               name="active"
               defaultChecked={supplierEdit === 'new' || supplierEdit.active}
             />
-            Active supplier
+            {tr('Active supplier')}
           </label>
           {error && <p role="alert">{error}</p>}
           <div className="dialog-actions">
@@ -304,9 +306,9 @@ function PurchasingWorkspace({
               variant="outline"
               onClick={() => setSupplierEdit(null)}
             >
-              Cancel
+              {tr('Cancel')}
             </Button>
-            <Button disabled={busy}>Save supplier</Button>
+            <Button disabled={busy}>{tr('Save supplier')}</Button>
           </div>
         </form>
       )}
@@ -358,10 +360,10 @@ function PurchasingWorkspace({
           back={() => open(view.from ?? { kind: 'list' })}
           backLabel={
             view.from?.kind === 'supplier'
-              ? 'Back to supplier'
+              ? tr('Back to supplier')
               : suppliersOnly
-                ? 'Back to suppliers'
-                : 'Back to purchases'
+                ? tr('Back to suppliers')
+                : tr('Back to purchases')
           }
           edit={(p) => open({ kind: 'edit', purchase: p })}
         />
@@ -391,14 +393,14 @@ function PurchasingWorkspace({
         {has('suppliers.manage') && (
           <PageActions>
             <Button onClick={() => setSupplierEdit('new')}>
-              <Plus aria-hidden="true" size={18} /> Add supplier
+              <Plus aria-hidden="true" size={18} /> {tr('Add supplier')}
             </Button>
           </PageActions>
         )}
         {feedback}
         {!branch && (
           <p role="status" className="muted-text">
-            Choose a branch to see supplier balances.
+            {tr('Choose a branch to see supplier balances.')}
           </p>
         )}
         <Toolbar
@@ -412,34 +414,40 @@ function PurchasingWorkspace({
             },
           }}
         >
-          <span className="toolbar-count">{total} suppliers</span>
+          <span className="toolbar-count">
+            {total} {tr('suppliers')}
+          </span>
         </Toolbar>
         {supplierDialog}
         {suppliers.isPending ? (
           <PageState
             kind="loading"
-            title="Loading suppliers"
-            description="Please wait while suppliers are loaded."
+            title={tr('Loading suppliers')}
+            description={tr('Please wait while suppliers are loaded.')}
           />
         ) : suppliers.error ? (
           <PageState
             kind="error"
-            title="Suppliers unavailable"
+            title={tr('Suppliers unavailable')}
             description={suppliers.error.message}
             retry={() => void suppliers.refetch()}
           />
         ) : !suppliers.data.items.length ? (
           <PageState
             kind="empty"
-            title={search ? 'No matching suppliers' : 'No suppliers yet'}
+            title={
+              search ? tr('No matching suppliers') : tr('No suppliers yet')
+            }
             description={
               search
-                ? 'Try another name or phone number.'
-                : 'Add the companies and agents you buy gas, cylinders and parts from.'
+                ? tr('Try another name or phone number.')
+                : tr(
+                    'Add the companies and agents you buy gas, cylinders and parts from.',
+                  )
             }
           />
         ) : (
-          <section aria-label="Suppliers" className="grid gap-4">
+          <section aria-label={tr('Suppliers')} className="grid gap-4">
             <ul className="entity-grid">
               {suppliers.data.items.map((row) => (
                 <li key={row.id} className="entity-card">
@@ -456,18 +464,18 @@ function PurchasingWorkspace({
                         {row.name}
                       </button>
                       <StatusChip tone={row.active ? 'success' : 'neutral'}>
-                        {row.active ? 'Active' : 'Inactive'}
+                        {row.active ? tr('Active') : tr('Inactive')}
                       </StatusChip>
                     </div>
                   </div>
                   <ul className="entity-facts">
                     <li>
                       <Phone aria-hidden="true" size={16} />
-                      {row.phone || 'No phone'}
+                      {row.phone || tr('No phone')}
                     </li>
                     <li>
                       <MapPin aria-hidden="true" size={16} />
-                      {row.address || 'No address'}
+                      {row.address || tr('No address')}
                     </li>
                   </ul>
                   <div className="entity-actions">
@@ -477,7 +485,11 @@ function PurchasingWorkspace({
                       onClick={() => open({ kind: 'supplier', id: row.id })}
                     >
                       <Eye aria-hidden="true" size={16} />
-                      View<span className="sr-only"> {row.name} profile</span>
+                      {tr('View')}
+                      <span className="sr-only">
+                        {' '}
+                        {row.name} {tr('profile')}
+                      </span>
                     </Button>
                     {has('suppliers.manage') && (
                       <Button
@@ -485,7 +497,8 @@ function PurchasingWorkspace({
                         onClick={() => setSupplierEdit(row)}
                       >
                         <Pencil aria-hidden="true" size={16} />
-                        Edit<span className="sr-only"> {row.name}</span>
+                        {tr('Edit')}
+                        <span className="sr-only"> {row.name}</span>
                       </Button>
                     )}
                   </div>
@@ -510,8 +523,10 @@ function PurchasingWorkspace({
     return (
       <PageState
         kind="empty"
-        title="Choose a branch"
-        description="Select a branch in the top bar to work with purchases."
+        title={tr('Choose a branch')}
+        description={tr(
+          'Select a branch in the top bar to work with purchases.',
+        )}
       />
     );
   const payables = figures.data?.metrics.find((m) => m.key === 'payables');
@@ -520,36 +535,36 @@ function PurchasingWorkspace({
       {has('purchases.create') && (
         <PageActions>
           <Button onClick={() => open({ kind: 'edit' })}>
-            <Plus aria-hidden="true" size={18} /> New purchase
+            <Plus aria-hidden="true" size={18} /> {tr('New purchase')}
           </Button>
         </PageActions>
       )}
       {feedback}
-      <StatGrid label="Purchasing summary">
+      <StatGrid label={tr('Purchasing summary')}>
         <StatCard
-          label="Purchases"
+          label={tr('Purchases')}
           icon={Truck}
           value={purchases.data?.total ?? '—'}
-          note="Drafts and posted, selected branch"
+          note={tr('Drafts and posted, selected branch')}
         />
         {payables && (
           <StatCard
-            label="Supplier payables"
+            label={tr('Supplier payables')}
             icon={HandCoins}
             tone={payables.value > 0 ? 'warning' : 'neutral'}
             value={money(payables.value)}
-            note="Owed to suppliers, selected branch"
+            note={tr('Owed to suppliers, selected branch')}
           />
         )}
         <StatCard
-          label="Suppliers"
+          label={tr('Suppliers')}
           icon={Store}
           value={suppliers.data?.total ?? '—'}
-          note="In your supplier directory"
+          note={tr('In your supplier directory')}
         />
       </StatGrid>
       <DataTable
-        title="Purchases"
+        title={tr('Purchases')}
         data={purchases.data?.items || []}
         rowCount={purchases.data?.total || 0}
         pagination={pagination}
@@ -631,26 +646,26 @@ function SupplierPage({
   });
   const data = profile.data;
   return (
-    <section className="detail-page" aria-label="Supplier profile">
-      <BackButton onClick={back}>Back to suppliers</BackButton>
+    <section className="detail-page" aria-label={tr('Supplier profile')}>
+      <BackButton onClick={back}>{tr('Back to suppliers')}</BackButton>
       {!branch && (
         <PageState
           kind="empty"
-          title="Choose a branch"
-          description="Supplier balances are kept per branch."
+          title={tr('Choose a branch')}
+          description={tr('Supplier balances are kept per branch.')}
         />
       )}
       {profile.isPending && branch && (
         <PageState
           kind="loading"
-          title="Loading supplier"
-          description="Please wait while the supplier is loaded."
+          title={tr('Loading supplier')}
+          description={tr('Please wait while the supplier is loaded.')}
         />
       )}
       {profile.error && (
         <PageState
           kind="error"
-          title="Supplier unavailable"
+          title={tr('Supplier unavailable')}
           description={profile.error.message}
           retry={() => void profile.refetch()}
         />
@@ -665,60 +680,64 @@ function SupplierPage({
               <h2 ref={heading} tabIndex={-1}>
                 {data.supplier.name}{' '}
                 <StatusChip tone={data.supplier.active ? 'success' : 'neutral'}>
-                  {data.supplier.active ? 'Active' : 'Inactive'}
+                  {data.supplier.active ? tr('Active') : tr('Inactive')}
                 </StatusChip>
               </h2>
               <ul className="entity-facts inline">
                 <li>
                   <Phone aria-hidden="true" size={16} />
-                  {data.supplier.phone || 'No phone'}
+                  {data.supplier.phone || tr('No phone')}
                 </li>
                 <li>
                   <MapPin aria-hidden="true" size={16} />
-                  {data.supplier.address || 'No address'}
+                  {data.supplier.address || tr('No address')}
                 </li>
               </ul>
             </div>
             {canEdit && (
               <div className="detail-actions">
                 <Button onClick={() => edit(data.supplier)}>
-                  <Pencil aria-hidden="true" size={16} /> Edit supplier
+                  <Pencil aria-hidden="true" size={16} /> {tr('Edit supplier')}
                 </Button>
               </div>
             )}
           </div>
-          <StatGrid label="Supplier balance">
+          <StatGrid label={tr('Supplier balance')}>
             <StatCard
-              label="Payable in selected branch"
+              label={tr('Payable in selected branch')}
               icon={HandCoins}
               tone={data.balance > 0 ? 'warning' : 'success'}
               value={money(data.balance)}
-              note="Owed to this supplier"
+              note={tr('Owed to this supplier')}
             />
             <StatCard
-              label="Unapplied supplier advances"
+              label={tr('Unapplied supplier advances')}
               icon={Wallet}
               value={money(data.unapplied)}
-              note="Paid ahead, not yet allocated"
+              note={tr('Paid ahead, not yet allocated')}
             />
           </StatGrid>
-          <Card title="Supplier ledger">
+          <Card title={tr('Supplier ledger')}>
             <p className="section-help">
-              Invoice activity is listed here; finance permissions give access
-              to the complete Udhaar history.
+              {tr(
+                'Invoice activity is listed here; finance permissions give access to the complete Udhaar history.',
+              )}
             </p>
             {!data.ledger.items.length ? (
-              <p className="muted-text">No purchases in this branch yet.</p>
+              <p className="muted-text">
+                {tr('No purchases in this branch yet.')}
+              </p>
             ) : (
               <ol className="timeline ledger-timeline">
                 {data.ledger.items.map(({ purchaseId, entry }) => (
                   <li key={entry.id}>
                     <div className="timeline-head">
-                      <strong>{entry.kind}</strong>
+                      <strong>{tr(entry.kind)}</strong>
                       <span>{entry.businessDate}</span>
                     </div>
                     <p>
-                      Payable {money(entry.payable)} · Cash {money(entry.cash)}
+                      {tr('Payable')} {money(entry.payable)} {tr('· Cash')}{' '}
+                      {money(entry.cash)}
                     </p>
                     {entry.reason && <p>{entry.reason}</p>}
                     <button
@@ -726,7 +745,7 @@ function SupplierPage({
                       className="table-link"
                       onClick={() => openPurchase(purchaseId)}
                     >
-                      Open purchase {purchaseId.slice(0, 8)}
+                      {tr('Open purchase')} {purchaseId.slice(0, 8)}
                     </button>
                   </li>
                 ))}
@@ -739,14 +758,14 @@ function SupplierPage({
                   disabled={ledgerPage === 1}
                   onClick={() => setLedgerPage((x) => x - 1)}
                 >
-                  Previous ledger page
+                  {tr('Previous ledger page')}
                 </Button>
                 <Button
                   variant="outline"
                   disabled={ledgerPage * 20 >= data.ledger.total}
                   onClick={() => setLedgerPage((x) => x + 1)}
                 >
-                  Next ledger page
+                  {tr('Next ledger page')}
                 </Button>
               </div>
             )}
@@ -790,24 +809,24 @@ function PurchaseDetail({
       {detail.isPending && (
         <PageState
           kind="loading"
-          title="Loading purchase"
-          description="Please wait while the purchase is loaded."
+          title={tr('Loading purchase')}
+          description={tr('Please wait while the purchase is loaded.')}
         />
       )}
       {detail.error && (
         <PageState
           kind="error"
-          title="Purchase unavailable"
+          title={tr('Purchase unavailable')}
           description={detail.error.message}
           retry={() => void detail.refetch()}
         />
       )}
       {p && (
-        <section className="grid gap-6" aria-label="Purchase details">
+        <section className="grid gap-6" aria-label={tr('Purchase details')}>
           <div className="detail-header">
             <div>
               <h2>
-                Purchase {p.snapshot.reference}{' '}
+                {tr('Purchase')} {p.snapshot.reference}{' '}
                 <StatusChip tone={statusTone(p.status)}>{p.status}</StatusChip>
               </h2>
               <p>
@@ -821,11 +840,12 @@ function PurchaseDetail({
                 disabled={detail.isFetching}
                 onClick={() => void detail.refetch()}
               >
-                <RefreshCw aria-hidden="true" size={16} /> Refresh purchase
+                <RefreshCw aria-hidden="true" size={16} />{' '}
+                {tr('Refresh purchase')}
               </Button>
               {p.status === 'Draft' && has('purchases.create') && (
                 <Button variant="outline" onClick={() => edit(p)}>
-                  <Pencil aria-hidden="true" size={16} /> Edit draft
+                  <Pencil aria-hidden="true" size={16} /> {tr('Edit draft')}
                 </Button>
               )}
               {p.status !== 'Draft' && (
@@ -853,27 +873,32 @@ function PurchaseDetail({
                     })
                   }
                 >
-                  <Download aria-hidden="true" size={16} /> Download PDF voucher
+                  <Download aria-hidden="true" size={16} />{' '}
+                  {tr('Download PDF voucher')}
                 </Button>
               )}
             </div>
           </div>
-          <StatGrid label="Purchase totals">
-            <StatCard label="Total" icon={Receipt} value={money(p.total)} />
+          <StatGrid label={tr('Purchase totals')}>
             <StatCard
-              label="Paid to supplier"
+              label={tr('Total')}
+              icon={Receipt}
+              value={money(p.total)}
+            />
+            <StatCard
+              label={tr('Paid to supplier')}
               icon={Banknote}
               tone="success"
               value={money(p.paid)}
             />
             <StatCard
-              label="Outstanding"
+              label={tr('Outstanding')}
               icon={HandCoins}
               tone={p.outstanding > 0 ? 'warning' : 'success'}
               value={money(p.outstanding)}
             />
             <StatCard
-              label="Landed charges"
+              label={tr('Landed charges')}
               icon={Truck}
               value={money(p.snapshot.landedCharges)}
               note={`Allocated by ${p.snapshot.allocationRule.toLowerCase()}`}
@@ -881,21 +906,21 @@ function PurchaseDetail({
           </StatGrid>
           <div className="split-layout">
             <div className="grid gap-6 content-start">
-              <Card title="Items received">
+              <Card title={tr('Items received')}>
                 <div
                   className="line-table"
                   role="region"
-                  aria-label="Purchase lines"
+                  aria-label={tr('Purchase lines')}
                   tabIndex={0}
                 >
                   <table>
                     <thead>
                       <tr>
-                        <th scope="col">Item</th>
-                        <th scope="col">Quantity</th>
-                        <th scope="col">Base</th>
-                        <th scope="col">Landed</th>
-                        <th scope="col">Value</th>
+                        <th scope="col">{tr('Item')}</th>
+                        <th scope="col">{tr('Quantity')}</th>
+                        <th scope="col">{tr('Base')}</th>
+                        <th scope="col">{tr('Landed')}</th>
+                        <th scope="col">{tr('Value')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -909,11 +934,12 @@ function PurchaseDetail({
                               {line.warehouse} · {line.bucket}
                             </span>
                             <span className="cell-note">
-                              Receipt unit cost: {line.receiptUnitCost} PKR
+                              {tr('Receipt unit cost:')} {line.receiptUnitCost}{' '}
+                              {tr('PKR')}
                             </span>
                             {line.serials.length > 0 && (
                               <span className="cell-note">
-                                Serials: {line.serials.join(', ')}
+                                {tr('Serials:')} {line.serials.join(', ')}
                               </span>
                             )}
                           </td>
@@ -935,16 +961,16 @@ function PurchaseDetail({
                 )}
               </Card>
               {p.status !== 'Draft' && (
-                <Card title="Payment and correction history">
+                <Card title={tr('Payment and correction history')}>
                   <ol className="timeline">
                     {p.entries.map((entry) => (
                       <li key={entry.id}>
                         <div className="timeline-head">
-                          <strong>{entry.kind}</strong>
+                          <strong>{tr(entry.kind)}</strong>
                           <span>{entry.businessDate}</span>
                         </div>
                         <p>
-                          Payable {money(entry.payable)} · Cash{' '}
+                          {tr('Payable')} {money(entry.payable)} {tr('· Cash')}{' '}
                           {money(entry.cash)}
                         </p>
                         {entry.reason && <p>{entry.reason}</p>}
@@ -955,7 +981,7 @@ function PurchaseDetail({
                           has('purchases.reverse') &&
                           has('purchases.pay') && (
                             <ReasonForm
-                              label="Reverse payment"
+                              label={tr('Reverse payment')}
                               busy={busy}
                               action={(reason) =>
                                 void run(() =>
@@ -975,7 +1001,7 @@ function PurchaseDetail({
             </div>
             <aside className="grid gap-6 content-start">
               {p.status === 'Draft' && has('purchases.post') && (
-                <Card title="Post purchase" className="accent-card">
+                <Card title={tr('Post purchase')} className="accent-card">
                   <form
                     className="grid gap-3"
                     onSubmit={(e) => {
@@ -989,23 +1015,24 @@ function PurchaseDetail({
                     }}
                   >
                     <p className="section-help">
-                      Posting receives the stock at the server-calculated cost.
-                      Corrections require a reversal.
+                      {tr(
+                        'Posting receives the stock at the server-calculated cost. Corrections require a reversal.',
+                      )}
                     </p>
                     <Field
-                      label="Cash paid on posting (PKR)"
+                      label={tr('Cash paid on posting (PKR)')}
                       name="cash"
                       defaultValue="0"
                       inputMode="decimal"
                       disabled={!has('purchases.pay')}
                     />
                     <Field
-                      label="Confirm permanent posting"
+                      label={tr('Confirm permanent posting')}
                       type="checkbox"
                       required
                     />
                     <Button disabled={busy} className="w-full">
-                      Post purchase
+                      {tr('Post purchase')}
                     </Button>
                   </form>
                 </Card>
@@ -1014,7 +1041,10 @@ function PurchaseDetail({
                 p.status !== 'Reversed' &&
                 p.outstanding > 0 &&
                 has('purchases.pay') && (
-                  <Card title="Record cash payment" className="accent-card">
+                  <Card
+                    title={tr('Record cash payment')}
+                    className="accent-card"
+                  >
                     <form
                       className="grid gap-3"
                       onSubmit={(e) => {
@@ -1029,28 +1059,29 @@ function PurchaseDetail({
                       }}
                     >
                       <Field
-                        label="Payment amount (PKR)"
+                        label={tr('Payment amount (PKR)')}
                         name="amount"
                         required
                         inputMode="decimal"
                       />
                       <Field
-                        label="Payment reference or reason"
+                        label={tr('Payment reference or reason')}
                         name="reason"
                         required
                         maxLength={300}
                       />
                       <Button disabled={busy} className="w-full">
-                        Record payment
+                        {tr('Record payment')}
                       </Button>
                     </form>
                   </Card>
                 )}
               {p.status !== 'Draft' && p.separateCosts && (
-                <Card title="Separately paid purchase costs">
+                <Card title={tr('Separately paid purchase costs')}>
                   <p className="section-help">
-                    Petrol, tolls, loading and unloading increase stock cost.
-                    They are paid separately from the goods supplier.
+                    {tr(
+                      'Petrol, tolls, loading and unloading increase stock cost. They are paid separately from the goods supplier.',
+                    )}
                   </p>
                   <KeyValues
                     className="pt-3"
@@ -1076,19 +1107,19 @@ function PurchaseDetail({
                         }}
                       >
                         <Field
-                          label="Purchase cost payment (PKR)"
+                          label={tr('Purchase cost payment (PKR)')}
                           name="amount"
                           required
                           inputMode="decimal"
                         />
                         <Field
-                          label="Cost type, recipient and reference"
+                          label={tr('Cost type, recipient and reference')}
                           name="reason"
                           required
                           maxLength={300}
                         />
                         <Button disabled={busy} className="w-full">
-                          Record cost payment
+                          {tr('Record cost payment')}
                         </Button>
                       </form>
                     )}
@@ -1097,13 +1128,14 @@ function PurchaseDetail({
               {p.status !== 'Draft' &&
                 p.status !== 'Reversed' &&
                 has('purchases.reverse') && (
-                  <Card title="Reverse purchase" className="danger-card">
+                  <Card title={tr('Reverse purchase')} className="danger-card">
                     <p className="section-help">
-                      Reverse recorded payments first. Later stock activity can
-                      prevent reversal.
+                      {tr(
+                        'Reverse recorded payments first. Later stock activity can prevent reversal.',
+                      )}
                     </p>
                     <ReasonForm
-                      label="Reverse purchase"
+                      label={tr('Reverse purchase')}
                       busy={busy}
                       action={(reason) =>
                         void run(() =>
@@ -1114,10 +1146,11 @@ function PurchaseDetail({
                   </Card>
                 )}
               {p.status === 'Reversed' && has('purchases.create') && (
-                <Card title="Correct this purchase">
+                <Card title={tr('Correct this purchase')}>
                   <p className="section-help">
-                    Create a replacement draft that references this reversed
-                    purchase.
+                    {tr(
+                      'Create a replacement draft that references this reversed purchase.',
+                    )}
                   </p>
                   <Button
                     className="w-full"
@@ -1125,7 +1158,7 @@ function PurchaseDetail({
                       edit({ ...p, id: '', version: 0, correctsId: p.id })
                     }
                   >
-                    Create replacement draft
+                    {tr('Create replacement draft')}
                   </Button>
                 </Card>
               )}
@@ -1259,26 +1292,27 @@ function DraftEditor({
   return (
     <div className="detail-page">
       <BackButton onClick={cancel}>
-        {initial?.id ? 'Back to purchase' : 'Back to purchases'}
+        {initial?.id ? tr('Back to purchase') : tr('Back to purchases')}
       </BackButton>
       <div className="detail-header">
         <div>
           <h2 ref={heading} tabIndex={-1}>
             {initial?.id
-              ? 'Edit purchase draft'
+              ? tr('Edit purchase draft')
               : replacement
-                ? 'Replacement purchase draft'
-                : 'New purchase draft'}
+                ? tr('Replacement purchase draft')
+                : tr('New purchase draft')}
           </h2>
           <p>
-            Record goods received from a supplier. Save the draft to see
-            server-calculated amounts, then post it.
+            {tr(
+              'Record goods received from a supplier. Save the draft to see server-calculated amounts, then post it.',
+            )}
           </p>
         </div>
       </div>
       <form
         className="split-layout"
-        aria-label="Purchase draft"
+        aria-label={tr('Purchase draft')}
         onSubmit={(e) => {
           const d = form(e);
           save(
@@ -1311,20 +1345,20 @@ function DraftEditor({
                 {e!.message}
               </p>
             ))}
-          <Card title="Supplier">
+          <Card title={tr('Supplier')}>
             <div className="form-grid">
               <Field
-                label="Find supplier"
+                label={tr('Find supplier')}
                 value={supplierSearch}
-                placeholder="Search by supplier name"
+                placeholder={tr('Search by supplier name')}
                 onChange={(e) => setSupplierSearch(e.target.value)}
               />
               <Select
-                label="Supplier"
+                label={tr('Supplier')}
                 value={supplier}
                 onChange={(e) => setSupplier(e.target.value)}
               >
-                <option value="">Choose supplier</option>
+                <option value="">{tr('Choose supplier')}</option>
                 {initial &&
                   !suppliers.data?.items.some(
                     (s) => s.id === initial.supplierId,
@@ -1343,24 +1377,24 @@ function DraftEditor({
               </Select>
             </div>
           </Card>
-          <Card title="Purchase details">
+          <Card title={tr('Purchase details')}>
             <div className="form-grid">
               <Field
-                label="Supplier reference"
+                label={tr('Supplier reference')}
                 name="reference"
                 required
                 maxLength={120}
-                placeholder="Supplier invoice or challan number"
+                placeholder={tr('Supplier invoice or challan number')}
                 defaultValue={initial?.snapshot.reference}
               />
               <Field
-                label="Purchase notes"
+                label={tr('Purchase notes')}
                 name="notes"
                 maxLength={300}
                 defaultValue={initial?.snapshot.notes}
               />
               <Select
-                label="Landed-cost allocation"
+                label={tr('Landed-cost allocation')}
                 name="allocation"
                 defaultValue={initial?.snapshot.allocationRule || 'Value'}
               >
@@ -1369,7 +1403,7 @@ function DraftEditor({
                 ))}
               </Select>
               <Field
-                label="Transport/loading charges (PKR)"
+                label={tr('Transport/loading charges (PKR)')}
                 name="charges"
                 required
                 inputMode="decimal"
@@ -1377,21 +1411,24 @@ function DraftEditor({
               />
             </div>
             <p className="section-help pt-3">
-              Charges increase stock cost and are paid separately from the goods
-              supplier. Weight uses each line&apos;s total received kilograms.
+              {tr(
+                "Charges increase stock cost and are paid separately from the goods supplier. Weight uses each line's total received kilograms.",
+              )}
             </p>
           </Card>
           <Card title={`Items (${lines.length})`}>
             <div className="grid gap-4">
               <Field
-                label="Find catalog item"
+                label={tr('Find catalog item')}
                 value={itemSearch}
-                placeholder="Filter the item lists below by SKU or name"
+                placeholder={tr('Filter the item lists below by SKU or name')}
                 onChange={(e) => setItemSearch(e.target.value)}
               />
               {lines.map((line, i) => (
                 <fieldset key={i} className="line-card">
-                  <legend>Line {i + 1}</legend>
+                  <legend>
+                    {tr('Line')} {i + 1}
+                  </legend>
                   <div className="form-grid">
                     <Select
                       label={`Item ${i + 1}`}
@@ -1407,7 +1444,7 @@ function DraftEditor({
                         });
                       }}
                     >
-                      <option value="">Choose item</option>
+                      <option value="">{tr('Choose item')}</option>
                       {line.itemId &&
                         !items.data?.items.some(
                           (x) => x.id === line.itemId,
@@ -1433,7 +1470,7 @@ function DraftEditor({
                         update(i, { warehouseId: e.target.value })
                       }
                     >
-                      <option value="">Choose warehouse</option>
+                      <option value="">{tr('Choose warehouse')}</option>
                       {warehouses.data
                         ?.filter((x) => x.branchId === branch && x.active)
                         .map((x) => (
@@ -1499,7 +1536,7 @@ function DraftEditor({
                       }
                     >
                       <Trash2 aria-hidden="true" size={16} />
-                      Remove line {i + 1}
+                      {tr('Remove line')} {i + 1}
                     </Button>
                   </div>
                 </fieldset>
@@ -1511,14 +1548,14 @@ function DraftEditor({
                   disabled={lines.length >= 100}
                   onClick={() => setLines((old) => [...old, blank()])}
                 >
-                  <Plus aria-hidden="true" size={16} /> Add line
+                  <Plus aria-hidden="true" size={16} /> {tr('Add line')}
                 </Button>
               </div>
             </div>
           </Card>
         </div>
         <aside className="sticky-aside">
-          <Card title="Draft summary" className="accent-card">
+          <Card title={tr('Draft summary')} className="accent-card">
             <KeyValues
               items={[
                 ['Supplier', supplierName],
@@ -1529,15 +1566,17 @@ function DraftEditor({
               {lines.map((line, i) => (
                 <li key={i}>
                   <span>
-                    {i + 1}. {line.itemId ? itemName(line.itemId) : 'No item'}
+                    {i + 1}.{' '}
+                    {line.itemId ? itemName(line.itemId) : tr('No item')}
                   </span>
                   <span>× {line.quantity || 0}</span>
                 </li>
               ))}
             </ul>
             <p className="section-help">
-              Values, landed costs and receipt unit costs are calculated by the
-              server when you save.
+              {tr(
+                'Values, landed costs and receipt unit costs are calculated by the server when you save.',
+              )}
             </p>
             <div className="grid gap-2">
               <Button
@@ -1549,7 +1588,7 @@ function DraftEditor({
                   warehouses.isPending
                 }
               >
-                Save draft
+                {tr('Save draft')}
               </Button>
               <Button
                 type="button"
@@ -1557,7 +1596,7 @@ function DraftEditor({
                 className="w-full"
                 onClick={cancel}
               >
-                Cancel draft editing
+                {tr('Cancel draft editing')}
               </Button>
             </div>
           </Card>

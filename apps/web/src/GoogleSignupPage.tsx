@@ -6,6 +6,8 @@ import { api } from './access-api';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/form';
 import { BrandMark } from './components/icons';
+import { tr } from './i18n';
+import { LanguageToggle } from './components/LanguageToggle';
 
 // Finishes sign-up for a new owner who arrived through Google: only the name and business name are needed.
 export function GoogleSignupPage() {
@@ -44,36 +46,42 @@ export function GoogleSignupPage() {
     <div className="auth-layout single">
       <main className="auth-main">
         <div className="auth-card">
+          <div className="auth-card-top">
+            <LanguageToggle />
+          </div>
           <Link to="/" className="auth-card-brand">
             <BrandMark size={30} />
             <span>
-              Gas<span>365</span>
+              Gas
+              <span>365</span>
             </span>
           </Link>
-          <h1>Finish setting up</h1>
+          <h1>{tr('Finish setting up')}</h1>
           {pending.isPending && (
-            <p role="status">Checking your Google sign-in…</p>
+            <p role="status">{tr('Checking your Google sign-in…')}</p>
           )}
           {pending.error && (
             <>
               <p role="alert" className="auth-alert">
-                Your Google sign-in has expired or was not completed.
+                {tr('Your Google sign-in has expired or was not completed.')}
               </p>
               <p className="auth-switch">
-                <Link to="/register">Start again</Link>
+                <Link to="/register">{tr('Start again')}</Link>
               </p>
             </>
           )}
           {pending.data && (
             <>
               <p className="auth-subtitle">
-                Signed in with Google as <strong>{pending.data.email}</strong>.
-                Tell us your name and your business name to start your free
-                trial.
+                {tr('Signed in with Google as')}{' '}
+                <strong>{pending.data.email}</strong>
+                {tr(
+                  '. Tell us your name and your business name to start your free trial.',
+                )}
               </p>
               <form className="auth-form" onSubmit={submit}>
                 <div className="auth-field">
-                  <label htmlFor="google-name">Your name</label>
+                  <label htmlFor="google-name">{tr('Your name')}</label>
                   <div className="input-with-icon">
                     <User aria-hidden="true" size={18} />
                     <Input
@@ -87,14 +95,14 @@ export function GoogleSignupPage() {
                   </div>
                 </div>
                 <div className="auth-field">
-                  <label htmlFor="google-business">Business name</label>
+                  <label htmlFor="google-business">{tr('Business name')}</label>
                   <div className="input-with-icon">
                     <Building2 aria-hidden="true" size={18} />
                     <Input
                       id="google-business"
                       name="businessName"
                       autoComplete="organization"
-                      placeholder="e.g. Karachi Gas Agency"
+                      placeholder={tr('e.g. Karachi Gas Agency')}
                       maxLength={120}
                       required
                     />
@@ -106,7 +114,7 @@ export function GoogleSignupPage() {
                   </p>
                 )}
                 <Button disabled={busy} className="w-full">
-                  {busy ? 'Please wait…' : 'Create workspace'}
+                  {busy ? tr('Please wait…') : tr('Create workspace')}
                   {!busy && <ArrowRight aria-hidden="true" size={16} />}
                 </Button>
               </form>

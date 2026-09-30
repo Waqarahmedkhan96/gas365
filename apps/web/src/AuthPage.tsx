@@ -24,6 +24,8 @@ import { api } from './access-api';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/form';
 import { BrandMark } from './components/icons';
+import { tr } from './i18n';
+import { LanguageToggle } from './components/LanguageToggle';
 
 type Mode = 'login' | 'register' | 'confirm' | 'forgot' | 'reset' | 'resend';
 const titles: Record<Mode, string> = {
@@ -60,7 +62,7 @@ function IconField({
   const id = useId();
   return (
     <div className="auth-field">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{tr(label)}</label>
       <div className="input-with-icon">
         <Icon aria-hidden="true" size={18} />
         <Input
@@ -88,7 +90,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
       window.history.replaceState(null, '', window.location.pathname);
   }, [params]);
   useEffect(() => {
-    document.title = `${titles[mode]} · Gas365`;
+    document.title = `${tr(titles[mode])} · Gas365`;
   }, [mode]);
   // Google appears only when the server has it configured.
   const [google, setGoogle] = useState(false);
@@ -142,22 +144,24 @@ export function AuthPage({ mode }: { mode: Mode }) {
     mode === 'login' || mode === 'register' || mode === 'reset';
   return (
     <div className="auth-layout">
-      <aside className="auth-aside" aria-label="About Gas365">
+      <aside className="auth-aside" aria-label={tr('About Gas365')}>
         <Link to="/" className="auth-aside-brand">
           <BrandMark size={36} />
           <span>
-            Gas<span>365</span>
+            Gas
+            <span>365</span>
           </span>
         </Link>
         <div className="auth-aside-copy">
           <h2>
             {mode === 'register'
-              ? 'Start running your LPG business digitally'
-              : 'Every branch, cylinder and rupee in one place'}
+              ? tr('Start running your LPG business digitally')
+              : tr('Every branch, cylinder and rupee in one place')}
           </h2>
           <p>
-            Sales, stock, udhaar and daily cash closing for LPG retailers and
-            distributors across Pakistan.
+            {tr(
+              'Sales, stock, udhaar and daily cash closing for LPG retailers and distributors across Pakistan.',
+            )}
           </p>
           <ul>
             {[
@@ -167,30 +171,37 @@ export function AuthPage({ mode }: { mode: Mode }) {
             ].map((point) => (
               <li key={point}>
                 <CheckCircle2 aria-hidden="true" size={18} />
-                {point}
+                {tr(point)}
               </li>
             ))}
           </ul>
         </div>
         <p className="auth-aside-foot">
-          <ShieldCheck aria-hidden="true" size={16} /> Secure sign-in · PKR ·
-          Your data stays private to your business
+          <ShieldCheck aria-hidden="true" size={16} />{' '}
+          {tr(
+            'Secure sign-in · PKR · Your data stays private to your business',
+          )}
         </p>
       </aside>
       <main className="auth-main">
         <div className="auth-card">
+          <div className="auth-card-top">
+            <LanguageToggle />
+          </div>
           <Link to="/" className="auth-card-brand">
             <BrandMark size={30} />
             <span>
-              Gas<span>365</span>
+              Gas
+              <span>365</span>
             </span>
           </Link>
-          <h1>{titles[mode]}</h1>
-          <p className="auth-subtitle">{subtitles[mode]}</p>
+          <h1>{tr(titles[mode])}</h1>
+          <p className="auth-subtitle">{tr(subtitles[mode])}</p>
           {googleFailed && mode === 'login' && (
             <p role="alert" className="auth-alert">
-              Google sign-in could not be completed. Try again, or use your
-              email and password.
+              {tr(
+                'Google sign-in could not be completed. Try again, or use your email and password.',
+              )}
             </p>
           )}
           {google && (
@@ -199,10 +210,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 <span className="google-mark" aria-hidden="true">
                   G
                 </span>
-                Continue with Google
+                {tr('Continue with Google')}
               </a>
               <p className="auth-divider">
-                <span>or use your email</span>
+                <span>{tr('or use your email')}</span>
               </p>
             </>
           )}
@@ -210,39 +221,39 @@ export function AuthPage({ mode }: { mode: Mode }) {
             {mode === 'register' && (
               <>
                 <IconField
-                  label="Your name"
+                  label={tr('Your name')}
                   icon={User}
                   name="name"
                   autoComplete="name"
-                  placeholder="Full name"
+                  placeholder={tr('Full name')}
                   maxLength={120}
                   required
                 />
                 <IconField
-                  label="Business name"
+                  label={tr('Business name')}
                   icon={Building2}
                   name="businessName"
                   autoComplete="organization"
-                  placeholder="e.g. Karachi Gas Agency"
+                  placeholder={tr('e.g. Karachi Gas Agency')}
                   maxLength={120}
                   required
                 />
               </>
             )}
             <IconField
-              label="Email address"
+              label={tr('Email address')}
               icon={Mail}
               name="email"
               type="email"
               autoComplete="email"
-              placeholder="name@business.pk"
+              placeholder={tr('name@business.pk')}
               defaultValue={params.get('email') || ''}
               maxLength={254}
               required
             />
             {needsPassword && (
               <IconField
-                label="Password"
+                label={tr('Password')}
                 icon={Lock}
                 name="password"
                 type={showPassword ? 'text' : 'password'}
@@ -262,7 +273,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
                     type="button"
                     className="password-toggle"
                     aria-label={
-                      showPassword ? 'Hide password' : 'Show password'
+                      showPassword ? tr('Hide password') : tr('Show password')
                     }
                     aria-pressed={showPassword}
                     onClick={() => setShowPassword((value) => !value)}
@@ -278,7 +289,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
             )}
             {mode === 'login' && (
               <p className="auth-inline-link">
-                <Link to="/forgot">Forgot password?</Link>
+                <Link to="/forgot">{tr('Forgot password?')}</Link>
               </p>
             )}
             {error && (
@@ -294,43 +305,47 @@ export function AuthPage({ mode }: { mode: Mode }) {
             )}
             <Button disabled={busy} className="w-full">
               {busy
-                ? 'Please wait…'
+                ? tr('Please wait…')
                 : mode === 'login'
-                  ? 'Sign in'
+                  ? tr('Sign in')
                   : mode === 'register'
-                    ? 'Create workspace'
+                    ? tr('Create workspace')
                     : mode === 'confirm'
-                      ? 'Verify email'
+                      ? tr('Verify email')
                       : mode === 'reset'
-                        ? 'Save password'
-                        : 'Send email'}
+                        ? tr('Save password')
+                        : tr('Send email')}
               {!busy && <ArrowRight aria-hidden="true" size={16} />}
             </Button>
           </form>
           {message && (
             <p className="auth-switch">
-              <Link to="/login">Continue to sign in</Link>
+              <Link to="/login">{tr('Continue to sign in')}</Link>
             </p>
           )}
           <p className="auth-switch">
             {mode === 'login' ? (
               <>
-                New to Gas365? <Link to="/register">Create a workspace</Link>
+                {tr('New to Gas365?')}{' '}
+                <Link to="/register">{tr('Create a workspace')}</Link>
               </>
             ) : (
               <>
-                Already have an account? <Link to="/login">Sign in</Link>
+                {tr('Already have an account?')}{' '}
+                <Link to="/login">{tr('Sign in')}</Link>
               </>
             )}
           </p>
           {mode === 'login' && (
             <p className="auth-switch">
-              Did not get the email?{' '}
-              <Link to="/resend">Resend verification</Link>
+              {tr('Did not get the email?')}{' '}
+              <Link to="/resend">{tr('Resend verification')}</Link>
             </p>
           )}
         </div>
-        <p className="auth-legal">© Gas365 · LPG operations, connected.</p>
+        <p className="auth-legal">
+          {tr('© Gas365 · LPG operations, connected.')}
+        </p>
       </main>
     </div>
   );

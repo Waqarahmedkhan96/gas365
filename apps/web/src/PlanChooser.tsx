@@ -5,6 +5,7 @@ import { Button } from './components/ui/button';
 import { StatusChip } from './components/page';
 import { money } from './report-types';
 import type { BillingPeriod, Subscription } from './platform-types';
+import { tr } from './i18n';
 
 const count = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;
@@ -39,7 +40,7 @@ export function PlanChooser({
         {subscription.error.message}
       </p>
     );
-  if (!s) return <p role="status">Loading plans…</p>;
+  if (!s) return <p role="status">{tr('Loading plans…')}</p>;
   const billing: BillingPeriod =
     period ?? s.requestedBillingPeriod ?? 'Monthly';
   async function request(planId: string) {
@@ -71,7 +72,7 @@ export function PlanChooser({
         <div
           className="billing-toggle"
           role="radiogroup"
-          aria-label="Billing period"
+          aria-label={tr('Billing period')}
         >
           {(['Monthly', 'Yearly'] as const).map((value) => (
             <button
@@ -83,7 +84,7 @@ export function PlanChooser({
             >
               {value}
               {value === 'Yearly' && (
-                <span className="billing-badge">2 months free</span>
+                <span className="billing-badge">{tr('2 months free')}</span>
               )}
             </button>
           ))}
@@ -114,14 +115,15 @@ export function PlanChooser({
               <h3>{p.name}</h3>
               <p className="plan-price">
                 {p.monthlyPrice === null
-                  ? 'Price on request'
+                  ? tr('Price on request')
                   : billing === 'Yearly' && p.yearlyPrice !== null
                     ? `${money(p.yearlyPrice)} per year`
                     : `${money(p.monthlyPrice)} per month`}
               </p>
               {billing === 'Yearly' && p.yearlySaving !== null && (
                 <p className="plan-saving">
-                  You save {money(p.yearlySaving)} (2 months free)
+                  {tr('You save')} {money(p.yearlySaving)}{' '}
+                  {tr('(2 months free)')}
                 </p>
               )}
               <ul className="plan-features">
@@ -131,7 +133,7 @@ export function PlanChooser({
               </ul>
               {s.plan?.id === p.id && s.status === 'Active' ? (
                 <p>
-                  <StatusChip tone="success">Current plan</StatusChip>
+                  <StatusChip tone="success">{tr('Current plan')}</StatusChip>
                 </p>
               ) : (
                 <Button
@@ -140,7 +142,7 @@ export function PlanChooser({
                   onClick={() => void request(p.id)}
                 >
                   {requested
-                    ? 'Requested'
+                    ? tr('Requested')
                     : billing === 'Yearly'
                       ? `Choose ${p.name} yearly`
                       : `Choose ${p.name}`}
@@ -151,7 +153,9 @@ export function PlanChooser({
         })}
       </ul>
       <p className="section-help">
-        Payments are confirmed by the Gas365 team ({s.paymentProvider}).
+        {tr('Payments are confirmed by the Gas365 team ({provider}).', {
+          provider: s.paymentProvider,
+        })}
       </p>
     </div>
   );

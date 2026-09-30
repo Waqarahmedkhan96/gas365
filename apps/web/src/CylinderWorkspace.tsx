@@ -5,6 +5,7 @@ import { Button } from './components/ui/button';
 import { Field } from './components/ui/form';
 import { DataTable } from './components/DataTable';
 import type { Item, Page } from './inventory-types';
+import { tr } from './i18n';
 
 const root = '/api/workspace/sales';
 const money = (n: number) =>
@@ -104,7 +105,7 @@ function ItemChoice({
           disabled={page === 1}
           onClick={() => setPage((p) => p - 1)}
         >
-          Previous {kind}
+          {tr('Previous')} {kind}
         </Button>
         <Button
           type="button"
@@ -112,7 +113,7 @@ function ItemChoice({
           disabled={page * 20 >= (rows.data?.total ?? 0)}
           onClick={() => setPage((p) => p + 1)}
         >
-          Next {kind}
+          {tr('Next')} {kind}
         </Button>
       </div>
     </div>
@@ -147,12 +148,12 @@ export function CylinderWorkspace({
       api<Loan>(`${root}/loans/${selected}`, 'GET', undefined, user.tenantId),
   });
   return (
-    <section className="grid gap-4" aria-label="Borrowed cylinders">
+    <section className="grid gap-4" aria-label={tr('Borrowed cylinders')}>
       {!customerId && user.permissions.includes('cylinders.configure') && (
         <PolicySetup user={user} />
       )}
       <DataTable
-        title="Borrowed cylinders"
+        title={tr('Borrowed cylinders')}
         data={rows.data?.items ?? []}
         rowCount={rows.data?.total ?? 0}
         pagination={pagination}
@@ -213,19 +214,23 @@ function PolicySetup({ user }: { user: Me }) {
   });
   return (
     <details className="panel">
-      <summary>Configure cylinder LPG and deposit</summary>
+      <summary>{tr('Configure cylinder LPG and deposit')}</summary>
       <p>
-        Track shell stock separately from LPG. A filled cylinder uses the
-        configured kilograms once when sold or exchanged. Shell opening/purchase
-        cost must exclude LPG already recorded as gas stock.
+        {tr(
+          'Track shell stock separately from LPG. A filled cylinder uses the configured kilograms once when sold or exchanged. Shell opening/purchase cost must exclude LPG already recorded as gas stock.',
+        )}
       </p>
       <ItemChoice
         user={user}
         kind="Cylinder"
-        label="Find cylinder type"
+        label={tr('Find cylinder type')}
         choose={setItem}
       />
-      {item && <p>Selected: {item.name}</p>}
+      {item && (
+        <p>
+          {tr('Selected:')} {item.name}
+        </p>
+      )}
       {policy.error && <p role="alert">{policy.error.message}</p>}
       {item && policy.isSuccess && (
         <PolicyEditor
@@ -285,19 +290,25 @@ function PolicyEditor({
     }
   }
   return (
-    <form className="grid gap-3" aria-label="Cylinder policy" onSubmit={save}>
+    <form
+      className="grid gap-3"
+      aria-label={tr('Cylinder policy')}
+      onSubmit={save}
+    >
       <ItemChoice
         user={user}
         kind="Lpg"
-        label="Find LPG item (KG unit)"
+        label={tr('Find LPG item (KG unit)')}
         choose={(x) => {
           setGasId(x.id);
           setGasName(x.name);
         }}
       />
-      <p>LPG item: {gasName}</p>
+      <p>
+        {tr('LPG item:')} {gasName}
+      </p>
       <Field
-        label="LPG kg per filled cylinder"
+        label={tr('LPG kg per filled cylinder')}
         name="gas"
         type="number"
         min="0.001"
@@ -307,7 +318,7 @@ function PolicyEditor({
         defaultValue={initial?.gasQuantity ?? item.capacityKg ?? ''}
       />
       <Field
-        label="Suggested deposit per cylinder (PKR)"
+        label={tr('Suggested deposit per cylinder (PKR)')}
         name="deposit"
         type="number"
         min="0"
@@ -317,7 +328,7 @@ function PolicyEditor({
         defaultValue={initial?.suggestedDeposit ?? 0}
       />
       <Field
-        label="Usage fee terms shown to customer"
+        label={tr('Usage fee terms shown to customer')}
         name="terms"
         maxLength={300}
         required
@@ -325,7 +336,7 @@ function PolicyEditor({
       />
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
-      <Button disabled={busy || !gasId}>Save cylinder policy</Button>
+      <Button disabled={busy || !gasId}>{tr('Save cylinder policy')}</Button>
     </form>
   );
 }
@@ -381,17 +392,20 @@ function LoanDetail({
       x.kind === 'Approval' && !loan.entries.some((e) => e.reversesId === x.id),
   );
   return (
-    <section className="panel grid gap-4" aria-label="Cylinder loan details">
+    <section
+      className="panel grid gap-4"
+      aria-label={tr('Cylinder loan details')}
+    >
       <h2 className="break-words">
-        Cylinder {loan.serial || loan.id} — {loan.status}
+        {tr('Cylinder')} {loan.serial || loan.id} — {loan.status}
       </h2>
       <p>{loan.usageTerms}</p>
       <dl>
-        <dt>Deposit collected</dt>
+        <dt>{tr('Deposit collected')}</dt>
         <dd>{money(loan.deposit)}</dd>
-        <dt>Refund still owed</dt>
+        <dt>{tr('Refund still owed')}</dt>
         <dd>{money(loan.refundDue)}</dd>
-        <dt>Additional amount to collect</dt>
+        <dt>{tr('Additional amount to collect')}</dt>
         <dd>{money(loan.amountToCollect)}</dd>
       </dl>
       {error && <p role="alert">{error}</p>}
@@ -400,20 +414,20 @@ function LoanDetail({
           <form
             className="grid gap-3"
             onSubmit={command}
-            aria-label="Approve cylinder damage or loss"
+            aria-label={tr('Approve cylinder damage or loss')}
           >
-            <h3>Manager damage/loss approval</h3>
+            <h3>{tr('Manager damage/loss approval')}</h3>
             <input type="hidden" name="action" value="approvals" />
             <label htmlFor={`approval-condition-${loan.id}`}>
-              Approval condition
+              {tr('Approval condition')}
             </label>
             <select id={`approval-condition-${loan.id}`} name="condition">
-              <option>Inspection</option>
-              <option>Damaged</option>
-              <option>Lost</option>
+              <option>{tr('Inspection')}</option>
+              <option>{tr('Damaged')}</option>
+              <option>{tr('Lost')}</option>
             </select>
             <Field
-              label="Approved damage or loss charge (PKR)"
+              label={tr('Approved damage or loss charge (PKR)')}
               name="charge"
               type="number"
               min="0"
@@ -423,12 +437,12 @@ function LoanDetail({
               defaultValue="0"
             />
             <Field
-              label="Approval reason"
+              label={tr('Approval reason')}
               name="reason"
               maxLength={300}
               required
             />
-            <Button disabled={busy}>Approve cylinder charge</Button>
+            <Button disabled={busy}>{tr('Approve cylinder charge')}</Button>
           </form>
         )}
       {loan.status === 'On loan' &&
@@ -436,21 +450,21 @@ function LoanDetail({
           <form
             className="grid gap-3"
             onSubmit={command}
-            aria-label="Return borrowed cylinder"
+            aria-label={tr('Return borrowed cylinder')}
           >
-            <h3>Return or loss settlement</h3>
+            <h3>{tr('Return or loss settlement')}</h3>
             <input type="hidden" name="action" value="return" />
             <label htmlFor={`return-condition-${loan.id}`}>
-              Cylinder condition
+              {tr('Cylinder condition')}
             </label>
             <select id={`return-condition-${loan.id}`} name="condition">
-              <option>Empty</option>
-              <option>Inspection</option>
-              <option>Damaged</option>
-              <option>Lost</option>
+              <option>{tr('Empty')}</option>
+              <option>{tr('Inspection')}</option>
+              <option>{tr('Damaged')}</option>
+              <option>{tr('Lost')}</option>
             </select>
             <Field
-              label="Usage fee for this return (PKR)"
+              label={tr('Usage fee for this return (PKR)')}
               name="usage"
               type="number"
               min="0"
@@ -460,10 +474,10 @@ function LoanDetail({
               defaultValue="0"
             />
             <label htmlFor={`approval-${loan.id}`}>
-              Manager approval for damage or loss
+              {tr('Manager approval for damage or loss')}
             </label>
             <select id={`approval-${loan.id}`} name="approval">
-              <option value="">No damage/loss charge</option>
+              <option value="">{tr('No damage/loss charge')}</option>
               {approvals.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.condition} — {money(x.damageOrLossCharge)} — {x.reason}
@@ -471,17 +485,17 @@ function LoanDetail({
               ))}
             </select>
             <Field
-              label="Return reason"
+              label={tr('Return reason')}
               name="reason"
               maxLength={300}
               required
             />
             <p>
-              Lost cylinders remain marked Lost and do not return to available
-              stock. Saving calculates the refund due; record cash separately
-              after paying it.
+              {tr(
+                'Lost cylinders remain marked Lost and do not return to available stock. Saving calculates the refund due; record cash separately after paying it.',
+              )}
             </p>
-            <Button disabled={busy}>Record cylinder return</Button>
+            <Button disabled={busy}>{tr('Record cylinder return')}</Button>
           </form>
         )}
       {user.permissions.includes('sales.pay') &&
@@ -509,17 +523,22 @@ function LoanDetail({
                 maxLength={300}
                 required
               />
-              <Button disabled={busy}>Record {label.toLowerCase()} cash</Button>
+              <Button disabled={busy}>
+                {tr('Record')} {label.toLowerCase()} {tr('cash')}
+              </Button>
             </form>
           );
         })}
-      <h3>Deposit and return history</h3>
+      <h3>{tr('Deposit and return history')}</h3>
       {loan.entries.map((e) => (
         <div key={e.id}>
           <p>
-            {e.kind}: cash {money(e.cash)}, deposit liability{' '}
-            {money(e.liability)}, usage fee {money(e.usageFee)}, damage/loss
-            charge {money(e.damageOrLossCharge)} — {e.reason}
+            {e.kind}
+            {tr(': cash')} {money(e.cash)}
+            {tr(', deposit liability')} {money(e.liability)}
+            {tr(', usage fee')} {money(e.usageFee)}
+            {tr(', damage/loss charge')} {money(e.damageOrLossCharge)} —{' '}
+            {e.reason}
           </p>
           {['Return', 'Refund', 'Payment'].includes(e.kind) &&
             !loan.entries.some((x) => x.reversesId === e.id) &&
@@ -538,7 +557,7 @@ function LoanDetail({
                   required
                 />
                 <Button variant="outline" disabled={busy}>
-                  Reverse cylinder {e.kind.toLowerCase()}
+                  {tr('Reverse cylinder')} {e.kind.toLowerCase()}
                 </Button>
               </form>
             )}
@@ -605,14 +624,14 @@ export function DepositArrangement({
           }}
         >
           <Field
-            label="Approved zero-deposit customer"
+            label={tr('Approved zero-deposit customer')}
             name="zero"
             type="checkbox"
             defaultChecked={row.data.zeroDepositApproved}
             disabled={!user.permissions.includes('cylinders.waive_deposit')}
           />
           <Field
-            label="Deposit arrangement reason"
+            label={tr('Deposit arrangement reason')}
             name="reason"
             maxLength={300}
             required
@@ -621,7 +640,7 @@ export function DepositArrangement({
           />
           {error && <p role="alert">{error}</p>}
           {user.permissions.includes('cylinders.waive_deposit') && (
-            <Button disabled={busy}>Save deposit arrangement</Button>
+            <Button disabled={busy}>{tr('Save deposit arrangement')}</Button>
           )}
         </form>
       )}

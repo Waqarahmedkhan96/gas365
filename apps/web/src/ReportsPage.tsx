@@ -20,6 +20,7 @@ import {
   type Report,
   type ReportDefinition,
 } from './report-types';
+import { tr } from './i18n';
 
 const root = '/api/workspace/reports';
 const statusText: Record<ExportJob['status'], string> = {
@@ -147,7 +148,7 @@ export function ReportsPage({
     return (
       <PageState
         kind="error"
-        title="Reports unavailable"
+        title={tr('Reports unavailable')}
         description={definitions.error.message}
         retry={() => void definitions.refetch()}
       />
@@ -156,16 +157,16 @@ export function ReportsPage({
     return (
       <PageState
         kind="loading"
-        title="Loading reports"
-        description="Please wait while your reports are loaded."
+        title={tr('Loading reports')}
+        description={tr('Please wait while your reports are loaded.')}
       />
     );
   if (!definition)
     return (
       <PageState
         kind="denied"
-        title="No reports available"
-        description="Your role does not include any reports yet."
+        title={tr('No reports available')}
+        description={tr('Your role does not include any reports yet.')}
       />
     );
   const data = report.data;
@@ -214,7 +215,7 @@ export function ReportsPage({
               onClick={() => void requestExport(f)}
             >
               <Download aria-hidden="true" size={16} />
-              Export {f.toUpperCase()}
+              {tr('Export')} {f.toUpperCase()}
             </Button>
           ))}
         </PageActions>
@@ -233,10 +234,10 @@ export function ReportsPage({
         <div
           className="flex flex-wrap items-end gap-4"
           role="group"
-          aria-label="Report filters"
+          aria-label={tr('Report filters')}
         >
           <label className="grid gap-1">
-            Report
+            {tr('Report')}
             <select
               value={definition.key}
               onChange={(e) => {
@@ -254,7 +255,7 @@ export function ReportsPage({
           </label>
           {definition.branchScoped && (
             <label className="grid gap-1">
-              Branch
+              {tr('Branch')}
               <select
                 value={branch}
                 onChange={(e) => {
@@ -262,7 +263,7 @@ export function ReportsPage({
                   setPage(1);
                 }}
               >
-                <option value="">All accessible branches</option>
+                <option value="">{tr('All accessible branches')}</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -273,7 +274,7 @@ export function ReportsPage({
           )}
           {definition.dateRange && (
             <label className="grid gap-1">
-              From
+              {tr('From')}
               <input
                 type="date"
                 value={from}
@@ -286,7 +287,7 @@ export function ReportsPage({
             </label>
           )}
           <label className="grid gap-1">
-            {definition.dateRange ? 'To' : 'As of'}
+            {definition.dateRange ? tr('To') : tr('As of')}
             <input
               type="date"
               value={to}
@@ -298,7 +299,7 @@ export function ReportsPage({
           </label>
           {definition.types.length > 0 && (
             <label className="grid gap-1">
-              Type
+              {tr('Type')}
               <select
                 value={type}
                 onChange={(e) => {
@@ -306,7 +307,7 @@ export function ReportsPage({
                   setPage(1);
                 }}
               >
-                <option value="">All</option>
+                <option value="">{tr('All')}</option>
                 {definition.types.map((t) => (
                   <option key={t} value={t}>
                     {t}
@@ -317,7 +318,11 @@ export function ReportsPage({
           )}
         </div>
         {definition.dateRange && (
-          <div className="preset-row" role="group" aria-label="Quick periods">
+          <div
+            className="preset-row"
+            role="group"
+            aria-label={tr('Quick periods')}
+          >
             {presets.map((p) => (
               <button
                 key={p.label}
@@ -344,38 +349,41 @@ export function ReportsPage({
           <h2>{definition.title}</h2>
           <p>{definition.definition}</p>
           <p className="section-help">
-            Reconciliation: {definition.reconciliation}
+            {tr('Reconciliation:')} {definition.reconciliation}
           </p>
         </div>
       </div>
       {headline.length > 0 && (
-        <StatGrid label="Report totals">
+        <StatGrid label={tr('Report totals')}>
           {headline.map(({ column, total }) => (
             <StatCard
               key={column.key}
               label={column.label}
               value={formatCell(total, column.type)}
-              note="Total for these filters"
+              note={tr('Total for these filters')}
             />
           ))}
         </StatGrid>
       )}
       <section className="card grid gap-4" aria-busy={report.isFetching}>
         {report.error && <p role="alert">{report.error.message}</p>}
-        {report.isPending && <p role="status">Loading report…</p>}
+        {report.isPending && <p role="status">{tr('Loading report…')}</p>}
         {data && (
           <>
             <p className="section-help">
-              {data.scope} · {data.totalRows} rows · generated{' '}
-              {new Date(data.generatedAt).toLocaleString('en-PK', {
-                timeZone,
+              {tr('{scope} · {rows} rows · generated {time}', {
+                scope: data.scope,
+                rows: data.totalRows,
+                time: new Date(data.generatedAt).toLocaleString('en-PK', {
+                  timeZone,
+                }),
               })}
             </p>
             {data.totalRows === 0 ? (
               <PageState
                 kind="empty"
-                title="No activity"
-                description="No activity for these filters."
+                title={tr('No activity')}
+                description={tr('No activity for these filters.')}
               />
             ) : (
               // Focusable so keyboard users can scroll wide tables on small screens.
@@ -387,7 +395,10 @@ export function ReportsPage({
               >
                 <table>
                   <caption>
-                    {data.title} — page {data.page}
+                    {tr('{title} — page {page}', {
+                      title: data.title,
+                      page: data.page,
+                    })}
                   </caption>
                   <thead>
                     <tr>
@@ -434,7 +445,7 @@ export function ReportsPage({
                             }
                           >
                             {i === 0 && t === null
-                              ? 'Total'
+                              ? tr('Total')
                               : formatCell(t, data.columns[i].type)}
                           </th>
                         ))}
@@ -451,14 +462,14 @@ export function ReportsPage({
                   disabled={page === 1}
                   onClick={() => setPage(page - 1)}
                 >
-                  Previous
+                  {tr('Previous')}
                 </Button>
                 <Button
                   variant="outline"
                   disabled={page * data.pageSize >= data.totalRows}
                   onClick={() => setPage(page + 1)}
                 >
-                  Next
+                  {tr('Next')}
                 </Button>
               </div>
             )}
@@ -466,12 +477,14 @@ export function ReportsPage({
         )}
       </section>
       {canExport && (
-        <Card title="Your exports" icon={FileDown}>
+        <Card title={tr('Your exports')} icon={FileDown}>
           <p className="section-help">
-            Files are private to you and expire 24 hours after they are ready.
+            {tr(
+              'Files are private to you and expire 24 hours after they are ready.',
+            )}
           </p>
           {exports.data?.items.length === 0 && (
-            <p className="muted-text pt-3">No exports yet.</p>
+            <p className="muted-text pt-3">{tr('No exports yet.')}</p>
           )}
           <ul className="export-list">
             {exports.data?.items.map((job) => (
@@ -485,7 +498,7 @@ export function ReportsPage({
                 </div>
                 <div className="export-actions">
                   <StatusChip tone={exportTone[job.status]}>
-                    {statusText[job.status]}
+                    {tr(statusText[job.status])}
                   </StatusChip>
                   {job.status === 'Completed' && (
                     <Button
@@ -493,7 +506,7 @@ export function ReportsPage({
                       onClick={() => void download(job)}
                     >
                       <Download aria-hidden="true" size={16} />
-                      Download {job.fileName}
+                      {tr('Download')} {job.fileName}
                     </Button>
                   )}
                 </div>

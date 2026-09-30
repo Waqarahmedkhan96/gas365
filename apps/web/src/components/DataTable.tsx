@@ -9,6 +9,7 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { PageState } from './page';
+import { tr } from '../i18n';
 
 export function DataTable<T>({
   title,
@@ -51,15 +52,15 @@ export function DataTable<T>({
     return (
       <PageState
         kind="loading"
-        title="Loading records"
-        description="Please wait while the records are loaded."
+        title={tr('Loading records')}
+        description={tr('Please wait while the records are loaded.')}
       />
     );
   if (error)
     return (
       <PageState
         kind="error"
-        title="Records unavailable"
+        title={tr('Records unavailable')}
         description={error}
         retry={retry}
       />
@@ -68,22 +69,24 @@ export function DataTable<T>({
     return (
       <PageState
         kind="empty"
-        title="No records found"
-        description="Try changing your filters, or add a new record."
+        title={tr('No records found')}
+        description={tr('Try changing your filters, or add a new record.')}
       />
     );
   return (
     <div className="data-table">
       <div className="desktop-table">
         <table>
-          <caption>{title}</caption>
+          <caption>{tr(title)}</caption>
           <thead>
             {table.getHeaderGroups().map((group) => (
               <tr key={group.id}>
                 {group.headers.map((header) => (
                   <th key={header.id} scope="col">
                     {flexRender(
-                      header.column.columnDef.header,
+                      typeof header.column.columnDef.header === 'string'
+                        ? tr(header.column.columnDef.header)
+                        : header.column.columnDef.header,
                       header.getContext(),
                     )}
                   </th>
@@ -104,12 +107,12 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
-      <div className="mobile-records" aria-label={title}>
+      <div className="mobile-records" aria-label={tr(title)}>
         {table.getRowModel().rows.map((row) => (
           <dl key={row.id}>
             {row.getVisibleCells().map((cell) => (
               <div key={cell.id}>
-                <dt>{String(cell.column.columnDef.header)}</dt>
+                <dt>{tr(String(cell.column.columnDef.header))}</dt>
                 <dd>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </dd>
@@ -120,8 +123,16 @@ export function DataTable<T>({
       </div>
       <div className="pagination">
         <p aria-live="polite">
-          Showing {first}–{last} of {rowCount} records · Page{' '}
-          {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}
+          {tr(
+            'Showing {first}–{last} of {total} records · Page {page} of {pages}',
+            {
+              first: first,
+              last: last,
+              total: rowCount,
+              page: pagination.pageIndex + 1,
+              pages: Math.max(1, table.getPageCount()),
+            },
+          )}
         </p>
         <div className="flex gap-2">
           <Button
@@ -129,14 +140,14 @@ export function DataTable<T>({
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
           >
-            <ChevronLeft aria-hidden="true" size={16} /> Previous
+            <ChevronLeft aria-hidden="true" size={16} /> {tr('Previous')}
           </Button>
           <Button
             variant="outline"
             disabled={!table.getCanNextPage()}
             onClick={() => table.nextPage()}
           >
-            Next <ChevronRight aria-hidden="true" size={16} />
+            {tr('Next')} <ChevronRight aria-hidden="true" size={16} />
           </Button>
         </div>
       </div>

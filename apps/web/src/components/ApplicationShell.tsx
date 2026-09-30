@@ -24,6 +24,8 @@ import { Input } from './ui/form';
 import { ConfirmDialog, Modal } from './ui/feedback';
 import { BrandMark, PageIcon } from './icons';
 import { NotificationBell } from '../NotificationsPage';
+import { tr } from '../i18n';
+import { LanguageToggle } from './LanguageToggle';
 
 const collapsedKey = 'gas365:sidebar-collapsed';
 
@@ -120,7 +122,7 @@ export function ApplicationShell({
       return index < 0 ? 99 : index;
     };
     return (
-      <nav aria-label="Workspace navigation" className="shell-nav">
+      <nav aria-label={tr('Workspace navigation')} className="shell-nav">
         {pageGroups.map((group) => {
           const items = available
             .filter((page) => page.group === group.id)
@@ -130,7 +132,7 @@ export function ApplicationShell({
           return (
             <div key={group.id} className="nav-section">
               <p className="nav-group" id={headingId}>
-                {group.label}
+                {tr(group.label)}
               </p>
               <ul aria-labelledby={headingId}>
                 {items.map((page) => (
@@ -139,10 +141,10 @@ export function ApplicationShell({
                       end
                       to={pagePath(page.id)}
                       onClick={close}
-                      title={collapsed && !close ? page.label : undefined}
+                      title={collapsed && !close ? tr(page.label) : undefined}
                     >
                       <PageIcon name={page.icon} />
-                      <span className="nav-label">{page.label}</span>
+                      <span className="nav-label">{tr(page.label)}</span>
                     </NavLink>
                   </li>
                 ))}
@@ -160,13 +162,18 @@ export function ApplicationShell({
       data-sidebar={collapsed ? 'collapsed' : 'expanded'}
     >
       <a className="skip-link" href="#workspace-content">
-        Skip to main content
+        {tr('Skip to main content')}
       </a>
       <aside className="desktop-sidebar" id="workspace-sidebar">
-        <Link to="/workspace" className="shell-brand" aria-label="Gas365 home">
+        <Link
+          to="/workspace"
+          className="shell-brand"
+          aria-label={tr('Gas365 home')}
+        >
           <BrandMark />
           <span className="brand-word" aria-hidden="true">
-            Gas<span>365</span>
+            Gas
+            <span>365</span>
           </span>
         </Link>
         {navigation()}
@@ -176,7 +183,9 @@ export function ApplicationShell({
           </span>
           <div className="sidebar-business-text">
             <strong>{tenant.name}</strong>
-            <span>{user.isOwner ? 'Owner workspace' : 'Team workspace'}</span>
+            <span>
+              {user.isOwner ? tr('Owner workspace') : tr('Team workspace')}
+            </span>
           </div>
         </div>
       </aside>
@@ -184,7 +193,7 @@ export function ApplicationShell({
         <header className="shell-header">
           <div className="mobile-menu">
             <Modal
-              title="Gas365"
+              title={tr('Gas365')}
               description={tenant.name}
               open={mobileOpen}
               onOpenChange={setMobileOpen}
@@ -193,7 +202,7 @@ export function ApplicationShell({
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="Open navigation"
+                  aria-label={tr('Open navigation')}
                 >
                   <Menu aria-hidden="true" size={20} />
                 </Button>
@@ -206,7 +215,9 @@ export function ApplicationShell({
             variant="ghost"
             size="icon"
             className="sidebar-toggle"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={
+              collapsed ? tr('Expand sidebar') : tr('Collapse sidebar')
+            }
             aria-controls="workspace-sidebar"
             aria-expanded={!collapsed}
             onClick={toggleSidebar}
@@ -223,12 +234,14 @@ export function ApplicationShell({
             </span>
             <div>
               <strong>{tenant.name}</strong>
-              <span>{tenant.timeZone} · PKR</span>
+              <span>
+                {tenant.timeZone} {tr('· PKR')}
+              </span>
             </div>
           </div>
           <div className="shell-header-actions">
             <label className="branch-picker">
-              <span>Active branch</span>
+              <span>{tr('Active branch')}</span>
               <select
                 aria-describedby="branch-context-note"
                 value={selectedBranch}
@@ -252,49 +265,49 @@ export function ApplicationShell({
                     </option>
                   ))
                 ) : (
-                  <option value="">No assigned branches</option>
+                  <option value="">{tr('No assigned branches')}</option>
                 )}
               </select>
             </label>
             <Modal
-              title="Go to a page"
+              title={tr('Go to a page')}
               onOpenAutoFocus={(event) => {
                 event.preventDefault();
                 searchInput.current?.focus();
               }}
-              description="Search the pages you can access."
+              description={tr('Search the pages you can access.')}
               open={searchOpen}
               onOpenChange={setSearchOpen}
               trigger={
                 <Button
                   variant="outline"
                   className="search-trigger"
-                  aria-label="Search pages"
+                  aria-label={tr('Search pages')}
                 >
                   <Search aria-hidden="true" size={18} />
                   <span className="search-label" aria-hidden="true">
-                    Search
+                    {tr('Search')}
                   </span>
                   <kbd className="search-label" aria-hidden="true">
-                    Ctrl K
+                    {tr('Ctrl K')}
                   </kbd>
                 </Button>
               }
             >
               <label htmlFor="page-search" className="sr-only">
-                Find a page
+                {tr('Find a page')}
               </label>
               <Input
                 id="page-search"
                 ref={searchInput}
-                placeholder="Search pages…"
+                placeholder={tr('Search pages…')}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
               <ul className="command-results">
                 {available
                   .filter((page) =>
-                    page.label.toLowerCase().includes(query.toLowerCase()),
+                    tr(page.label).toLowerCase().includes(query.toLowerCase()),
                   )
                   .map((page) => (
                     <li key={page.id}>
@@ -306,19 +319,20 @@ export function ApplicationShell({
                         }}
                       >
                         <PageIcon name={page.icon} />
-                        {page.label}
+                        {tr(page.label)}
                       </Link>
                     </li>
                   ))}
               </ul>
               {!available.some((page) =>
-                page.label.toLowerCase().includes(query.toLowerCase()),
+                tr(page.label).toLowerCase().includes(query.toLowerCase()),
               ) && (
                 <p role="status" className="py-6 text-muted-foreground">
-                  No matching pages. Try another name.
+                  {tr('No matching pages. Try another name.')}
                 </p>
               )}
             </Modal>
+            <LanguageToggle className="compact" />
             <NotificationBell user={user} />
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
@@ -350,19 +364,19 @@ export function ApplicationShell({
                   <DropdownMenu.Separator className="menu-separator" />
                   <DropdownMenu.Item asChild className="menu-item">
                     <Link to="/workspace/sessions">
-                      <PageIcon name="sessions" /> Sessions
+                      <PageIcon name="sessions" /> {tr('Sessions')}
                     </Link>
                   </DropdownMenu.Item>
                   {can('tenant.manage') && (
                     <>
                       <DropdownMenu.Item asChild className="menu-item">
                         <Link to="/workspace/subscription">
-                          <PageIcon name="subscription" /> Subscription
+                          <PageIcon name="subscription" /> {tr('Subscription')}
                         </Link>
                       </DropdownMenu.Item>
                       <DropdownMenu.Item asChild className="menu-item">
                         <Link to="/workspace/settings">
-                          <PageIcon name="settings" /> Business settings
+                          <PageIcon name="settings" /> {tr('Business settings')}
                         </Link>
                       </DropdownMenu.Item>
                     </>
@@ -372,14 +386,16 @@ export function ApplicationShell({
                     className="menu-item danger"
                     onSelect={() => setSignOutOpen(true)}
                   >
-                    <LogOut aria-hidden="true" size={18} /> Sign out
+                    <LogOut aria-hidden="true" size={18} /> {tr('Sign out')}
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
             <ConfirmDialog
-              title="Sign out of Gas365?"
-              description="This session will end. You can sign in again whenever you need."
+              title={tr('Sign out of Gas365?')}
+              description={tr(
+                'This session will end. You can sign in again whenever you need.',
+              )}
               open={signOutOpen}
               onOpenChange={setSignOutOpen}
               onConfirm={onSignOut}
@@ -389,7 +405,7 @@ export function ApplicationShell({
         {user.workspaces.length > 1 && (
           <div className="workspace-switch">
             <label>
-              Workspace
+              {tr('Workspace')}
               <select
                 value={user.membershipId}
                 disabled={busy}
@@ -416,10 +432,11 @@ export function ApplicationShell({
         </main>
         <footer className="shell-footer">
           <span id="branch-context-note">
-            Inventory follows the active branch. Business settings apply to the
-            whole workspace.
+            {tr(
+              'Inventory follows the active branch. Business settings apply to the whole workspace.',
+            )}
           </span>
-          <span>Gas365</span>
+          <span>{tr('Gas365')}</span>
         </footer>
       </div>
     </div>

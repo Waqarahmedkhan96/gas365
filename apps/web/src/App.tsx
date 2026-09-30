@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getHealth } from './health';
+import { tr } from './i18n';
 
 export function App() {
   const health = useQuery({
@@ -19,20 +20,22 @@ export function App() {
     <>
       <header>
         <a href="/" className="brand">
-          Gas<span>365</span>
+          Gas
+          <span>365</span>
         </a>
-        <a href="/workspace">Open workspace</a>
+        <a href="/workspace">{tr('Open workspace')}</a>
       </header>
       <main>
-        <p className="eyebrow">PLATFORM STATUS</p>
+        <p className="eyebrow">{tr('PLATFORM STATUS')}</p>
         <h1>
-          A foundation for
+          {tr('A foundation for')}
           <br />
-          your daily operations.
+          {tr('your daily operations.')}
         </h1>
         <p className="intro">
-          The Gas365 platform is taking shape. This page checks that the
-          application and database are connected.
+          {tr(
+            'The Gas365 platform is taking shape. This page checks that the application and database are connected.',
+          )}
         </p>
         <section className="status-card" aria-labelledby="status-heading">
           <div className="status-top">
@@ -46,45 +49,48 @@ export function App() {
           </div>
           <dl>
             <div>
-              <dt>Application</dt>
+              <dt>{tr('Application')}</dt>
               <dd>
                 {health.isPending
-                  ? 'Checking'
+                  ? tr('Checking')
                   : health.isError
-                    ? 'Unavailable'
-                    : 'Connected'}
+                    ? tr('Unavailable')
+                    : tr('Connected')}
               </dd>
             </div>
             <div>
-              <dt>Database</dt>
+              <dt>{tr('Database')}</dt>
               <dd>
                 {health.isPending
-                  ? 'Checking'
+                  ? tr('Checking')
                   : health.isError
-                    ? 'Unknown'
+                    ? tr('Unknown')
                     : health.data?.database}
               </dd>
             </div>
           </dl>
           {health.isError && (
             <p role="alert">
-              Unable to check platform status. Check the connection and try
-              again.
+              {tr(
+                'Unable to check platform status. Check the connection and try again.',
+              )}
             </p>
           )}
           <button
             onClick={() => void health.refetch()}
             disabled={health.isFetching}
           >
-            {health.isFetching ? 'Checking…' : 'Check again'}
+            {health.isFetching ? tr('Checking…') : tr('Check again')}
           </button>
         </section>
         <p className="note">
-          Business features will be added in the next development stages.
+          {tr(
+            'Business features will be added in the next development stages.',
+          )}
         </p>
       </main>
       <footer>
-        Gas365 <span>LPG operations, connected.</span>
+        {tr('Gas365')} <span>{tr('LPG operations, connected.')}</span>
       </footer>
     </>
   );

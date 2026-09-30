@@ -19,6 +19,7 @@ import { Button } from './ui/button';
 import { PageIcon } from './icons';
 import { cn } from '../lib/utils';
 import type { Tone } from '../lib/ui-helpers';
+import { tr } from '../i18n';
 
 export type { Tone };
 
@@ -44,8 +45,8 @@ export function PageHeading({
           </span>
         )}
         <div>
-          <h1>{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
+          <h1>{tr(title)}</h1>
+          <p className="text-muted-foreground">{tr(description)}</p>
         </div>
       </div>
       <div className="page-heading-actions" ref={actionsRef}>
@@ -81,13 +82,13 @@ export function PageState({
       <div className="state-symbol" aria-hidden="true">
         <Icon size={24} className={kind === 'loading' ? 'spin' : undefined} />
       </div>
-      <h2>{title}</h2>
+      <h2>{tr(title)}</h2>
       <p
         role={
           kind === 'error' ? 'alert' : kind === 'loading' ? 'status' : undefined
         }
       >
-        {description}
+        {tr(description)}
       </p>
       {kind === 'loading' && (
         <div className="skeleton-lines" aria-hidden="true">
@@ -98,7 +99,7 @@ export function PageState({
       )}
       {retry && (
         <Button variant="outline" onClick={retry}>
-          Try again
+          {tr('Try again')}
         </Button>
       )}
       {action}
@@ -128,7 +129,7 @@ export function StatusChip({
   return (
     <span className={`status-chip ${tone}`}>
       <Icon aria-hidden="true" size={14} />
-      {children}
+      {typeof children === 'string' ? tr(children) : children}
     </span>
   );
 }
@@ -171,7 +172,7 @@ export function StatCard({
   return (
     <div className={`stat-card ${tone}`}>
       <div className="stat-card-top">
-        <span className="stat-card-label">{label}</span>
+        <span className="stat-card-label">{tr(label)}</span>
         {Icon && (
           <span className="stat-card-icon" aria-hidden="true">
             <Icon size={18} />
@@ -179,7 +180,11 @@ export function StatCard({
         )}
       </div>
       <strong className="stat-card-value">{value}</strong>
-      {note && <span className="stat-card-note">{note}</span>}
+      {note && (
+        <span className="stat-card-note">
+          {typeof note === 'string' ? tr(note) : note}
+        </span>
+      )}
     </div>
   );
 }
@@ -192,7 +197,7 @@ export function StatGrid({
   label?: string;
 }) {
   return (
-    <section className="stat-grid" aria-label={label}>
+    <section className="stat-grid" aria-label={label && tr(label)}>
       {children}
     </section>
   );
@@ -236,7 +241,7 @@ export function Card({
           {title && (
             <h3>
               {Icon && <Icon aria-hidden="true" size={18} />}
-              {title}
+              {typeof title === 'string' ? tr(title) : title}
             </h3>
           )}
           {action}
@@ -294,7 +299,7 @@ export function KeyValues({
     <dl className={cn('kv-list', className)}>
       {items.map(([label, value], index) => (
         <div key={index}>
-          <dt>{label}</dt>
+          <dt>{typeof label === 'string' ? tr(label) : label}</dt>
           <dd>{value}</dd>
         </div>
       ))}
@@ -335,14 +340,14 @@ export function Tabs({
       onValueChange={onChange}
       className="page-tabs"
     >
-      <TabsPrimitive.List aria-label={label} className="tab-list">
+      <TabsPrimitive.List aria-label={tr(label)} className="tab-list">
         {tabs.map((tab) => (
           <TabsPrimitive.Trigger
             key={tab.id}
             value={tab.id}
             className="tab-trigger"
           >
-            {tab.label}
+            {tr(tab.label)}
             {tab.count !== undefined && (
               <span className="tab-count">{tab.count}</span>
             )}
@@ -380,7 +385,16 @@ export function Pager({
   return (
     <div className="pagination card-pagination">
       <p aria-live="polite">
-        Showing {first}–{last} of {total} records · Page {page} of {pages}
+        {tr(
+          'Showing {first}–{last} of {total} records · Page {page} of {pages}',
+          {
+            first: first,
+            last: last,
+            total: total,
+            page: page,
+            pages: pages,
+          },
+        )}
       </p>
       <div className="flex gap-2">
         <Button
@@ -388,14 +402,14 @@ export function Pager({
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
         >
-          Previous
+          {tr('Previous')}
         </Button>
         <Button
           variant="outline"
           disabled={page >= pages}
           onClick={() => onChange(page + 1)}
         >
-          Next
+          {tr('Next')}
         </Button>
       </div>
     </div>

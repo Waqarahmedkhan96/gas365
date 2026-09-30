@@ -37,6 +37,7 @@ import {
   money,
   type Dashboard as DashboardData,
 } from './report-types';
+import { language, tr } from './i18n';
 
 // Validated categorical slots (light surface #FFFFFF): blue, orange, aqua. Aqua is below 3:1,
 // so every chart also has a legend, a dashed secondary encoding and a table view.
@@ -59,7 +60,11 @@ function TableView({
 }) {
   return (
     <details>
-      <summary>Show {caption.toLowerCase()} as a table</summary>
+      <summary>
+        {tr('Show {name} as a table', {
+          name: language() === 'ur' ? tr(caption) : caption.toLowerCase(),
+        })}
+      </summary>
       <div
         className="data-table report-table overflow-x-auto"
         role="region"
@@ -183,17 +188,17 @@ function RecentSales({ user, branch }: { user: Me; branch: string }) {
     <section className="card" aria-labelledby="recent-sales-heading">
       <div className="card-header">
         <h2 id="recent-sales-heading" className="card-title">
-          Recent sales
+          {tr('Recent sales')}
         </h2>
         <Link to="/workspace/sales" className="text-link">
-          View all sales
+          {tr('View all sales')}
         </Link>
       </div>
-      {sales.isPending && <p role="status">Loading recent sales…</p>}
+      {sales.isPending && <p role="status">{tr('Loading recent sales…')}</p>}
       {sales.error && <p role="alert">{sales.error.message}</p>}
       {sales.isSuccess && !rows.length && (
         <p className="muted-text">
-          No posted sales in the selected branch yet.
+          {tr('No posted sales in the selected branch yet.')}
         </p>
       )}
       <ul className="activity-list">
@@ -235,15 +240,21 @@ export function Dashboard({ user, timeZone }: { user: Me; timeZone: string }) {
   });
   const data = dashboard.data;
   const lines = [
-    { key: 'revenue', label: 'Net revenue', color: series.revenue },
+    { key: 'revenue', label: tr('Net revenue'), color: series.revenue },
     ...(data?.profitVisible
-      ? [{ key: 'grossProfit', label: 'Gross profit', color: series.profit }]
+      ? [
+          {
+            key: 'grossProfit',
+            label: tr('Gross profit'),
+            color: series.profit,
+          },
+        ]
       : []),
     ...(data?.financeVisible
       ? [
           {
             key: 'expenses',
-            label: 'Operating expenses',
+            label: tr('Operating expenses'),
             color: series.expenses,
             dashed: true,
           },
@@ -255,54 +266,58 @@ export function Dashboard({ user, timeZone }: { user: Me; timeZone: string }) {
       <PageActions>
         <Button variant="outline" asChild>
           <Link to="/workspace/reports">
-            <ChartColumn aria-hidden="true" size={18} /> Reports
+            <ChartColumn aria-hidden="true" size={18} /> {tr('Reports')}
           </Link>
         </Button>
         {has('sales.create') && has('customers.view') && (
           <Button asChild>
             <Link to="/workspace/sales?new=1">
-              <Plus aria-hidden="true" size={18} /> New sales draft
+              <Plus aria-hidden="true" size={18} /> {tr('New sales draft')}
             </Link>
           </Button>
         )}
       </PageActions>
-      <div className="filter-bar" role="group" aria-label="Dashboard filters">
+      <div
+        className="filter-bar"
+        role="group"
+        aria-label={tr('Dashboard filters')}
+      >
         <label>
-          Period
+          {tr('Period')}
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
           >
-            <option value={1}>Today</option>
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
+            <option value={1}>{tr('Today')}</option>
+            <option value={7}>{tr('Last 7 days')}</option>
+            <option value={30}>{tr('Last 30 days')}</option>
+            <option value={90}>{tr('Last 90 days')}</option>
           </select>
         </label>
         <label>
-          Branches
+          {tr('Branches')}
           <select
             value={scoped ? 'current' : 'all'}
             onChange={(e) => setScoped(e.target.value === 'current')}
           >
-            <option value="all">All accessible branches</option>
+            <option value="all">{tr('All accessible branches')}</option>
             <option value="current" disabled={!branch}>
-              Selected branch
+              {tr('Selected branch')}
             </option>
           </select>
         </label>
         {data && (
           <p className="filter-note">
-            {data.scope} · {data.from} to {data.to}. Figures come from posted
-            records.
+            {data.scope} · {data.from} {tr('to')} {data.to}
+            {tr('. Figures come from posted records.')}
           </p>
         )}
       </div>
-      {dashboard.isPending && <p role="status">Loading dashboard…</p>}
+      {dashboard.isPending && <p role="status">{tr('Loading dashboard…')}</p>}
       {dashboard.error && <p role="alert">{dashboard.error.message}</p>}
       {data && (
         <>
-          <StatGrid label="Key figures">
+          <StatGrid label={tr('Key figures')}>
             {data.metrics.map((m) => (
               <StatCard
                 key={m.key}
@@ -315,8 +330,11 @@ export function Dashboard({ user, timeZone }: { user: Me; timeZone: string }) {
           </StatGrid>
           <div className="dashboard-grid">
             {data.trend.length > 0 && (
-              <section className="card grid gap-3" aria-label="Daily trend">
-                <h2 className="card-title">Daily trend</h2>
+              <section
+                className="card grid gap-3"
+                aria-label={tr('Daily trend')}
+              >
+                <h2 className="card-title">{tr('Daily trend')}</h2>
                 <div style={{ height: 280 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data.trend} margin={{ top: 8, right: 12 }}>
@@ -377,13 +395,13 @@ export function Dashboard({ user, timeZone }: { user: Me; timeZone: string }) {
           <div className="grid gap-6 lg:grid-cols-2">
             {data.expensesByCategory.length > 0 && (
               <Ranked
-                title="Operating expenses by category"
+                title={tr('Operating expenses by category')}
                 data={data.expensesByCategory}
               />
             )}
             {data.revenueByBranch.length > 1 && (
               <Ranked
-                title="Net revenue by branch"
+                title={tr('Net revenue by branch')}
                 data={data.revenueByBranch}
               />
             )}

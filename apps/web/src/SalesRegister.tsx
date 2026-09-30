@@ -23,6 +23,7 @@ import {
   Receipt,
   TrendingUp,
 } from 'lucide-react';
+import { tr } from './i18n';
 
 type Entry = {
   id: string;
@@ -121,11 +122,12 @@ export function PostSale({
     }
   }
   return (
-    <form className="grid gap-3" aria-label="Post sale" onSubmit={post}>
-      <h3 className="card-title">Post reviewed sale</h3>
+    <form className="grid gap-3" aria-label={tr('Post sale')} onSubmit={post}>
+      <h3 className="card-title">{tr('Post reviewed sale')}</h3>
       <p className="section-help">
-        Posting records stock usage, filling loss and the customer balance.
-        Corrections require a reversal.
+        {tr(
+          'Posting records stock usage, filling loss and the customer balance. Corrections require a reversal.',
+        )}
       </p>
       {draft.snapshot.lines.map(
         (line, i) =>
@@ -150,8 +152,9 @@ export function PostSale({
           {line.mode === 'LoanRefill' && (
             <div className="grid gap-2">
               <p>
-                Line {i + 1}: {line.quantity} borrowed cylinders,{' '}
-                {line.gasQuantity} kg LPG each. {line.usageTerms}
+                {tr('Line')} {i + 1}: {line.quantity}{' '}
+                {tr('borrowed cylinders,')} {line.gasQuantity}{' '}
+                {tr('kg LPG each.')} {line.usageTerms}
               </p>
               <Field
                 label={`Deposit collected per cylinder for line ${i + 1} (PKR)`}
@@ -164,9 +167,9 @@ export function PostSale({
                 defaultValue={line.suggestedDeposit}
               />
               <p>
-                Enter the amount actually collected. Zero or a reduced deposit
-                needs authorization. Deposit cash is separate from the sale
-                payment.
+                {tr(
+                  'Enter the amount actually collected. Zero or a reduced deposit needs authorization. Deposit cash is separate from the sale payment.',
+                )}
               </p>
             </div>
           )}
@@ -174,7 +177,7 @@ export function PostSale({
       ))}
       {user.permissions.includes('sales.pay') && (
         <Field
-          label="Cash received on sale (PKR)"
+          label={tr('Cash received on sale (PKR)')}
           name="cashPaid"
           type="number"
           min="0"
@@ -185,7 +188,7 @@ export function PostSale({
       )}
       {error && <p role="alert">{error}</p>}
       <Button disabled={busy} className="w-full">
-        Post sale
+        {tr('Post sale')}
       </Button>
     </form>
   );
@@ -222,9 +225,9 @@ export function SalesRegister({
       api<Sale>(`${root}/posted/${selected}`, 'GET', undefined, user.tenantId),
   });
   return (
-    <section className="grid gap-4" aria-label="Sales register">
+    <section className="grid gap-4" aria-label={tr('Sales register')}>
       <DataTable
-        title="Posted sales"
+        title={tr('Posted sales')}
         data={list.data?.items ?? []}
         rowCount={list.data?.total ?? 0}
         pagination={pagination}
@@ -311,18 +314,18 @@ export function SaleDetailPage({
   });
   return (
     <div className="detail-page" ref={heading} tabIndex={-1}>
-      <BackButton onClick={back}>Back to sales</BackButton>
+      <BackButton onClick={back}>{tr('Back to sales')}</BackButton>
       {detail.isPending && (
         <PageState
           kind="loading"
-          title="Loading sale"
-          description="Please wait while the sale is loaded."
+          title={tr('Loading sale')}
+          description={tr('Please wait while the sale is loaded.')}
         />
       )}
       {detail.error && (
         <PageState
           kind="error"
-          title="Sale unavailable"
+          title={tr('Sale unavailable')}
           description={detail.error.message}
           retry={() => void detail.refetch()}
         />
@@ -409,7 +412,7 @@ function SaleDetail({
   const canReverse = user.permissions.includes('sales.reverse');
   const open = sale.status !== 'Reversed';
   return (
-    <section className="grid gap-6" aria-label="Posted sale details">
+    <section className="grid gap-6" aria-label={tr('Posted sale details')}>
       <div className="detail-header">
         <div>
           <h2>
@@ -425,29 +428,37 @@ function SaleDetail({
         <div className="detail-actions">
           <Button variant="outline" disabled={busy} onClick={receipt}>
             <Download aria-hidden="true" size={16} />
-            Download sales receipt
+            {tr('Download sales receipt')}
           </Button>
         </div>
       </div>
       {error && <p role="alert">{error}</p>}
-      <StatGrid label="Sale totals">
-        <StatCard label="Total" icon={Receipt} value={money(sale.total)} />
+      <StatGrid label={tr('Sale totals')}>
         <StatCard
-          label="Paid / allocated"
+          label={tr('Total')}
+          icon={Receipt}
+          value={money(sale.total)}
+        />
+        <StatCard
+          label={tr('Paid / allocated')}
           icon={Banknote}
           tone="success"
           value={money(sale.paid)}
         />
         <StatCard
-          label="Balance"
+          label={tr('Balance')}
           icon={HandCoins}
           tone={sale.outstanding > 0 ? 'warning' : 'success'}
           value={money(sale.outstanding)}
-          note={sale.outstanding > 0 ? 'Still owed by the customer' : 'Settled'}
+          note={
+            sale.outstanding > 0
+              ? tr('Still owed by the customer')
+              : tr('Settled')
+          }
         />
         {sale.cogs !== null && (
           <StatCard
-            label="Gross profit"
+            label={tr('Gross profit')}
             icon={TrendingUp}
             tone={sale.grossProfit! < 0 ? 'danger' : 'success'}
             value={money(sale.grossProfit!)}
@@ -457,19 +468,19 @@ function SaleDetail({
       </StatGrid>
       <div className="split-layout">
         <div className="grid gap-6 content-start">
-          <Card title="Items">
+          <Card title={tr('Items')}>
             <div
               className="line-table"
               role="region"
-              aria-label="Sale lines"
+              aria-label={tr('Sale lines')}
               tabIndex={0}
             >
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">Item</th>
-                    <th scope="col">Quantity</th>
-                    <th scope="col">Net</th>
+                    <th scope="col">{tr('Item')}</th>
+                    <th scope="col">{tr('Quantity')}</th>
+                    <th scope="col">{tr('Net')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -477,18 +488,20 @@ function SaleDetail({
                     <tr key={i}>
                       <td>
                         <strong>
-                          Line {i + 1}: {line.name}
+                          {tr('Line')} {i + 1}: {line.name}
                         </strong>
                         {line.sourceCylinderReference && (
                           <span className="cell-note">
-                            Source cylinder: {line.sourceCylinderReference}
+                            {tr('Source cylinder:')}{' '}
+                            {line.sourceCylinderReference}
                           </span>
                         )}
                         {line.mode === 'Refill' && (
                           <span className="cell-note loss-note">
-                            Cylinder {line.cylinderReference || `line ${i + 1}`}
-                            : Loss {line.lossQuantity ?? 0} {line.unit} —{' '}
-                            {line.lossReason}
+                            {tr('Cylinder')}{' '}
+                            {line.cylinderReference || `line ${i + 1}`}
+                            {tr(': Loss')} {line.lossQuantity ?? 0} {line.unit}{' '}
+                            — {line.lossReason}
                           </span>
                         )}
                       </td>
@@ -504,16 +517,16 @@ function SaleDetail({
               </table>
             </div>
           </Card>
-          <Card title="Payment and correction history">
+          <Card title={tr('Payment and correction history')}>
             <ol className="timeline">
               {sale.entries.map((entry) => (
                 <li key={entry.id}>
                   <div className="timeline-head">
-                    <strong>{entry.kind}</strong>
+                    <strong>{tr(entry.kind)}</strong>
                     <span>{entry.businessDate}</span>
                   </div>
                   <p>
-                    Cash {money(entry.cash)} · balance movement{' '}
+                    {tr('Cash')} {money(entry.cash)} {tr('· balance movement')}{' '}
                     {money(entry.receivable)}
                     {entry.reason ? ` · ${entry.reason}` : ''}
                   </p>
@@ -535,7 +548,7 @@ function SaleDetail({
                           required
                         />
                         <Button variant="outline" disabled={busy}>
-                          Reverse payment
+                          {tr('Reverse payment')}
                         </Button>
                       </form>
                     )}
@@ -546,15 +559,15 @@ function SaleDetail({
         </div>
         <aside className="grid gap-6 content-start">
           {open && canPay && sale.outstanding > 0 && (
-            <Card title="Receive payment" className="accent-card">
+            <Card title={tr('Receive payment')} className="accent-card">
               <form
                 className="grid gap-3"
                 onSubmit={command}
-                aria-label="Receive sales payment"
+                aria-label={tr('Receive sales payment')}
               >
                 <input type="hidden" name="action" value="payments" />
                 <Field
-                  label="Payment amount (PKR)"
+                  label={tr('Payment amount (PKR)')}
                   name="amount"
                   type="number"
                   min="0.01"
@@ -562,18 +575,18 @@ function SaleDetail({
                   required
                 />
                 <Field
-                  label="Payment reason"
+                  label={tr('Payment reason')}
                   name="reason"
                   maxLength={300}
                   required
                 />
                 <Button disabled={busy} className="w-full">
-                  Receive payment
+                  {tr('Receive payment')}
                 </Button>
               </form>
             </Card>
           )}
-          <Card title="Summary">
+          <Card title={tr('Summary')}>
             <KeyValues
               items={[
                 ['Total', money(sale.total)],
@@ -597,21 +610,20 @@ function SaleDetail({
             />
           </Card>
           {open && canReverse && (
-            <Card title="Reverse sale" className="danger-card">
+            <Card title={tr('Reverse sale')} className="danger-card">
               <form
                 className="grid gap-3"
                 onSubmit={command}
-                aria-label="Reverse sale"
+                aria-label={tr('Reverse sale')}
               >
                 <p className="section-help">
-                  First reverse recorded sale payments. Reversing a
-                  borrowed-cylinder sale also records the return of its deposit
-                  cash and cylinder. Only proceed after handing that cash back.
-                  Later stock activity can prevent reversal.
+                  {tr(
+                    'First reverse recorded sale payments. Reversing a borrowed-cylinder sale also records the return of its deposit cash and cylinder. Only proceed after handing that cash back. Later stock activity can prevent reversal.',
+                  )}
                 </p>
                 <input type="hidden" name="action" value="reverse" />
                 <Field
-                  label="Sale reversal reason"
+                  label={tr('Sale reversal reason')}
                   name="reason"
                   maxLength={300}
                   required
@@ -621,7 +633,7 @@ function SaleDetail({
                   className="w-full"
                   disabled={busy || sale.paid !== 0}
                 >
-                  Reverse sale
+                  {tr('Reverse sale')}
                 </Button>
               </form>
             </Card>

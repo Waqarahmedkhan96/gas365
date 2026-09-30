@@ -22,6 +22,7 @@ import {
   StatusChip,
 } from './components/page';
 import type { Page } from './inventory-types';
+import { tr } from './i18n';
 
 type Account = {
   id: string;
@@ -99,7 +100,7 @@ const money = (n: number) =>
   }).format(n);
 const str = (d: FormData, key: string) => String(d.get(key) || '');
 // Server kinds are PascalCase words; show them as plain words.
-const label = (kind: string) => kind.replace(/([a-z])([A-Z])/g, '$1 $2');
+const label = (kind: string) => tr(kind.replace(/([a-z])([A-Z])/g, '$1 $2'));
 function Select({
   label,
   name,
@@ -126,7 +127,7 @@ function Select({
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         required={!optional}
       >
-        <option value="">Select…</option>
+        <option value="">{tr('Select…')}</option>
         {options.map((x) => (
           <option key={x.id} value={x.id}>
             {x.name}
@@ -152,7 +153,9 @@ function MasterEditor({
 }) {
   return (
     <details className="row-action">
-      <summary>Edit {label}</summary>
+      <summary>
+        {tr('Edit')} {label}
+      </summary>
       <form
         className="grid gap-3"
         onSubmit={(e) => {
@@ -175,7 +178,7 @@ function MasterEditor({
           defaultChecked={active}
         />
         <Button disabled={busy} variant="outline">
-          Save {label}
+          {tr('Save')} {label}
         </Button>
       </form>
     </details>
@@ -350,8 +353,8 @@ function FinanceWorkspace({
     return (
       <PageState
         kind="empty"
-        title="Choose a branch"
-        description="Select a branch in the top bar to manage finances."
+        title={tr('Choose a branch')}
+        description={tr('Select a branch in the top bar to manage finances.')}
       />
     );
   const queryError =
@@ -375,25 +378,27 @@ function FinanceWorkspace({
         ? 'info'
         : 'warning';
   const history = (
-    <Card title="Financial history">
+    <Card title={tr('Financial history')}>
       {entries.data?.items.length === 0 ? (
-        <p className="muted-text">No financial entries yet.</p>
+        <p className="muted-text">{tr('No financial entries yet.')}</p>
       ) : (
         <div
           className="data-table finance-table"
           role="region"
-          aria-label="Financial history table"
+          aria-label={tr('Financial history table')}
           tabIndex={0}
         >
           <table>
-            <caption>Posted entries — page {page}</caption>
+            <caption>
+              {tr('Posted entries — page')} {page}
+            </caption>
             <thead>
               <tr>
-                <th scope="col">Date</th>
-                <th scope="col">Type / reason</th>
-                <th scope="col">Account movement</th>
-                <th scope="col">Unapplied / principal</th>
-                <th scope="col">Correction</th>
+                <th scope="col">{tr('Date')}</th>
+                <th scope="col">{tr('Type / reason')}</th>
+                <th scope="col">{tr('Account movement')}</th>
+                <th scope="col">{tr('Unapplied / principal')}</th>
+                <th scope="col">{tr('Correction')}</th>
               </tr>
             </thead>
             <tbody>
@@ -425,7 +430,7 @@ function FinanceWorkspace({
                         'TransferIn',
                       ].includes(e.kind) && (
                         <details className="row-action">
-                          <summary>Reverse</summary>
+                          <summary>{tr('Reverse')}</summary>
                           <form
                             className="inline-form"
                             onSubmit={(event) =>
@@ -445,7 +450,7 @@ function FinanceWorkspace({
                               maxLength={300}
                             />
                             <Button disabled={busy} variant="outline">
-                              Reverse entry
+                              {tr('Reverse entry')}
                             </Button>
                           </form>
                         </details>
@@ -463,14 +468,14 @@ function FinanceWorkspace({
           disabled={page === 1}
           onClick={() => setPage(page - 1)}
         >
-          Previous
+          {tr('Previous')}
         </Button>
         <Button
           variant="outline"
           disabled={!entries.data || page * 20 >= entries.data.total}
           onClick={() => setPage(page + 1)}
         >
-          Next
+          {tr('Next')}
         </Button>
       </div>
     </Card>
@@ -487,9 +492,9 @@ function FinanceWorkspace({
           {error || queryError?.message}
         </p>
       )}
-      {accounts.isPending && <p role="status">Loading accounts…</p>}
+      {accounts.isPending && <p role="status">{tr('Loading accounts…')}</p>}
       {!!accounts.data?.length && (
-        <StatGrid label="Cash and bank balances">
+        <StatGrid label={tr('Cash and bank balances')}>
           {accounts.data.map((a) => (
             <StatCard
               key={a.id}
@@ -505,16 +510,16 @@ function FinanceWorkspace({
       <div className="split-layout">
         <div className="grid gap-6 content-start">
           {section === 'cash-register' && (
-            <Card title="Drawer session" icon={Wallet}>
+            <Card title={tr('Drawer session')} icon={Wallet}>
               <div className="form-grid">
                 <Select
-                  label="Cash drawer"
+                  label={tr('Cash drawer')}
                   value={account}
                   onChange={setAccount}
                   options={usableAccounts.filter((a) => a.kind === 'Cash')}
                 />
                 <Field
-                  label="Business date"
+                  label={tr('Business date')}
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
@@ -522,7 +527,9 @@ function FinanceWorkspace({
               </div>
               {!account && (
                 <p className="muted-text pt-4">
-                  Choose a cash drawer to open, count or close it for the day.
+                  {tr(
+                    'Choose a cash drawer to open, count or close it for the day.',
+                  )}
                 </p>
               )}
               {register.data && (
@@ -531,17 +538,20 @@ function FinanceWorkspace({
                     <div className="register-callout">
                       <DoorOpen aria-hidden="true" size={28} />
                       <div>
-                        <strong>The register is not open for {date}</strong>
+                        <strong>
+                          {tr('The register is not open for {date}', { date })}
+                        </strong>
                         <p>
-                          Count the cash in the drawer and open the register
-                          before recording sales and payments.
+                          {tr(
+                            'Count the cash in the drawer and open the register before recording sales and payments.',
+                          )}
                         </p>
                       </div>
                     </div>
                   )}
-                  <StatGrid label="Drawer session figures">
+                  <StatGrid label={tr('Drawer session figures')}>
                     <StatCard
-                      label="Status"
+                      label={tr('Status')}
                       value={
                         <StatusChip tone={registerTone}>
                           {register.data.status}
@@ -549,21 +559,21 @@ function FinanceWorkspace({
                       }
                     />
                     <StatCard
-                      label="Opening"
+                      label={tr('Opening')}
                       icon={Coins}
                       value={money(register.data.opening)}
                     />
                     <StatCard
-                      label="Expected"
+                      label={tr('Expected')}
                       icon={Calculator}
                       value={money(register.data.expected)}
-                      note="Calculated by the server"
+                      note={tr('Calculated by the server')}
                     />
                   </StatGrid>
                   <p className="section-help">
-                    Expected = opening + sales and collections + loans and owner
-                    funds + other cash in − purchases, expenses, supplier
-                    payments, repayments, withdrawals and bank deposits.
+                    {tr(
+                      'Expected = opening + sales and collections + loans and owner funds + other cash in − purchases, expenses, supplier payments, repayments, withdrawals and bank deposits.',
+                    )}
                   </p>
                   <form
                     className="register-form"
@@ -589,7 +599,7 @@ function FinanceWorkspace({
                   >
                     <div className="form-grid">
                       <Field
-                        label="Counted cash (PKR)"
+                        label={tr('Counted cash (PKR)')}
                         name="counted"
                         type="number"
                         step="0.01"
@@ -597,7 +607,7 @@ function FinanceWorkspace({
                         required
                       />
                       <Field
-                        label="Session / variance reason"
+                        label={tr('Session / variance reason')}
                         name="reason"
                         required
                         maxLength={300}
@@ -627,12 +637,12 @@ function FinanceWorkspace({
                   </form>
                   {register.data.history.length > 0 && (
                     <div className="grid gap-3">
-                      <h4 className="subheading">Session history</h4>
+                      <h4 className="subheading">{tr('Session history')}</h4>
                       <ol className="timeline">
                         {register.data.history.map((h) => (
                           <li key={h.id}>
                             <div className="timeline-head">
-                              <strong>{h.kind}</strong>
+                              <strong>{label(h.kind)}</strong>
                               <span
                                 className={
                                   h.variance < 0
@@ -642,12 +652,12 @@ function FinanceWorkspace({
                                       : undefined
                                 }
                               >
-                                Variance {money(h.variance)}
+                                {tr('Variance')} {money(h.variance)}
                               </span>
                             </div>
                             <p>
-                              Expected {money(h.expected)} · counted{' '}
-                              {money(h.counted)}
+                              {tr('Expected')} {money(h.expected)}{' '}
+                              {tr('· counted')} {money(h.counted)}
                             </p>
                             <p>{h.reason}</p>
                           </li>
@@ -660,10 +670,10 @@ function FinanceWorkspace({
             </Card>
           )}
           {section === 'udhaar' && (
-            <Card title="Udhaar and aging" icon={HandCoins}>
+            <Card title={tr('Udhaar and aging')} icon={HandCoins}>
               <div className="form-grid">
                 <Select
-                  label="Ledger type"
+                  label={tr('Ledger type')}
                   value={supplier ? 'supplier' : 'customer'}
                   onChange={(s) => {
                     setSupplier(s === 'supplier');
@@ -675,13 +685,13 @@ function FinanceWorkspace({
                   ]}
                 />
                 <Select
-                  label="Counterparty"
+                  label={tr('Counterparty')}
                   value={party}
                   onChange={setParty}
                   options={parties.data || []}
                 />
                 <Field
-                  label="As of date"
+                  label={tr('As of date')}
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
@@ -689,48 +699,49 @@ function FinanceWorkspace({
               </div>
               {!party && (
                 <p className="muted-text pt-4">
-                  Choose a customer or supplier to see their balance, open
-                  invoices and aging.
+                  {tr(
+                    'Choose a customer or supplier to see their balance, open invoices and aging.',
+                  )}
                 </p>
               )}
               {credit.data && (
                 <div className="grid gap-4 pt-4">
-                  <StatGrid label="Credit balance">
+                  <StatGrid label={tr('Credit balance')}>
                     <StatCard
-                      label="Balance"
+                      label={tr('Balance')}
                       icon={HandCoins}
                       tone={credit.data.balance > 0 ? 'warning' : 'success'}
                       value={money(credit.data.balance)}
-                      note="Net of unapplied payments"
+                      note={tr('Net of unapplied payments')}
                     />
                     <StatCard
-                      label="Unapplied"
+                      label={tr('Unapplied')}
                       icon={Wallet}
                       value={money(credit.data.unapplied)}
-                      note="Payments not yet allocated"
+                      note={tr('Payments not yet allocated')}
                     />
                   </StatGrid>
                   <p className="section-help">
-                    Aging uses invoice dates; opening balances age from their
-                    original invoice date. Refundable cylinder deposits are
-                    separate from receivables.
+                    {tr(
+                      'Aging uses invoice dates; opening balances age from their original invoice date. Refundable cylinder deposits are separate from receivables.',
+                    )}
                   </p>
                   <div
                     className="data-table finance-table"
                     role="region"
-                    aria-label="Outstanding invoices table"
+                    aria-label={tr('Outstanding invoices table')}
                     tabIndex={0}
                   >
                     <table>
-                      <caption>Outstanding invoices</caption>
+                      <caption>{tr('Outstanding invoices')}</caption>
                       <thead>
                         <tr>
-                          <th scope="col">Reference</th>
-                          <th scope="col">Type</th>
-                          <th scope="col">Date</th>
-                          <th scope="col">Outstanding</th>
-                          <th scope="col">Age</th>
-                          <th scope="col">Correction</th>
+                          <th scope="col">{tr('Reference')}</th>
+                          <th scope="col">{tr('Type')}</th>
+                          <th scope="col">{tr('Date')}</th>
+                          <th scope="col">{tr('Outstanding')}</th>
+                          <th scope="col">{tr('Age')}</th>
+                          <th scope="col">{tr('Correction')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -770,7 +781,7 @@ function FinanceWorkspace({
                                       maxLength={300}
                                     />
                                     <Button disabled={busy} variant="outline">
-                                      Reverse opening balance
+                                      {tr('Reverse opening balance')}
                                     </Button>
                                   </form>
                                 )}
@@ -782,7 +793,7 @@ function FinanceWorkspace({
                   </div>
                   {has('finance.manage') && (
                     <details className="disclosure">
-                      <summary>Record opening balance</summary>
+                      <summary>{tr('Record opening balance')}</summary>
                       <form
                         className="grid gap-3 pt-3"
                         onSubmit={(e) =>
@@ -802,20 +813,20 @@ function FinanceWorkspace({
                         }
                       >
                         <p className="section-help">
-                          Use for credit that existed before Gas365. It moves no
-                          cash; settle it later by recording a payment and
-                          allocating it.
+                          {tr(
+                            'Use for credit that existed before Gas365. It moves no cash; settle it later by recording a payment and allocating it.',
+                          )}
                         </p>
                         <div className="form-grid">
                           <Field
-                            label="Original invoice date"
+                            label={tr('Original invoice date')}
                             name="originalDate"
                             type="date"
                             max={date}
                             required
                           />
                           <Field
-                            label="Opening amount (PKR)"
+                            label={tr('Opening amount (PKR)')}
                             name="amount"
                             type="number"
                             min="0.01"
@@ -823,12 +834,12 @@ function FinanceWorkspace({
                             required
                           />
                           <Field
-                            label="Old reference"
+                            label={tr('Old reference')}
                             name="reference"
                             maxLength={120}
                           />
                           <Field
-                            label="Reconciliation reason"
+                            label={tr('Reconciliation reason')}
                             name="reason"
                             required
                             maxLength={300}
@@ -836,14 +847,14 @@ function FinanceWorkspace({
                         </div>
                         <div>
                           <Button disabled={busy}>
-                            Record opening balance
+                            {tr('Record opening balance')}
                           </Button>
                         </div>
                       </form>
                     </details>
                   )}
                   <details className="disclosure">
-                    <summary>Append-only credit history</summary>
+                    <summary>{tr('Append-only credit history')}</summary>
                     <ol className="timeline pt-3">
                       {credit.data.entries.map((e) => (
                         <li key={e.id}>
@@ -866,7 +877,7 @@ function FinanceWorkspace({
         </div>
         <aside className="grid gap-6 content-start">
           {has('finance.post') && (
-            <Card title="Record transaction" className="accent-card">
+            <Card title={tr('Record transaction')} className="accent-card">
               <form
                 className="grid gap-3"
                 onSubmit={(e) =>
@@ -900,7 +911,7 @@ function FinanceWorkspace({
                 }
               >
                 <Select
-                  label="Transaction type"
+                  label={tr('Transaction type')}
                   value={kind}
                   onChange={(s) => {
                     setKind(s);
@@ -914,37 +925,43 @@ function FinanceWorkspace({
                 />
                 {kind !== 'Allocate' && (
                   <Select
-                    label="Payment account"
+                    label={tr('Payment account')}
                     name="accountId"
                     options={usableAccounts}
                   />
                 )}
                 {kind === 'Expense' && (
                   <Select
-                    label="Expense category"
+                    label={tr('Expense category')}
                     name="categoryId"
                     options={usableCategories}
                   />
                 )}
                 {kind === 'Transfer' && (
                   <Select
-                    label="Destination account"
+                    label={tr('Destination account')}
                     name="destination"
                     options={usableAccounts}
                   />
                 )}
                 {(kind === 'CustomerReceipt' || kind === 'SupplierPayment') && (
                   <p className="section-help">
-                    Payment will be recorded for the{' '}
-                    {kind === 'CustomerReceipt' ? 'customer' : 'supplier'}{' '}
-                    selected in the Udhaar panel
-                    {party ? '' : ' (none selected yet)'}. Leave it unapplied or
-                    allocate it to invoices afterwards.
+                    {kind === 'CustomerReceipt'
+                      ? tr(
+                          'Payment will be recorded for the customer selected in the Udhaar panel',
+                        )
+                      : tr(
+                          'Payment will be recorded for the supplier selected in the Udhaar panel',
+                        )}
+                    {party ? '' : tr(' (none selected yet)')}
+                    {tr(
+                      '. Leave it unapplied or allocate it to invoices afterwards.',
+                    )}
                   </p>
                 )}
                 {(kind === 'LoanReceived' || kind === 'LoanGiven') && (
                   <Field
-                    label="Loan counterparty"
+                    label={tr('Loan counterparty')}
                     name="counterparty"
                     required
                     maxLength={120}
@@ -954,8 +971,8 @@ function FinanceWorkspace({
                   <Select
                     label={
                       kind === 'Allocate'
-                        ? 'Unapplied payment'
-                        : 'Outstanding loan'
+                        ? tr('Unapplied payment')
+                        : tr('Outstanding loan')
                     }
                     value={parent}
                     onChange={(id) => {
@@ -982,7 +999,7 @@ function FinanceWorkspace({
                 )}
                 {kind === 'Allocate' && (
                   <Select
-                    label="Invoice to allocate"
+                    label={tr('Invoice to allocate')}
                     name="invoiceId"
                     options={(credit.data?.invoices || [])
                       .filter((x) => x.outstanding > 0)
@@ -993,7 +1010,7 @@ function FinanceWorkspace({
                   />
                 )}
                 <Field
-                  label="Amount (PKR)"
+                  label={tr('Amount (PKR)')}
                   name="amount"
                   type="number"
                   min="0.01"
@@ -1001,7 +1018,7 @@ function FinanceWorkspace({
                   required
                 />
                 <Field
-                  label="Transaction reason / reference"
+                  label={tr('Transaction reason / reference')}
                   name="reason"
                   required
                   maxLength={300}
@@ -1015,13 +1032,13 @@ function FinanceWorkspace({
                       !party)
                   }
                 >
-                  Post transaction
+                  {tr('Post transaction')}
                 </Button>
               </form>
             </Card>
           )}
           {section === 'expenses' && has('finance.manage') && (
-            <Card title="Expense categories" icon={Tags}>
+            <Card title={tr('Expense categories')} icon={Tags}>
               <ul className="master-list">
                 {categories.data?.map((c) => (
                   <li key={c.id}>
@@ -1029,11 +1046,13 @@ function FinanceWorkspace({
                       <span>
                         <strong>{c.name}</strong>
                         <span className="cell-note">
-                          {c.capital ? 'Capital item' : 'Operating expense'}
+                          {c.capital
+                            ? tr('Capital item')
+                            : tr('Operating expense')}
                         </span>
                       </span>
                       {!c.active && (
-                        <StatusChip tone="neutral">Retired</StatusChip>
+                        <StatusChip tone="neutral">{tr('Retired')}</StatusChip>
                       )}
                     </div>
                     <MasterEditor
@@ -1066,29 +1085,28 @@ function FinanceWorkspace({
                 }
               >
                 <Field
-                  label="Category name"
+                  label={tr('Category name')}
                   name="name"
                   required
                   maxLength={120}
                 />
                 <Field
-                  label="Capital item (excluded from operating expenses)"
+                  label={tr('Capital item (excluded from operating expenses)')}
                   name="capital"
                   type="checkbox"
                 />
                 <Button disabled={busy} variant="outline">
-                  Add category
+                  {tr('Add category')}
                 </Button>
               </form>
             </Card>
           )}
-          <Card title="Accounts" icon={Landmark}>
+          <Card title={tr('Accounts')} icon={Landmark}>
             {accounts.data?.length === 0 && (
               <p className="section-help">
-                Create an account with a reconciled opening balance. The first
-                cash account becomes the drawer used by sales, purchases and
-                cylinder payments. Earlier transactions remain in their original
-                history.
+                {tr(
+                  'Create an account with a reconciled opening balance. The first cash account becomes the drawer used by sales, purchases and cylinder payments. Earlier transactions remain in their original history.',
+                )}
               </p>
             )}
             <ul className="master-list">
@@ -1099,13 +1117,13 @@ function FinanceWorkspace({
                       <strong>{a.name}</strong>
                       <span className="cell-note">
                         {a.kind}
-                        {a.defaultCash ? ' · default drawer' : ''}
+                        {a.defaultCash ? tr(' · default drawer') : ''}
                       </span>
                     </span>
                     <span className="master-amount">
                       {money(a.balance)}
                       {!a.active && (
-                        <StatusChip tone="neutral">Retired</StatusChip>
+                        <StatusChip tone="neutral">{tr('Retired')}</StatusChip>
                       )}
                     </span>
                   </div>
@@ -1129,7 +1147,7 @@ function FinanceWorkspace({
             </ul>
             {has('finance.manage') && (
               <details className="disclosure">
-                <summary>Create account</summary>
+                <summary>{tr('Create account')}</summary>
                 <form
                   className="grid gap-3 pt-3"
                   onSubmit={(e) =>
@@ -1147,18 +1165,18 @@ function FinanceWorkspace({
                   }
                 >
                   <Field
-                    label="Account name"
+                    label={tr('Account name')}
                     name="name"
                     required
                     maxLength={120}
                   />
                   <Select
-                    label="Account type"
+                    label={tr('Account type')}
                     name="kind"
                     options={['Cash', 'Bank'].map((id) => ({ id, name: id }))}
                   />
                   <Field
-                    label="Reconciled opening balance (PKR)"
+                    label={tr('Reconciled opening balance (PKR)')}
                     name="opening"
                     type="number"
                     min="0"
@@ -1166,12 +1184,12 @@ function FinanceWorkspace({
                     required
                   />
                   <Field
-                    label="Opening reconciliation reason"
+                    label={tr('Opening reconciliation reason')}
                     name="reason"
                     required
                     maxLength={300}
                   />
-                  <Button disabled={busy}>Create account</Button>
+                  <Button disabled={busy}>{tr('Create account')}</Button>
                 </form>
               </details>
             )}

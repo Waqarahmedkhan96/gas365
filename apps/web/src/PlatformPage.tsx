@@ -8,6 +8,7 @@ import {
   type SupportGrant,
   type TenantSummary,
 } from './platform-types';
+import { tr } from './i18n';
 
 const statusText = { Trial: 'Trial', Active: 'Active', Expired: 'Ended' };
 
@@ -59,11 +60,15 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
   return (
     <div className="grid gap-6">
       <p className="section-help">
-        Platform administration shows plans, status and usage counts only.
-        Business records are visible only through an owner-approved support
-        view.
+        {tr(
+          'Platform administration shows plans, status and usage counts only. Business records are visible only through an owner-approved support view.',
+        )}
       </p>
-      <div className="flex flex-wrap gap-3" role="group" aria-label="View">
+      <div
+        className="flex flex-wrap gap-3"
+        role="group"
+        aria-label={tr('View')}
+      >
         {(
           [
             ['tenants', 'Businesses'],
@@ -94,7 +99,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
       {view === 'tenants' && (
         <section className="panel grid gap-4">
           <label className="grid gap-1">
-            Search businesses
+            {tr('Search businesses')}
             <input value={search} onChange={(e) => setSearch(e.target.value)} />
           </label>
           {tenants.error && <p role="alert">{tenants.error.message}</p>}
@@ -104,7 +109,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                 <div>
                   <h2>{t.name}</h2>
                   <p>
-                    {t.plan ?? 'No plan'} · {statusText[t.status]}
+                    {t.plan ?? tr('No plan')} · {tr(statusText[t.status])}
                     {t.status === 'Trial' &&
                       ` until ${dateText(t.trialEndsAt, timeZone)}`}
                     {t.paidThrough &&
@@ -113,13 +118,14 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                       ` · requested ${t.requestedPlan} (${(t.requestedBillingPeriod ?? 'Monthly').toLowerCase()})`}
                   </p>
                   <p className="section-help">
-                    {t.users} users · {t.branches} branches ·{' '}
-                    {t.transactionsThisMonth} transactions this month · since{' '}
+                    {t.users} {tr('users ·')} {t.branches} {tr('branches ·')}{' '}
+                    {t.transactionsThisMonth}{' '}
+                    {tr('transactions this month · since')}{' '}
                     {dateText(t.createdAt, timeZone)}
                   </p>
                 </div>
                 <details>
-                  <summary>Record payment and activate</summary>
+                  <summary>{tr('Record payment and activate')}</summary>
                   <form
                     className="grid gap-3"
                     onSubmit={submit(
@@ -134,7 +140,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                     )}
                   >
                     <label className="grid gap-1">
-                      Plan
+                      {tr('Plan')}
                       <select
                         name="planId"
                         defaultValue={
@@ -152,7 +158,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                       </select>
                     </label>
                     <label className="grid gap-1">
-                      Months
+                      {tr('Months')}
                       <input
                         name="months"
                         type="number"
@@ -165,7 +171,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                       />
                     </label>
                     <label className="grid gap-1">
-                      Amount received (PKR)
+                      {tr('Amount received (PKR)')}
                       <input
                         name="amount"
                         type="number"
@@ -175,15 +181,15 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                       />
                     </label>
                     <label className="grid gap-1">
-                      Payment reference
+                      {tr('Payment reference')}
                       <input name="reference" required maxLength={120} />
                     </label>
-                    <Button>Activate plan</Button>
+                    <Button>{tr('Activate plan')}</Button>
                   </form>
                 </details>
                 {t.status !== 'Active' && (
                   <details>
-                    <summary>Extend trial</summary>
+                    <summary>{tr('Extend trial')}</summary>
                     <form
                       className="grid gap-3"
                       onSubmit={submit(
@@ -200,7 +206,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                       )}
                     >
                       <label className="grid gap-1">
-                        Extra days
+                        {tr('Extra days')}
                         <input
                           name="days"
                           type="number"
@@ -211,10 +217,10 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                         />
                       </label>
                       <label className="grid gap-1">
-                        Reason
+                        {tr('Reason')}
                         <input name="reason" required maxLength={300} />
                       </label>
-                      <Button variant="secondary">Extend trial</Button>
+                      <Button variant="secondary">{tr('Extend trial')}</Button>
                     </form>
                   </details>
                 )}
@@ -246,7 +252,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
             >
               <h2>{p.name}</h2>
               <label className="grid gap-1">
-                Plan name
+                {tr('Plan name')}
                 <input
                   name="name"
                   defaultValue={p.name}
@@ -255,7 +261,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                 />
               </label>
               <label className="grid gap-1">
-                Monthly price (PKR, blank for price on request)
+                {tr('Monthly price (PKR, blank for price on request)')}
                 <input
                   name="price"
                   type="number"
@@ -266,7 +272,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
               </label>
               <div className="flex flex-wrap gap-4">
                 <label className="grid gap-1">
-                  Branches
+                  {tr('Branches')}
                   <input
                     name="branches"
                     type="number"
@@ -276,7 +282,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                   />
                 </label>
                 <label className="grid gap-1">
-                  Users
+                  {tr('Users')}
                   <input
                     name="users"
                     type="number"
@@ -286,7 +292,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                   />
                 </label>
                 <label className="grid gap-1">
-                  Administrators
+                  {tr('Administrators')}
                   <input
                     name="admins"
                     type="number"
@@ -302,29 +308,31 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                   name="active"
                   defaultChecked={p.active}
                 />
-                Offered to businesses
+                {tr('Offered to businesses')}
               </label>
-              <Button variant="secondary">Save {p.name}</Button>
+              <Button variant="secondary">
+                {tr('Save')} {p.name}
+              </Button>
             </form>
           ))}
         </section>
       )}
       {view === 'support' && (
         <section className="panel grid gap-3">
-          <h2>Active support grants</h2>
+          <h2>{tr('Active support grants')}</h2>
           {grants.data?.length === 0 && (
-            <p>No business has granted support access right now.</p>
+            <p>{tr('No business has granted support access right now.')}</p>
           )}
           <ul className="grid gap-2">
             {grants.data?.map((g) => (
               <li key={g.id} className="record-row">
                 <span>
-                  <strong>{g.tenantName}</strong> · until{' '}
+                  <strong>{g.tenantName}</strong> {tr('· until')}{' '}
                   {new Date(g.expiresAt).toLocaleString('en-PK', { timeZone })}{' '}
                   ·{' '}
                   {g.includeFinance
-                    ? 'including financial figures'
-                    : 'operational data only'}{' '}
+                    ? tr('including financial figures')
+                    : tr('operational data only')}{' '}
                   · {g.reason}
                 </span>
                 <Button
@@ -335,7 +343,7 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                     }, '')
                   }
                 >
-                  Open read-only view
+                  {tr('Open read-only view')}
                 </Button>
               </li>
             ))}

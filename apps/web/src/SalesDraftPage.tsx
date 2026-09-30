@@ -33,6 +33,7 @@ import type { Page, Warehouse } from './inventory-types';
 import { businessDate, type Dashboard } from './report-types';
 import { SalesRegister, PostSale, SaleDetailPage } from './SalesRegister';
 import { CylinderWorkspace } from './CylinderWorkspace';
+import { tr } from './i18n';
 
 type Party = { id: string; name: string; active: boolean };
 type Price = {
@@ -180,36 +181,36 @@ function SalesSummary({
   const revenue = metric('revenue');
   const receivables = metric('receivables');
   return (
-    <StatGrid label="Sales summary">
+    <StatGrid label={tr('Sales summary')}>
       {revenue && (
         <StatCard
-          label="Net revenue today"
+          label={tr('Net revenue today')}
           icon={TrendingUp}
           value={money(revenue.value)}
-          note="Selected branch, posted sales"
+          note={tr('Selected branch, posted sales')}
         />
       )}
       {receivables && (
         <StatCard
-          label="Customer receivables"
+          label={tr('Customer receivables')}
           icon={HandCoins}
           tone={receivables.value > 0 ? 'warning' : 'neutral'}
           value={money(receivables.value)}
-          note="Outstanding customer balances"
+          note={tr('Outstanding customer balances')}
         />
       )}
       <StatCard
-        label="Posted sales"
+        label={tr('Posted sales')}
         icon={ShoppingCart}
         value={posted.data?.total ?? '—'}
-        note="All time, selected branch"
+        note={tr('All time, selected branch')}
       />
       <StatCard
-        label="Drafts awaiting review"
+        label={tr('Drafts awaiting review')}
         icon={FileClock}
         tone={drafts ? 'warning' : 'neutral'}
         value={drafts ?? '—'}
-        note="Drafts do not reserve stock"
+        note={tr('Drafts do not reserve stock')}
       />
     </StatGrid>
   );
@@ -257,8 +258,10 @@ function DraftWorkspace({
     return (
       <PageState
         kind="empty"
-        title="Choose a branch"
-        description="Select a branch in the top bar to prepare and review sales."
+        title={tr('Choose a branch')}
+        description={tr(
+          'Select a branch in the top bar to prepare and review sales.',
+        )}
       />
     );
   if (view.kind === 'edit')
@@ -318,7 +321,7 @@ function DraftWorkspace({
       {canEdit && (
         <PageActions>
           <Button onClick={() => setView({ kind: 'edit', draft: null })}>
-            <Plus aria-hidden="true" size={18} /> New sales draft
+            <Plus aria-hidden="true" size={18} /> {tr('New sales draft')}
           </Button>
         </PageActions>
       )}
@@ -329,7 +332,7 @@ function DraftWorkspace({
         drafts={list.data?.total}
       />
       <Tabs
-        label="Sales sections"
+        label={tr('Sales sections')}
         value={tab}
         onChange={setTab}
         tabs={[
@@ -349,13 +352,14 @@ function DraftWorkspace({
             label: 'Drafts',
             count: list.data?.total,
             content: (
-              <section className="grid gap-3" aria-label="Sales drafts">
+              <section className="grid gap-3" aria-label={tr('Sales drafts')}>
                 <p className="section-help">
-                  Drafts are for review. They do not reserve stock or record
-                  payments until they are posted.
+                  {tr(
+                    'Drafts are for review. They do not reserve stock or record payments until they are posted.',
+                  )}
                 </p>
                 <DataTable
-                  title="Sales drafts"
+                  title={tr('Sales drafts')}
                   data={list.data?.items ?? []}
                   rowCount={list.data?.total ?? 0}
                   pagination={pagination}
@@ -392,7 +396,9 @@ function DraftWorkspace({
                     },
                     {
                       header: 'Status',
-                      cell: () => <StatusChip tone="warning">Draft</StatusChip>,
+                      cell: () => (
+                        <StatusChip tone="warning">{tr('Draft')}</StatusChip>
+                      ),
                     },
                     ...(canEdit
                       ? [
@@ -406,7 +412,7 @@ function DraftWorkspace({
                                 }
                               >
                                 <Pencil aria-hidden="true" size={16} />
-                                Edit
+                                {tr('Edit')}
                                 <span className="sr-only">
                                   {' '}
                                   {row.original.reference}
@@ -437,17 +443,17 @@ function LinesTable({ lines }: { lines: Line[] }) {
     <div
       className="line-table"
       role="region"
-      aria-label="Sale lines"
+      aria-label={tr('Sale lines')}
       tabIndex={0}
     >
       <table>
         <thead>
           <tr>
-            <th scope="col">Item</th>
-            <th scope="col">Quantity</th>
-            <th scope="col">Unit price</th>
-            <th scope="col">Discount</th>
-            <th scope="col">Net</th>
+            <th scope="col">{tr('Item')}</th>
+            <th scope="col">{tr('Quantity')}</th>
+            <th scope="col">{tr('Unit price')}</th>
+            <th scope="col">{tr('Discount')}</th>
+            <th scope="col">{tr('Net')}</th>
           </tr>
         </thead>
         <tbody>
@@ -456,19 +462,19 @@ function LinesTable({ lines }: { lines: Line[] }) {
               <td>
                 <strong>{line.name}</strong>
                 <span className="cell-note">
-                  {modeLabels[line.mode] ?? line.mode}
+                  {tr(modeLabels[line.mode] ?? line.mode)}
                   {line.warehouse ? ` · ${line.warehouse}` : ''}
                 </span>
                 {line.mode === 'Refill' && (
                   <span className="cell-note loss-note">
-                    Cylinder {line.cylinderReference || `line ${i + 1}`}: Loss{' '}
-                    {line.lossQuantity ?? 0} {line.unit}
+                    {tr('Cylinder')} {line.cylinderReference || `line ${i + 1}`}
+                    {tr(': Loss')} {line.lossQuantity ?? 0} {line.unit}
                     {line.lossReason ? ` — ${line.lossReason}` : ''}
                   </span>
                 )}
                 {line.sourceCylinderReference && (
                   <span className="cell-note">
-                    Source cylinder: {line.sourceCylinderReference}
+                    {tr('Source cylinder:')} {line.sourceCylinderReference}
                   </span>
                 )}
               </td>
@@ -505,12 +511,13 @@ function DraftDetail({
 }) {
   const heading = useViewFocus<HTMLHeadingElement>();
   return (
-    <section className="detail-page" aria-label="Sales draft details">
-      <BackButton onClick={back}>Back to sales</BackButton>
+    <section className="detail-page" aria-label={tr('Sales draft details')}>
+      <BackButton onClick={back}>{tr('Back to sales')}</BackButton>
       <div className="detail-header">
         <div>
           <h2 ref={heading} tabIndex={-1}>
-            {draft.reference} <StatusChip tone="warning">Draft</StatusChip>
+            {draft.reference}{' '}
+            <StatusChip tone="warning">{tr('Draft')}</StatusChip>
           </h2>
           <p>
             {draft.snapshot.customerName} — {draft.snapshot.priceListName}
@@ -520,28 +527,32 @@ function DraftDetail({
           <div className="detail-actions">
             <Button variant="outline" onClick={edit}>
               <Pencil aria-hidden="true" size={16} />
-              Edit<span className="sr-only"> {draft.reference}</span>
+              {tr('Edit')}
+              <span className="sr-only"> {draft.reference}</span>
             </Button>
           </div>
         )}
       </div>
-      <StatGrid label="Draft totals">
-        <StatCard label="Gross" value={money(draft.snapshot.gross)} />
-        <StatCard label="Discount" value={money(draft.snapshot.discount)} />
+      <StatGrid label={tr('Draft totals')}>
+        <StatCard label={tr('Gross')} value={money(draft.snapshot.gross)} />
         <StatCard
-          label="Net"
+          label={tr('Discount')}
+          value={money(draft.snapshot.discount)}
+        />
+        <StatCard
+          label={tr('Net')}
           icon={ClipboardList}
           value={money(draft.snapshot.net)}
-          note="Calculated by the server"
+          note={tr('Calculated by the server')}
         />
       </StatGrid>
       <div className="split-layout">
         <div className="grid gap-6">
-          <Card title="Items">
+          <Card title={tr('Items')}>
             <LinesTable lines={draft.snapshot.lines} />
           </Card>
           {draft.snapshot.notes && (
-            <Card title="Notes">
+            <Card title={tr('Notes')}>
               <p className="muted-text">{draft.snapshot.notes}</p>
             </Card>
           )}
@@ -552,10 +563,11 @@ function DraftDetail({
               <PostSale user={user} draft={draft} done={posted} />
             </Card>
           ) : (
-            <Card title="Posting">
+            <Card title={tr('Posting')}>
               <p className="muted-text">
-                Ask a colleague with posting permission to review and post this
-                draft.
+                {tr(
+                  'Ask a colleague with posting permission to review and post this draft.',
+                )}
               </p>
             </Card>
           )}
@@ -603,7 +615,11 @@ function Lookup({
         }}
       />
       {rows.error && <p role="alert">{rows.error.message}</p>}
-      {rows.isPending && <p role="status">Loading {label}...</p>}
+      {rows.isPending && (
+        <p role="status">
+          {tr('Loading')} {label}...
+        </p>
+      )}
       <div className="option-grid">
         {rows.data?.items
           .filter((p) => p.active)
@@ -631,7 +647,7 @@ function Lookup({
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
           >
-            Previous {label}
+            {tr('Previous')} {label}
           </Button>
           <Button
             type="button"
@@ -639,7 +655,7 @@ function Lookup({
             disabled={page * 20 >= total}
             onClick={() => setPage((p) => p + 1)}
           >
-            Next {label}
+            {tr('Next')} {label}
           </Button>
         </div>
       )}
@@ -765,58 +781,59 @@ function DraftEditor({
   return (
     <div className="detail-page">
       <BackButton onClick={close}>
-        {initial ? 'Back to draft' : 'Back to sales'}
+        {initial ? tr('Back to draft') : tr('Back to sales')}
       </BackButton>
       <div className="detail-header">
         <div>
           <h2 ref={heading} tabIndex={-1}>
-            {initial ? `Edit ${initial.reference}` : 'New sales draft'}
+            {initial ? `Edit ${initial.reference}` : tr('New sales draft')}
           </h2>
           <p>
-            Choose the customer and price list, then add items at their saved
-            selling price.
+            {tr(
+              'Choose the customer and price list, then add items at their saved selling price.',
+            )}
           </p>
         </div>
       </div>
       <form
-        aria-label="Sales draft editor"
+        aria-label={tr('Sales draft editor')}
         className="split-layout"
         onSubmit={save}
       >
         <div className="grid gap-6">
-          <Card title="Sale details">
+          <Card title={tr('Sale details')}>
             <div className="form-grid">
               <Field
-                label="Sales reference"
+                label={tr('Sales reference')}
                 name="reference"
                 required
                 maxLength={120}
-                placeholder="e.g. INV-0001"
+                placeholder={tr('e.g. INV-0001')}
                 defaultValue={initial?.reference ?? ''}
               />
               <Field
-                label="Sales notes"
+                label={tr('Sales notes')}
                 name="notes"
                 maxLength={300}
                 defaultValue={initial?.snapshot.notes ?? ''}
               />
             </div>
           </Card>
-          <Card title="Customer">
+          <Card title={tr('Customer')}>
             <Lookup
               user={user}
               path="customers"
-              label="customer"
+              label={tr('customer')}
               selected={customer?.id}
               choose={setCustomer}
             />
           </Card>
-          <Card title="Price list and items">
+          <Card title={tr('Price list and items')}>
             <div className="grid gap-4">
               <Lookup
                 user={user}
                 path="price-lists"
-                label="price list"
+                label={tr('price list')}
                 selected={list?.id}
                 choose={(p) => {
                   if (p.id !== list?.id) {
@@ -827,7 +844,7 @@ function DraftEditor({
                 }}
               />
               <p className="section-help">
-                Changing the price list clears the draft lines.
+                {tr('Changing the price list clears the draft lines.')}
               </p>
               {prices.error && <p role="alert">{prices.error.message}</p>}
               {warehouses.error && (
@@ -835,7 +852,7 @@ function DraftEditor({
               )}
               {list && (
                 <div className="grid gap-3">
-                  <h4 className="subheading">Add items</h4>
+                  <h4 className="subheading">{tr('Add items')}</h4>
                   <div className="option-grid">
                     {prices.data?.items
                       .filter((x) => x.active)
@@ -867,7 +884,7 @@ function DraftEditor({
                           }
                         >
                           <Plus aria-hidden="true" size={16} />
-                          Add {p.sku} ({p.mode})
+                          {tr('Add')} {p.sku} ({p.mode})
                         </Button>
                       ))}
                   </div>
@@ -879,7 +896,7 @@ function DraftEditor({
                         disabled={pricePage === 1}
                         onClick={() => setPricePage((p) => p - 1)}
                       >
-                        Previous prices
+                        {tr('Previous prices')}
                       </Button>
                       <Button
                         type="button"
@@ -887,7 +904,7 @@ function DraftEditor({
                         disabled={pricePage * 20 >= (prices.data?.total ?? 0)}
                         onClick={() => setPricePage((p) => p + 1)}
                       >
-                        Next prices
+                        {tr('Next prices')}
                       </Button>
                     </div>
                   )}
@@ -898,19 +915,19 @@ function DraftEditor({
           <Card title={`Lines (${lines.length})`}>
             {!lines.length && (
               <p className="muted-text">
-                No items yet. Choose a price list and add items above.
+                {tr('No items yet. Choose a price list and add items above.')}
               </p>
             )}
             <div className="grid gap-4">
               {lines.map((line, i) => (
                 <fieldset key={line.key} className="line-card">
                   <legend>
-                    Line {i + 1}: {line.name} ({line.mode})
+                    {tr('Line')} {i + 1}: {line.name} ({line.mode})
                   </legend>
                   <div className="form-grid">
                     <div className="grid gap-2">
                       <label htmlFor={`warehouse-${line.key}`}>
-                        Warehouse for line {i + 1}
+                        {tr('Warehouse for line')} {i + 1}
                       </label>
                       <select
                         id={`warehouse-${line.key}`}
@@ -920,7 +937,7 @@ function DraftEditor({
                           change(line.key, { warehouseId: e.target.value })
                         }
                       >
-                        <option value="">Choose warehouse</option>
+                        <option value="">{tr('Choose warehouse')}</option>
                         {visibleWarehouses.map((w) => (
                           <option key={w.id} value={w.id}>
                             {w.name}
@@ -956,8 +973,9 @@ function DraftEditor({
                   {line.mode === 'Refill' && (
                     <div className="grid gap-3">
                       <p className="section-help">
-                        Use one line per cylinder filled. With a kg price, enter
-                        0.1 for 100 g, 1.6 for 1,600 g or 3.5 for 3,500 g.
+                        {tr(
+                          'Use one line per cylinder filled. With a kg price, enter 0.1 for 100 g, 1.6 for 1,600 g or 3.5 for 3,500 g.',
+                        )}
                       </p>
                       <div className="form-grid">
                         <Field
@@ -1002,8 +1020,9 @@ function DraftEditor({
                         />
                       </div>
                       <p className="section-help">
-                        Loss is deducted from stock without charging the
-                        customer for it.
+                        {tr(
+                          'Loss is deducted from stock without charging the customer for it.',
+                        )}
                       </p>
                     </div>
                   )}
@@ -1017,7 +1036,7 @@ function DraftEditor({
                       }
                     >
                       <Trash2 aria-hidden="true" size={16} />
-                      Remove line {i + 1}
+                      {tr('Remove line')} {i + 1}
                     </Button>
                   </div>
                 </fieldset>
@@ -1026,7 +1045,7 @@ function DraftEditor({
           </Card>
         </div>
         <aside className="sticky-aside">
-          <Card title="Draft summary" className="accent-card">
+          <Card title={tr('Draft summary')} className="accent-card">
             <KeyValues
               items={[
                 ['Customer', customer?.name ?? 'Choose a customer'],
@@ -1047,8 +1066,9 @@ function DraftEditor({
               </ul>
             )}
             <p className="section-help">
-              Totals are calculated by the server when you save. Changed selling
-              prices require removing and adding the affected line.
+              {tr(
+                'Totals are calculated by the server when you save. Changed selling prices require removing and adding the affected line.',
+              )}
             </p>
             {error && <p role="alert">{error}</p>}
             <div className="grid gap-2">
@@ -1056,7 +1076,7 @@ function DraftEditor({
                 className="w-full"
                 disabled={busy || !customer || !list || !lines.length}
               >
-                Save sales draft
+                {tr('Save sales draft')}
               </Button>
               <Button
                 type="button"
@@ -1065,7 +1085,7 @@ function DraftEditor({
                 disabled={busy}
                 onClick={close}
               >
-                Cancel sales draft
+                {tr('Cancel sales draft')}
               </Button>
             </div>
           </Card>
