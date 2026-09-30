@@ -1,13 +1,15 @@
 namespace Gas365.Application;
 
-public sealed record PlanDto(Guid Id, string Code, string Name, decimal? MonthlyPrice, int MaxBranches, int MaxUsers, int MaxAdmins, bool Active, uint Version);
+// Yearly amounts are derived by the server from the monthly price; clients display them as given.
+public sealed record PlanDto(Guid Id, string Code, string Name, decimal? MonthlyPrice, int MaxBranches, int MaxUsers, int MaxAdmins, bool Active, uint Version,
+    decimal? YearlyPrice, decimal? YearlySaving);
 public sealed record PlanUpdateRequest(string Name, decimal? MonthlyPrice, int MaxBranches, int MaxUsers, int MaxAdmins, bool Active, uint Version);
 public sealed record UsageDto(string Month, int Branches, int Users, int Admins, int SalesInvoices, int PurchaseInvoices, int FinanceEntries, int StockDocuments,
     int Exports, int ImportedRows, long StorageBytes);
 public sealed record SubscriptionEventDto(Guid Id, string Kind, string? PlanName, decimal? Amount, string Reference, string Note, DateTimeOffset? PeriodEnd, DateTimeOffset OccurredAt);
 public sealed record SubscriptionDto(PlanDto? Plan, string Status, DateTimeOffset? TrialEndsAt, DateTimeOffset? PaidThrough, PlanDto? RequestedPlan, UsageDto Usage,
-    PlanDto[] Plans, SubscriptionEventDto[] History, string PaymentProvider);
-public sealed record PlanRequest(Guid PlanId);
+    PlanDto[] Plans, SubscriptionEventDto[] History, string PaymentProvider, string? RequestedBillingPeriod);
+public sealed record PlanRequest(Guid PlanId, string? BillingPeriod = null);
 public sealed record PaymentStartDto(string Provider, string Instructions);
 public sealed record SupportGrantRequest(int Hours, bool IncludeFinance, string Reason);
 public sealed record SupportGrantDto(Guid Id, Guid TenantId, string TenantName, bool IncludeFinance, string Reason, DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt, bool Active);
@@ -30,7 +32,7 @@ public interface ISubscriptionAccess
 }
 
 public sealed record TenantSummaryDto(Guid TenantId, string Name, string? Plan, string Status, DateTimeOffset? TrialEndsAt, DateTimeOffset? PaidThrough, string? RequestedPlan,
-    int Users, int Branches, int TransactionsThisMonth, DateTimeOffset CreatedAt);
+    int Users, int Branches, int TransactionsThisMonth, DateTimeOffset CreatedAt, string? RequestedBillingPeriod);
 public sealed record ActivationRequest(Guid PlanId, int Months, decimal Amount, string Reference);
 public sealed record TrialExtensionRequest(int Days, string Reason);
 
@@ -51,5 +53,5 @@ public interface IPlatformAccess
 public interface IPaymentProvider
 {
     string Name { get; }
-    PaymentStartDto Start(string businessName, PlanDto plan);
+    PaymentStartDto Start(string businessName, PlanDto plan, string billingPeriod);
 }

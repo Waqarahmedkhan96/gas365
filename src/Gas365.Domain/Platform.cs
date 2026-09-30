@@ -52,6 +52,20 @@ public static class SubscriptionRules
     // Owner-approved on 2026-09-29: new businesses get a 14-day trial of the Business plan.
     public const int TrialDays = 14;
     public const string TrialPlan = "business";
+    public const string Monthly = "Monthly";
+    public const string Yearly = "Yearly";
+    // Owner-approved on 2026-09-30: yearly billing charges ten months for twelve (two months free).
+    public const int YearlyMonthsCharged = 10;
+    public static decimal? YearlyPrice(decimal? monthlyPrice) => monthlyPrice * YearlyMonthsCharged;
+    public static decimal? YearlySaving(decimal? monthlyPrice) => monthlyPrice * (12 - YearlyMonthsCharged);
+    public static int PeriodMonths(string period) => period == Yearly ? 12 : 1;
+    public static string Period(string? value) => value switch
+    {
+        null or "" or Monthly => Monthly,
+        Yearly => Yearly,
+        _ => throw new ArgumentException("Choose monthly or yearly billing.")
+    };
+
     public static readonly Guid StarterId = new("7a1f0c2e-0000-4000-8000-000000000001");
     public static readonly Guid BusinessId = new("7a1f0c2e-0000-4000-8000-000000000002");
     public static readonly Guid EnterpriseId = new("7a1f0c2e-0000-4000-8000-000000000003");

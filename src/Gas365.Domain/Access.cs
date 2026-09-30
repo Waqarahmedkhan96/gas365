@@ -61,6 +61,7 @@ public sealed class Tenant : ITenantOwned
     public DateTimeOffset? TrialEndsAt { get; set; }
     public DateTimeOffset? PaidThrough { get; set; }
     public Guid? RequestedPlanId { get; set; }
+    public string? RequestedBillingPeriod { get; set; }
     public bool OnboardingDismissed { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

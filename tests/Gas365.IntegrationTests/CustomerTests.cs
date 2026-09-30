@@ -23,7 +23,7 @@ public sealed partial class CustomerTests(DatabaseFixture database) : IClassFixt
         app = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
-            builder.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Database"] = database.ConnectionString, ["Platform:AdminEmails"] = "admin-platform@test.example; admin-support@test.example" }));
+            builder.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Database"] = database.ConnectionString, ["Platform:AdminEmails"] = "admin-platform@test.example; admin-support@test.example; admin-yearly@test.example" }));
             builder.ConfigureServices(s => { s.RemoveAll<IAccountMessages>(); s.AddSingleton<IAccountMessages>(messages); });
         });
     }

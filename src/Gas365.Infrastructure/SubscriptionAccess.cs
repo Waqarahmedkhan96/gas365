@@ -17,14 +17,25 @@ public static class PlatformAdmins
 public sealed class ManualPaymentProvider : IPaymentProvider
 {
     public string Name => "Manual";
-    public PaymentStartDto Start(string businessName, PlanDto plan) => new(Name,
-        $"Your request for the {plan.Name} plan has been sent to the Gas365 team. Pay by bank transfer quoting \"{businessName}\"; "
-        + "the plan is activated once the payment is confirmed. Your data stays available meanwhile.");
+    private static string Amount(decimal value) => value.ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
+
+    public PaymentStartDto Start(string businessName, PlanDto plan, string billingPeriod)
+    {
+        var yearly = billingPeriod == SubscriptionRules.Yearly;
+        var price = yearly ? plan.YearlyPrice : plan.MonthlyPrice;
+        var due = price is null ? "" : yearly
+            ? $" The amount due is PKR {Amount(price.Value)} for 12 months (two months free)."
+            : $" The amount due is PKR {Amount(price.Value)} for one month.";
+        return new(Name,
+            $"Your request for the {plan.Name} plan, billed {billingPeriod.ToLowerInvariant()}, has been sent to the Gas365 team.{due} Pay by bank transfer quoting \"{businessName}\"; "
+            + "the plan is activated once the payment is confirmed. Your data stays available meanwhile.");
+    }
 }
 
 public sealed class SubscriptionAccess(Gas365DbContext db, TenantScope scope, IPaymentProvider payments) : ISubscriptionAccess
 {
-    internal static PlanDto Dto(Plan p) => new(p.Id, p.Code, p.Name, p.MonthlyPrice, p.MaxBranches, p.MaxUsers, p.MaxAdmins, p.Active, p.Version);
+    internal static PlanDto Dto(Plan p) => new(p.Id, p.Code, p.Name, p.MonthlyPrice, p.MaxBranches, p.MaxUsers, p.MaxAdmins, p.Active, p.Version,
+        SubscriptionRules.YearlyPrice(p.MonthlyPrice), SubscriptionRules.YearlySaving(p.MonthlyPrice));
     private void Require(string permission) { if (!scope.Has(permission)) throw new AccessException(403, "Only the business owner can manage the subscription."); }
     private void Audit(string action, Guid? subject) => db.AuditEvents.Add(new AuditEvent { TenantId = scope.TenantId, ActorId = scope.UserId, Action = action, SubjectId = subject });
 
@@ -65,18 +76,21 @@ public sealed class SubscriptionAccess(Gas365DbContext db, TenantScope scope, IP
             tenant.TrialEndsAt, tenant.PaidThrough, plans.Where(p => p.Id == tenant.RequestedPlanId).Select(Dto).SingleOrDefault(),
             await UsageAsync(db, tenant, ct), plans.Where(p => p.Active).Select(Dto).ToArray(),
             history.Select(h => new SubscriptionEventDto(h.Id, h.Kind, h.PlanId.HasValue ? names.GetValueOrDefault(h.PlanId.Value) : null, h.Amount, h.Reference, h.Note, h.PeriodEnd, h.OccurredAt)).ToArray(),
-            payments.Name);
+            payments.Name, tenant.RequestedPlanId is null ? null : tenant.RequestedBillingPeriod ?? SubscriptionRules.Monthly);
     }
 
     public async Task<PaymentStartDto> RequestPlanAsync(PlanRequest request, CancellationToken ct)
     {
         Require(Permissions.TenantManage);
+        string period;
+        try { period = SubscriptionRules.Period(request.BillingPeriod); }
+        catch (ArgumentException e) { throw new AccessException(400, e.Message); }
         var plan = await db.Plans.AsNoTracking().SingleOrDefaultAsync(p => p.Id == request.PlanId && p.Active, ct) ?? throw new AccessException(404, "Plan not found.");
         var tenant = await db.Tenants.SingleAsync(ct);
-        tenant.RequestedPlanId = plan.Id;
-        db.SubscriptionEvents.Add(new SubscriptionEvent { TenantId = tenant.TenantId, Kind = "PlanRequested", PlanId = plan.Id, ActorId = scope.UserId, Note = "Awaiting payment confirmation" });
+        tenant.RequestedPlanId = plan.Id; tenant.RequestedBillingPeriod = period;
+        db.SubscriptionEvents.Add(new SubscriptionEvent { TenantId = tenant.TenantId, Kind = "PlanRequested", PlanId = plan.Id, ActorId = scope.UserId, Note = $"Awaiting payment confirmation · {period} billing" });
         Audit("subscription.plan_requested", plan.Id); await db.SaveChangesAsync(ct);
-        return payments.Start(tenant.Name, Dto(plan));
+        return payments.Start(tenant.Name, Dto(plan), period);
     }
 
     private static SupportGrantDto Dto(SupportGrant g, string tenantName) =>

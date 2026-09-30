@@ -69,6 +69,31 @@ public sealed partial class CustomerTests
     }
 
     [Fact]
+    public async Task YearlyRequestsChargeTenMonthsForTwelveAndReachTheAdministrator()
+    {
+        var owner = await Owner(); using var oc = owner.Client;
+        var admin = await Owner("admin-yearly@test.example"); using var ac = admin.Client;
+        var enterprise = (await Read<PlanDto[]>(await Platform(admin, "/plans"))).Single(p => p.Id == SubscriptionRules.EnterpriseId);
+        var priced = await Read<PlanDto>(await Send(admin.Client, $"/api/platform/plans/{enterprise.Id}", HttpMethod.Put,
+            new PlanUpdateRequest(enterprise.Name, 12000, enterprise.MaxBranches, enterprise.MaxUsers, enterprise.MaxAdmins, true, enterprise.Version)));
+        Assert.Equal(120000, priced.YearlyPrice); Assert.Equal(24000, priced.YearlySaving);
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await Workspace(owner, "/subscription/request", new PlanRequest(SubscriptionRules.EnterpriseId, "Weekly"))).StatusCode);
+        var payment = await Read<PaymentStartDto>(await Workspace(owner, "/subscription/request", new PlanRequest(SubscriptionRules.EnterpriseId, SubscriptionRules.Yearly)));
+        Assert.Contains("billed yearly", payment.Instructions); Assert.Contains("PKR 120,000.00 for 12 months", payment.Instructions);
+        var subscription = await Read<SubscriptionDto>(await Workspace(owner, "/subscription"));
+        Assert.Equal(SubscriptionRules.Yearly, subscription.RequestedBillingPeriod);
+        Assert.Equal(120000, subscription.Plans.Single(p => p.Id == SubscriptionRules.EnterpriseId).YearlyPrice);
+        Assert.Contains(subscription.History, h => h.Kind == "PlanRequested" && h.Note.Contains("Yearly billing"));
+
+        var summary = (await Read<PageDto<TenantSummaryDto>>(await Platform(admin, "/tenants?search=Inventory"))).Items.First(t => t.TenantId == owner.Me.TenantId);
+        Assert.Equal(SubscriptionRules.Yearly, summary.RequestedBillingPeriod);
+        var active = await Read<TenantSummaryDto>(await Platform(admin, $"/tenants/{owner.Me.TenantId}/activate", new ActivationRequest(SubscriptionRules.EnterpriseId, 12, 120000, "Bank ref yearly")));
+        Assert.Null(active.RequestedBillingPeriod); Assert.True(active.PaidThrough > DateTimeOffset.UtcNow.AddMonths(11));
+        Assert.Null((await Read<SubscriptionDto>(await Workspace(owner, "/subscription"))).RequestedBillingPeriod);
+    }
+
+    [Fact]
     public async Task SupportViewsNeedAnOwnerGrantAreReadOnlyLeastPrivilegeAuditedAndEndOnRevoke()
     {
         var (owner, branch, _) = await ReportingTenant(); using var oc = owner.Client;

@@ -28,7 +28,8 @@ public sealed class PlatformAccess(Gas365DbContext db, TenantScope scope, UserMa
         return new(t.TenantId, t.Name, t.PlanId.HasValue ? plans.GetValueOrDefault(t.PlanId.Value) : null,
             SubscriptionRules.Effective(t.SubscriptionStatus, t.TrialEndsAt, t.PaidThrough, DateTimeOffset.UtcNow), t.TrialEndsAt, t.PaidThrough,
             t.RequestedPlanId.HasValue ? plans.GetValueOrDefault(t.RequestedPlanId.Value) : null, usage.Users, usage.Branches,
-            usage.SalesInvoices + usage.PurchaseInvoices + usage.FinanceEntries + usage.StockDocuments, t.CreatedAt);
+            usage.SalesInvoices + usage.PurchaseInvoices + usage.FinanceEntries + usage.StockDocuments, t.CreatedAt,
+            t.RequestedPlanId.HasValue ? t.RequestedBillingPeriod ?? SubscriptionRules.Monthly : null);
     }
 
     public async Task<PageDto<TenantSummaryDto>> TenantsAsync(string? search, int page, CancellationToken ct)
@@ -76,7 +77,7 @@ public sealed class PlatformAccess(Gas365DbContext db, TenantScope scope, UserMa
         AuditIn(tenantId, "subscription.activated", plan.Id);
         var now = DateTimeOffset.UtcNow;
         var start = tenant.SubscriptionStatus == SubscriptionRules.Active && tenant.PaidThrough > now ? tenant.PaidThrough.Value : now;
-        tenant.PlanId = plan.Id; tenant.SubscriptionStatus = SubscriptionRules.Active; tenant.PaidThrough = start.AddMonths(r.Months); tenant.RequestedPlanId = null;
+        tenant.PlanId = plan.Id; tenant.SubscriptionStatus = SubscriptionRules.Active; tenant.PaidThrough = start.AddMonths(r.Months); tenant.RequestedPlanId = null; tenant.RequestedBillingPeriod = null;
         tenant.MaxBranches = plan.MaxBranches; tenant.MaxUsers = plan.MaxUsers; tenant.MaxAdmins = plan.MaxAdmins;
         db.SubscriptionEvents.Add(new SubscriptionEvent
         {

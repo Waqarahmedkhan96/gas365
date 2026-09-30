@@ -8,7 +8,11 @@ export type Plan = {
   maxAdmins: number;
   active: boolean;
   version: number;
+  // Calculated by the server: ten monthly payments for twelve months.
+  yearlyPrice: number | null;
+  yearlySaving: number | null;
 };
+export type BillingPeriod = 'Monthly' | 'Yearly';
 export type Usage = {
   month: string;
   branches: number;
@@ -41,6 +45,7 @@ export type Subscription = {
     occurredAt: string;
   }[];
   paymentProvider: string;
+  requestedBillingPeriod: BillingPeriod | null;
 };
 export type SupportGrant = {
   id: string;
@@ -68,6 +73,7 @@ export type TenantSummary = {
   branches: number;
   transactionsThisMonth: number;
   createdAt: string;
+  requestedBillingPeriod: BillingPeriod | null;
 };
 
 export const daysLeft = (iso: string) =>

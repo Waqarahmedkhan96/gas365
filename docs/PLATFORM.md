@@ -17,6 +17,10 @@ Phase 10 adds a plan catalogue, business subscription state, server-enforced lim
 
 The platform administrator sets prices and can adjust limits and availability. Limits are enforced by the API when branches, members or roles change. Activating a plan copies its limits to the business. A business already above a lower plan's limits keeps everything it has, but cannot add more until it is within the limit.
 
+## Billing periods
+
+Owner decision (2026-09-30): businesses can request a plan billed monthly or yearly. Yearly billing charges ten monthly prices for twelve months (two months free). The server derives `yearlyPrice` (monthly × 10) and `yearlySaving` (monthly × 2) for every plan; clients display these values and never calculate them. A plan request stores the chosen period on the business (`RequestedBillingPeriod`, `Monthly` or `Yearly`), states the amount due in the payment instructions and records the period in the billing history. The platform administrator sees the requested period, and the activation form defaults to 12 months for yearly requests. Activation clears the request. Payment is still confirmed manually.
+
 ## Subscription states
 
 - **Trial:** new businesses get 14 days of the Business plan. The dashboard shows the days left to people who can manage the business.
@@ -69,6 +73,8 @@ Every administrative action is written into the affected business's own audit lo
 4. The view ends when the administrator exits, when the grant expires or is revoked, or when the email is removed from the configuration. The session then returns to the administrator's own workspace. Signing out works from a support view; switching workspace requires exiting it first.
 
 ## Migration
+
+Apply `20260930110219_YearlyBilling` (adds the nullable `RequestedBillingPeriod` column with a check constraint). Existing pending requests are treated as monthly.
 
 Apply `SubscriptionsAndPlatform` before starting the updated API. It:
 

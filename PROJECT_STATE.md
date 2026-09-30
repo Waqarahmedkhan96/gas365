@@ -61,6 +61,8 @@ The owner accepted the recommendations in this task and clarified that workers e
 
 ## Open decisions
 
+Owner decisions recorded 2026-09-30 for the post-redesign additions: yearly billing charges ten months for twelve (two months free); Google sign-in is built but stays off until the owner adds Google OAuth keys in server configuration; marketing-site contact details use clearly marked placeholders until the owner provides them (no invented testimonials, reviews or customer numbers); the whole app is translated to Urdu with a right-to-left layout and an English/Urdu switch, with the wording to be reviewed by the owner or a native speaker.
+
 Phase 07 operating rules approved on 2026-09-28: invoice-date aging (Current/1–30/31–60/61–90/90+), principal-only loans, operator-reconciled opening balances and recorded cash variances requiring a separate reasoned adjustment before book cash changes. These are implemented and verified. Open for later phases: allocating advances to cylinder settlement receivables; renaming or retiring accounts and expense categories; a per-category reconciliation breakdown (Phase 08 reporting).
 
 Owner decisions recorded during Phase 06: petrol, tolls, loading and unloading are paid separately from the goods supplier, including costs of the business's own vehicle. The previous supplier-paid landed-charge assumption is rejected and requires a purchasing correction. Separate reasoned payment reversal before purchase reversal is approved. Borrowed cylinders and refundable deposits are explicitly included in Phase 06, not deferred.
