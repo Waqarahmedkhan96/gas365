@@ -151,6 +151,7 @@ test('owner manages customer profiles and versioned selling prices', async ({
   await expect(
     page.getByRole('region', { name: 'Customer profile' }),
   ).toContainText('Customer Beta');
+  await page.getByRole('button', { name: 'Back to customers' }).click();
   await page.getByLabel('Search customers').fill('Beta');
   await expect(
     page
@@ -316,6 +317,8 @@ test('owner manages customer profiles and versioned selling prices', async ({
     },
     me.tenantId,
   );
+  await page.getByRole('button', { name: 'Back to sales' }).click();
+  await page.getByRole('tab', { name: 'Borrowed cylinders' }).click();
   await page
     .getByText('Configure cylinder LPG and deposit', { exact: true })
     .click();
@@ -385,6 +388,7 @@ test('owner manages customer profiles and versioned selling prices', async ({
     .fill('5000');
   await detail.getByRole('button', { name: 'Post sale', exact: true }).click();
   await expect(detail).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Borrowed cylinders' }).click();
   const loans = await (
     await request.get(`/api/workspace/sales/loans?branchId=${branches[0].id}`, {
       headers,

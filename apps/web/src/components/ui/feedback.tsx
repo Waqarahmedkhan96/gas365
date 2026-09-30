@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { AlertDialog, Dialog, Toast } from 'radix-ui';
+import { X } from 'lucide-react';
 import { Button } from './button';
 
 export function Modal({
@@ -39,7 +40,7 @@ export function Modal({
             </Dialog.Title>
             <Dialog.Close asChild>
               <Button variant="ghost" size="icon" aria-label="Close dialog">
-                ×
+                <X aria-hidden="true" size={18} />
               </Button>
             </Dialog.Close>
           </div>
@@ -69,15 +70,44 @@ export function ConfirmButton({
   destructive?: boolean;
 }) {
   return (
-    <AlertDialog.Root>
-      <AlertDialog.Trigger asChild>
+    <ConfirmDialog
+      title={title}
+      description={description}
+      onConfirm={onConfirm}
+      destructive={destructive}
+      trigger={
         <Button
           variant={destructive ? 'destructive' : 'outline'}
           disabled={disabled}
         >
           {children}
         </Button>
-      </AlertDialog.Trigger>
+      }
+    />
+  );
+}
+
+// Controlled variant for confirmations started from menus, where the trigger unmounts when the menu closes.
+export function ConfirmDialog({
+  title,
+  description,
+  onConfirm,
+  destructive = false,
+  trigger,
+  open,
+  onOpenChange,
+}: {
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  destructive?: boolean;
+  trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (value: boolean) => void;
+}) {
+  return (
+    <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
+      {trigger && <AlertDialog.Trigger asChild>{trigger}</AlertDialog.Trigger>}
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="dialog-overlay" />
         <AlertDialog.Content className="dialog-panel">

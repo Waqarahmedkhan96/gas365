@@ -29,6 +29,28 @@ export function Field({
 }) {
   const generated = useId();
   const inputId = id || generated;
+  if (props.type === 'checkbox')
+    return (
+      <div className="check-field">
+        <Input
+          id={inputId}
+          aria-describedby={error || hint ? `${inputId}-help` : undefined}
+          {...props}
+        />
+        <label htmlFor={inputId}>
+          {label}
+          {props.required && <span className="sr-only"> (required)</span>}
+        </label>
+        {(error || hint) && (
+          <p
+            id={`${inputId}-help`}
+            className={error ? 'field-error' : 'text-sm text-muted-foreground'}
+          >
+            {error || hint}
+          </p>
+        )}
+      </div>
+    );
   return (
     <div className="grid gap-2">
       <label htmlFor={inputId}>

@@ -152,7 +152,9 @@ test('finance reconciles advances, expenses, loans and controlled drawer closing
     .getByRole('button', { name: 'Open register', exact: true })
     .click();
   await saved();
-  await expect(page.getByText(/Status: Open/)).toBeVisible();
+  await expect(page.getByLabel('Drawer session figures')).toContainText(
+    /Status\s*Open/,
+  );
   await page.goto('/workspace/expenses');
   await page.getByLabel(/Category name/).fill('Utilities');
   await page.getByRole('button', { name: 'Add category' }).click();
@@ -209,23 +211,27 @@ test('finance reconciles advances, expenses, loans and controlled drawer closing
   await page.getByLabel('Transaction reason / reference').fill('Apply advance');
   await page.getByRole('button', { name: 'Post transaction' }).click();
   await saved();
-  await expect(
-    page.getByText(/Balance:.*100\.00.*Unapplied:.*100\.00/),
-  ).toBeVisible();
+  await expect(page.getByLabel('Credit balance')).toContainText(
+    /Balance\s*-?PKR\s100\.00.*Unapplied\s*PKR\s100\.00/,
+  );
   const accessibility = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
     .analyze();
   expect(accessibility.violations).toEqual([]);
   await page.goto('/workspace/cash-register');
   await page.getByLabel('Cash drawer').selectOption({ label: 'Main drawer' });
-  await expect(page.getByText(/Expected:.*1,700\.00/)).toBeVisible();
+  await expect(page.getByLabel('Drawer session figures')).toContainText(
+    /Expected\s*PKR\s1,700\.00/,
+  );
   await page.getByLabel(/Counted cash/).fill('1690');
   await page.getByLabel('Session / variance reason').fill('Ten rupees short');
   await page
     .getByRole('button', { name: 'Close register', exact: true })
     .click();
   await saved();
-  await expect(page.getByText(/Status: Closed/)).toBeVisible();
+  await expect(page.getByLabel('Drawer session figures')).toContainText(
+    /Status\s*Closed/,
+  );
   await page
     .getByLabel('Session / variance reason')
     .fill('Approved shortage correction');
@@ -243,7 +249,9 @@ test('finance reconciles advances, expenses, loans and controlled drawer closing
     .fill('Approved cash shortage');
   await page.getByRole('button', { name: 'Post transaction' }).click();
   await saved();
-  await expect(page.getByText(/Expected:.*1,690\.00/)).toBeVisible();
+  await expect(page.getByLabel('Drawer session figures')).toContainText(
+    /Expected\s*PKR\s1,690\.00/,
+  );
   await page
     .getByLabel('Session / variance reason')
     .fill('Reconciled final close');

@@ -49,7 +49,9 @@ it('read-only finance access shows server balances without posting or account co
       </BranchContext.Provider>
     </QueryClientProvider>,
   );
-  expect(await screen.findByText(/Drawer.*123\.45/)).toBeInTheDocument();
+  expect(
+    await screen.findByLabelText('Cash and bank balances'),
+  ).toHaveTextContent(/Drawer.*123\.45/);
   expect(
     screen.queryByRole('button', { name: 'Post transaction' }),
   ).not.toBeInTheDocument();
@@ -111,7 +113,9 @@ it('finance managers rename or retire accounts with the row version and cannot p
       </BranchContext.Provider>
     </QueryClientProvider>,
   );
-  expect(await screen.findByText(/Old bank.*retired/)).toBeInTheDocument();
+  expect(
+    await screen.findByLabelText('Cash and bank balances'),
+  ).toHaveTextContent(/Old bank.*retired/);
   const payment = screen.getByLabelText('Payment account');
   expect(
     within(payment).queryByRole('option', { name: 'Old bank' }),

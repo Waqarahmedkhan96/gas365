@@ -88,7 +88,8 @@ test('owner verifies email, signs in, manages a branch and signs out', async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBeTruthy();
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('button', { name: /account menu$/ }).click();
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Welcome back' }),

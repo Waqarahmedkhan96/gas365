@@ -81,8 +81,16 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
           </Button>
         ))}
       </div>
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert">{error}</p>}
+      {message && (
+        <p role="status" className="notice-banner">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="error-banner">
+          {error}
+        </p>
+      )}
       {view === 'tenants' && (
         <section className="panel grid gap-4">
           <label className="grid gap-1">

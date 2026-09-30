@@ -4,6 +4,23 @@ import { api, type Me } from './access-api';
 import { useBranch } from './components/branch-context';
 import { Field } from './components/ui/form';
 import { Button } from './components/ui/button';
+import {
+  Calculator,
+  CheckCircle2,
+  Coins,
+  DoorOpen,
+  HandCoins,
+  Landmark,
+  Tags,
+  Wallet,
+} from 'lucide-react';
+import {
+  Card,
+  PageState,
+  StatCard,
+  StatGrid,
+  StatusChip,
+} from './components/page';
 import type { Page } from './inventory-types';
 
 type Account = {
@@ -81,6 +98,8 @@ const money = (n: number) =>
     maximumFractionDigits: 2,
   }).format(n);
 const str = (d: FormData, key: string) => String(d.get(key) || '');
+// Server kinds are PascalCase words; show them as plain words.
+const label = (kind: string) => kind.replace(/([a-z])([A-Z])/g, '$1 $2');
 function Select({
   label,
   name,
@@ -132,7 +151,7 @@ function MasterEditor({
   onSave: (name: string, active: boolean) => void;
 }) {
   return (
-    <details>
+    <details className="row-action">
       <summary>Edit {label}</summary>
       <form
         className="grid gap-3"
@@ -155,7 +174,7 @@ function MasterEditor({
           type="checkbox"
           defaultChecked={active}
         />
-        <Button disabled={busy} variant="secondary">
+        <Button disabled={busy} variant="outline">
           Save {label}
         </Button>
       </form>
@@ -327,7 +346,14 @@ function FinanceWorkspace({
           ? { saleId: id }
           : { purchaseId: id };
   }
-  if (!branch) return <p>Select a branch to manage finances.</p>;
+  if (!branch)
+    return (
+      <PageState
+        kind="empty"
+        title="Choose a branch"
+        description="Select a branch in the top bar to manage finances."
+      />
+    );
   const queryError =
     accounts.error ||
     entries.error ||
@@ -336,559 +362,25 @@ function FinanceWorkspace({
     parties.error ||
     credit.error ||
     register.error;
-  return (
-    <div className="grid gap-6">
-      {message && <p role="status">{message}</p>}
-      {(error || queryError) && (
-        <p role="alert">{error || queryError?.message}</p>
-      )}
-      {accounts.isPending && <p role="status">Loading accounts…</p>}
-      <section className="panel grid gap-4">
-        <h2>Cash and bank balances</h2>
-        {accounts.data?.length === 0 && (
-          <p>
-            Create an account with a reconciled opening balance. The first cash
-            account becomes the drawer used by sales, purchases and cylinder
-            payments. Earlier transactions remain in their original history.
-          </p>
-        )}
-        <ul>
-          {accounts.data?.map((a) => (
-            <li key={a.id}>
-              {a.name} ({a.kind}
-              {a.defaultCash ? ', default drawer' : ''}
-              {a.active ? '' : ', retired'}): {money(a.balance)}
-              {has('finance.manage') && (
-                <MasterEditor
-                  label={a.name}
-                  name={a.name}
-                  active={a.active}
-                  busy={busy}
-                  onSave={(name, active) =>
-                    void update(`/accounts/${a.id}`, {
-                      name,
-                      active,
-                      version: a.version,
-                    })
-                  }
-                />
-              )}
-            </li>
-          ))}
-        </ul>
-        {has('finance.manage') && (
-          <details>
-            <summary>Create account</summary>
-            <form
-              className="grid gap-3"
-              onSubmit={(e) =>
-                submit(
-                  e,
-                  (d) =>
-                    void write('/accounts', {
-                      branchId: branch,
-                      name: str(d, 'name'),
-                      kind: str(d, 'kind'),
-                      opening: Number(str(d, 'opening')),
-                      reason: str(d, 'reason'),
-                    }),
-                )
-              }
-            >
-              <Field
-                label="Account name"
-                name="name"
-                required
-                maxLength={120}
-              />
-              <Select
-                label="Account type"
-                name="kind"
-                options={['Cash', 'Bank'].map((id) => ({ id, name: id }))}
-              />
-              <Field
-                label="Reconciled opening balance (PKR)"
-                name="opening"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-              />
-              <Field
-                label="Opening reconciliation reason"
-                name="reason"
-                required
-                maxLength={300}
-              />
-              <Button disabled={busy}>Create account</Button>
-            </form>
-          </details>
-        )}
-      </section>
-      {section === 'cash-register' && (
-        <section className="panel grid gap-4">
-          <h2>Drawer session</h2>
-          <Select
-            label="Cash drawer"
-            value={account}
-            onChange={setAccount}
-            options={usableAccounts.filter((a) => a.kind === 'Cash')}
-          />
-          <Field
-            label="Business date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-          {register.data && (
-            <>
-              <p>
-                Status: {register.data.status} · Opening:{' '}
-                {money(register.data.opening)} · Expected:{' '}
-                {money(register.data.expected)}
-              </p>
-              <p>
-                Expected = opening + sales and collections + loans and owner
-                funds + other cash in − purchases, expenses, supplier payments,
-                repayments, withdrawals and bank deposits.
-              </p>
-              <form
-                className="grid gap-3"
-                onSubmit={(e) =>
-                  submit(
-                    e,
-                    (d) =>
-                      void write('/register', {
-                        accountId: account,
-                        businessDate: date,
-                        kind:
-                          register.data!.status === 'Not opened'
-                            ? 'Open'
-                            : register.data!.status === 'Closed'
-                              ? 'Reopen'
-                              : 'Close',
-                        counted: Number(str(d, 'counted')),
-                        reason: str(d, 'reason'),
-                        expectedLastEventId: register.data!.lastEventId,
-                      }),
-                  )
-                }
-              >
-                <Field
-                  label="Counted cash (PKR)"
-                  name="counted"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                />
-                <Field
-                  label="Session / variance reason"
-                  name="reason"
-                  required
-                  maxLength={300}
-                />
-                <Button
-                  disabled={
-                    busy ||
-                    !has(
-                      register.data.status === 'Closed'
-                        ? 'register.reopen'
-                        : register.data.status === 'Open'
-                          ? 'register.close'
-                          : 'finance.post',
-                    )
-                  }
-                >
-                  {register.data.status === 'Not opened'
-                    ? 'Open register'
-                    : register.data.status === 'Closed'
-                      ? 'Reopen register'
-                      : 'Close register'}
-                </Button>
-              </form>
-              <ul>
-                {register.data.history.map((h) => (
-                  <li key={h.id}>
-                    {h.kind}: expected {money(h.expected)}, counted{' '}
-                    {money(h.counted)}, variance {money(h.variance)} —{' '}
-                    {h.reason}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
-      )}
-      {section === 'udhaar' && (
-        <section className="panel grid gap-4">
-          <h2>Udhaar and aging</h2>
-          <Select
-            label="Ledger type"
-            value={supplier ? 'supplier' : 'customer'}
-            onChange={(s) => {
-              setSupplier(s === 'supplier');
-              setParty('');
-            }}
-            options={[
-              { id: 'customer', name: 'Customer' },
-              { id: 'supplier', name: 'Supplier' },
-            ]}
-          />
-          <Select
-            label="Counterparty"
-            value={party}
-            onChange={setParty}
-            options={parties.data || []}
-          />
-          <Field
-            label="As of date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-          {credit.data && (
-            <>
-              <p>
-                Balance: {money(credit.data.balance)} · Unapplied:{' '}
-                {money(credit.data.unapplied)}
-              </p>
-              <p>
-                Aging uses invoice dates; opening balances age from their
-                original invoice date. Refundable cylinder deposits are separate
-                from receivables.
-              </p>
-              <div
-                className="overflow-x-auto"
-                role="region"
-                aria-label="Outstanding invoices table"
-                tabIndex={0}
-              >
-                <table>
-                  <caption>Outstanding invoices</caption>
-                  <thead>
-                    <tr>
-                      <th>Reference</th>
-                      <th>Date</th>
-                      <th>Outstanding</th>
-                      <th>Age</th>
-                      <th>Correction</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {credit.data.invoices.map((i) => (
-                      <tr key={i.id}>
-                        <td>{i.reference}</td>
-                        <td>{i.date}</td>
-                        <td>{money(i.outstanding)}</td>
-                        <td>{i.bucket}</td>
-                        <td>
-                          {i.kind === 'Opening' &&
-                            i.outstanding === i.original &&
-                            has('finance.reverse') &&
-                            has('finance.manage') && (
-                              <form
-                                onSubmit={(event) =>
-                                  submit(
-                                    event,
-                                    (d) =>
-                                      void write(`/openings/${i.id}/reverse`, {
-                                        reason: str(d, 'reason'),
-                                      }),
-                                  )
-                                }
-                              >
-                                <Field
-                                  label={`Reversal reason for ${i.reference}`}
-                                  name="reason"
-                                  required
-                                  maxLength={300}
-                                />
-                                <Button disabled={busy} variant="secondary">
-                                  Reverse opening balance
-                                </Button>
-                              </form>
-                            )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {has('finance.manage') && (
-                <details>
-                  <summary>Record opening balance</summary>
-                  <form
-                    className="grid gap-3"
-                    onSubmit={(e) =>
-                      submit(
-                        e,
-                        (d) =>
-                          void write('/openings', {
-                            branchId: branch,
-                            customerId: supplier ? null : party,
-                            supplierId: supplier ? party : null,
-                            reference: str(d, 'reference'),
-                            originalDate: str(d, 'originalDate'),
-                            amount: Number(str(d, 'amount')),
-                            reason: str(d, 'reason'),
-                          }),
-                      )
-                    }
-                  >
-                    <p>
-                      Use for credit that existed before Gas365. It moves no
-                      cash; settle it later by recording a payment and
-                      allocating it.
-                    </p>
-                    <Field
-                      label="Original invoice date"
-                      name="originalDate"
-                      type="date"
-                      max={date}
-                      required
-                    />
-                    <Field
-                      label="Opening amount (PKR)"
-                      name="amount"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      required
-                    />
-                    <Field
-                      label="Old reference"
-                      name="reference"
-                      maxLength={120}
-                    />
-                    <Field
-                      label="Reconciliation reason"
-                      name="reason"
-                      required
-                      maxLength={300}
-                    />
-                    <Button disabled={busy}>Record opening balance</Button>
-                  </form>
-                </details>
-              )}
-              <details>
-                <summary>Append-only credit history</summary>
-                <ul>
-                  {credit.data.entries.map((e) => (
-                    <li key={e.id}>
-                      {e.date} · {e.kind} · {money(e.balanceChange)} ·{' '}
-                      {e.reason}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            </>
-          )}
-        </section>
-      )}
-      {section === 'expenses' && has('finance.manage') && (
-        <section className="panel">
-          <h2>Expense categories</h2>
-          <ul>
-            {categories.data?.map((c) => (
-              <li key={c.id}>
-                {c.name} ({c.capital ? 'Capital item' : 'Operating expense'}
-                {c.active ? '' : ', retired'})
-                <MasterEditor
-                  label={c.name}
-                  name={c.name}
-                  active={c.active}
-                  busy={busy}
-                  onSave={(name, active) =>
-                    void update(`/categories/${c.id}`, {
-                      name,
-                      active,
-                      version: c.version,
-                    })
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-          <form
-            className="grid gap-3"
-            onSubmit={(e) =>
-              submit(
-                e,
-                (d) =>
-                  void write('/categories', {
-                    name: str(d, 'name'),
-                    capital: d.has('capital'),
-                  }),
-              )
-            }
-          >
-            <Field label="Category name" name="name" required maxLength={120} />
-            <Field
-              label="Capital item (excluded from operating expenses)"
-              name="capital"
-              type="checkbox"
-            />
-            <Button disabled={busy}>Add category</Button>
-          </form>
-        </section>
-      )}
-      {has('finance.post') && (
-        <section className="panel grid gap-4">
-          <h2>Record transaction</h2>
-          <form
-            className="grid gap-3"
-            onSubmit={(e) =>
-              submit(e, (d) => {
-                const partyFields =
-                  kind === 'CustomerReceipt'
-                    ? { customerId: party }
-                    : kind === 'SupplierPayment'
-                      ? { supplierId: party }
-                      : {};
-                void write('/entries', {
-                  ...common(d),
-                  ...partyFields,
-                  ...(kind === 'Expense'
-                    ? { categoryId: str(d, 'categoryId') }
-                    : {}),
-                  ...(kind === 'Transfer'
-                    ? { destinationAccountId: str(d, 'destination') }
-                    : {}),
-                  ...(kind === 'LoanReceived' || kind === 'LoanGiven'
-                    ? { counterparty: str(d, 'counterparty') }
-                    : {}),
-                  ...(kind === 'Allocate' || kind === 'LoanRepayment'
-                    ? { parentId: parent }
-                    : {}),
-                  ...(kind === 'Allocate'
-                    ? allocationTarget(str(d, 'invoiceId'))
-                    : {}),
-                });
-              })
-            }
-          >
-            <Select
-              label="Transaction type"
-              value={kind}
-              onChange={(s) => {
-                setKind(s);
-                setParent('');
-                if (s === 'CustomerReceipt' || s === 'SupplierPayment') {
-                  setSupplier(s === 'SupplierPayment');
-                  setParty('');
-                }
-              }}
-              options={kinds.map((id) => ({
-                id,
-                name: id.replace(/([a-z])([A-Z])/g, '$1 $2'),
-              }))}
-            />
-            {kind !== 'Allocate' && (
-              <Select
-                label="Payment account"
-                name="accountId"
-                options={usableAccounts}
-              />
-            )}
-            {kind === 'Expense' && (
-              <Select
-                label="Expense category"
-                name="categoryId"
-                options={usableCategories}
-              />
-            )}
-            {kind === 'Transfer' && (
-              <Select
-                label="Destination account"
-                name="destination"
-                options={usableAccounts}
-              />
-            )}
-            {(kind === 'CustomerReceipt' || kind === 'SupplierPayment') && (
-              <p>
-                Payment will be recorded for the selected{' '}
-                {kind === 'CustomerReceipt' ? 'customer' : 'supplier'} above.
-                Leave it unapplied or allocate it to invoices afterwards.
-              </p>
-            )}
-            {(kind === 'LoanReceived' || kind === 'LoanGiven') && (
-              <Field
-                label="Loan counterparty"
-                name="counterparty"
-                required
-                maxLength={120}
-              />
-            )}
-            {(kind === 'Allocate' || kind === 'LoanRepayment') && (
-              <Select
-                label={
-                  kind === 'Allocate' ? 'Unapplied payment' : 'Outstanding loan'
-                }
-                value={parent}
-                onChange={(id) => {
-                  setParent(id);
-                  const p = openItems.data?.find((x) => x.id === id);
-                  if (kind === 'Allocate') {
-                    setSupplier(!!p?.supplierId);
-                    setParty(p?.customerId || p?.supplierId || '');
-                  }
-                }}
-                options={(openItems.data || [])
-                  .filter((x) =>
-                    kind === 'Allocate'
-                      ? ['CustomerReceipt', 'SupplierPayment'].includes(x.kind)
-                      : ['LoanReceived', 'LoanGiven'].includes(x.kind),
-                  )
-                  .map((x) => ({
-                    id: x.id,
-                    name: `${x.counterparty || x.kind} · ${x.reason} · ${money(x.unapplied)}`,
-                  }))}
-              />
-            )}
-            {kind === 'Allocate' && (
-              <Select
-                label="Invoice to allocate"
-                name="invoiceId"
-                options={(credit.data?.invoices || [])
-                  .filter((x) => x.outstanding > 0)
-                  .map((x) => ({
-                    id: x.id,
-                    name: `${x.reference} · ${money(x.outstanding)}`,
-                  }))}
-              />
-            )}
-            <Field
-              label="Amount (PKR)"
-              name="amount"
-              type="number"
-              min="0.01"
-              step="0.01"
-              required
-            />
-            <Field
-              label="Transaction reason / reference"
-              name="reason"
-              required
-              maxLength={300}
-            />
-            <Button
-              disabled={
-                busy ||
-                ((kind === 'CustomerReceipt' || kind === 'SupplierPayment') &&
-                  !party)
-              }
-            >
-              Post transaction
-            </Button>
-          </form>
-        </section>
-      )}
-      <section className="panel grid gap-4">
-        <h2>Financial history</h2>
-        {entries.data?.items.length === 0 && <p>No financial entries yet.</p>}
+  const registerAction =
+    register.data?.status === 'Not opened'
+      ? 'Open register'
+      : register.data?.status === 'Closed'
+        ? 'Reopen register'
+        : 'Close register';
+  const registerTone =
+    register.data?.status === 'Open'
+      ? 'success'
+      : register.data?.status === 'Closed'
+        ? 'info'
+        : 'warning';
+  const history = (
+    <Card title="Financial history">
+      {entries.data?.items.length === 0 ? (
+        <p className="muted-text">No financial entries yet.</p>
+      ) : (
         <div
-          className="overflow-x-auto"
+          className="data-table finance-table"
           role="region"
           aria-label="Financial history table"
           tabIndex={0}
@@ -897,24 +389,31 @@ function FinanceWorkspace({
             <caption>Posted entries — page {page}</caption>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Type / reason</th>
-                <th>Account movement</th>
-                <th>Unapplied / principal</th>
-                <th>Correction</th>
+                <th scope="col">Date</th>
+                <th scope="col">Type / reason</th>
+                <th scope="col">Account movement</th>
+                <th scope="col">Unapplied / principal</th>
+                <th scope="col">Correction</th>
               </tr>
             </thead>
             <tbody>
               {entries.data?.items.map((e) => (
                 <tr key={e.id}>
-                  <td>{e.businessDate}</td>
+                  <td className="whitespace-nowrap">{e.businessDate}</td>
                   <td>
-                    {e.kind}
-                    <br />
-                    {e.reason}
+                    <span className="kind-tag">{label(e.kind)}</span>
+                    <span className="cell-note">{e.reason}</span>
                   </td>
-                  <td>{money(e.cash)}</td>
-                  <td>{money(e.unapplied)}</td>
+                  <td
+                    className={
+                      e.cash < 0
+                        ? 'amount-out whitespace-nowrap'
+                        : 'amount-in whitespace-nowrap'
+                    }
+                  >
+                    {money(e.cash)}
+                  </td>
+                  <td className="whitespace-nowrap">{money(e.unapplied)}</td>
                   <td>
                     {has('finance.reverse') &&
                       !e.reversesId &&
@@ -925,27 +424,31 @@ function FinanceWorkspace({
                         'CylinderCash',
                         'TransferIn',
                       ].includes(e.kind) && (
-                        <form
-                          onSubmit={(event) =>
-                            submit(
-                              event,
-                              (d) =>
-                                void write(`/entries/${e.id}/reverse`, {
-                                  reason: str(d, 'reason'),
-                                }),
-                            )
-                          }
-                        >
-                          <Field
-                            label={`Reversal reason for ${e.reason}`}
-                            name="reason"
-                            required
-                            maxLength={300}
-                          />
-                          <Button disabled={busy} variant="secondary">
-                            Reverse entry
-                          </Button>
-                        </form>
+                        <details className="row-action">
+                          <summary>Reverse</summary>
+                          <form
+                            className="inline-form"
+                            onSubmit={(event) =>
+                              submit(
+                                event,
+                                (d) =>
+                                  void write(`/entries/${e.id}/reverse`, {
+                                    reason: str(d, 'reason'),
+                                  }),
+                              )
+                            }
+                          >
+                            <Field
+                              label={`Reversal reason for ${e.reason}`}
+                              name="reason"
+                              required
+                              maxLength={300}
+                            />
+                            <Button disabled={busy} variant="outline">
+                              Reverse entry
+                            </Button>
+                          </form>
+                        </details>
                       )}
                   </td>
                 </tr>
@@ -953,23 +456,728 @@ function FinanceWorkspace({
             </tbody>
           </table>
         </div>
-        <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="secondary"
-            disabled={!entries.data || page * 20 >= entries.data.total}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-          </Button>
+      )}
+      <div className="flex gap-3 pt-4">
+        <Button
+          variant="outline"
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          disabled={!entries.data || page * 20 >= entries.data.total}
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </Button>
+      </div>
+    </Card>
+  );
+  return (
+    <div className="grid gap-6">
+      {message && (
+        <p role="status" className="notice-banner">
+          <CheckCircle2 aria-hidden="true" size={18} /> {message}
+        </p>
+      )}
+      {(error || queryError) && (
+        <p role="alert" className="error-banner">
+          {error || queryError?.message}
+        </p>
+      )}
+      {accounts.isPending && <p role="status">Loading accounts…</p>}
+      {!!accounts.data?.length && (
+        <StatGrid label="Cash and bank balances">
+          {accounts.data.map((a) => (
+            <StatCard
+              key={a.id}
+              label={a.name}
+              icon={a.kind === 'Cash' ? Wallet : Landmark}
+              tone={a.active ? 'neutral' : 'warning'}
+              value={money(a.balance)}
+              note={`${a.kind}${a.defaultCash ? ' · default drawer' : ''}${a.active ? '' : ' · retired'}`}
+            />
+          ))}
+        </StatGrid>
+      )}
+      <div className="split-layout">
+        <div className="grid gap-6 content-start">
+          {section === 'cash-register' && (
+            <Card title="Drawer session" icon={Wallet}>
+              <div className="form-grid">
+                <Select
+                  label="Cash drawer"
+                  value={account}
+                  onChange={setAccount}
+                  options={usableAccounts.filter((a) => a.kind === 'Cash')}
+                />
+                <Field
+                  label="Business date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+              {!account && (
+                <p className="muted-text pt-4">
+                  Choose a cash drawer to open, count or close it for the day.
+                </p>
+              )}
+              {register.data && (
+                <div className="grid gap-4 pt-4">
+                  {register.data.status === 'Not opened' && (
+                    <div className="register-callout">
+                      <DoorOpen aria-hidden="true" size={28} />
+                      <div>
+                        <strong>The register is not open for {date}</strong>
+                        <p>
+                          Count the cash in the drawer and open the register
+                          before recording sales and payments.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <StatGrid label="Drawer session figures">
+                    <StatCard
+                      label="Status"
+                      value={
+                        <StatusChip tone={registerTone}>
+                          {register.data.status}
+                        </StatusChip>
+                      }
+                    />
+                    <StatCard
+                      label="Opening"
+                      icon={Coins}
+                      value={money(register.data.opening)}
+                    />
+                    <StatCard
+                      label="Expected"
+                      icon={Calculator}
+                      value={money(register.data.expected)}
+                      note="Calculated by the server"
+                    />
+                  </StatGrid>
+                  <p className="section-help">
+                    Expected = opening + sales and collections + loans and owner
+                    funds + other cash in − purchases, expenses, supplier
+                    payments, repayments, withdrawals and bank deposits.
+                  </p>
+                  <form
+                    className="register-form"
+                    onSubmit={(e) =>
+                      submit(
+                        e,
+                        (d) =>
+                          void write('/register', {
+                            accountId: account,
+                            businessDate: date,
+                            kind:
+                              register.data!.status === 'Not opened'
+                                ? 'Open'
+                                : register.data!.status === 'Closed'
+                                  ? 'Reopen'
+                                  : 'Close',
+                            counted: Number(str(d, 'counted')),
+                            reason: str(d, 'reason'),
+                            expectedLastEventId: register.data!.lastEventId,
+                          }),
+                      )
+                    }
+                  >
+                    <div className="form-grid">
+                      <Field
+                        label="Counted cash (PKR)"
+                        name="counted"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        required
+                      />
+                      <Field
+                        label="Session / variance reason"
+                        name="reason"
+                        required
+                        maxLength={300}
+                      />
+                    </div>
+                    <div>
+                      <Button
+                        variant={
+                          register.data.status === 'Open'
+                            ? 'destructive'
+                            : 'default'
+                        }
+                        disabled={
+                          busy ||
+                          !has(
+                            register.data.status === 'Closed'
+                              ? 'register.reopen'
+                              : register.data.status === 'Open'
+                                ? 'register.close'
+                                : 'finance.post',
+                          )
+                        }
+                      >
+                        {registerAction}
+                      </Button>
+                    </div>
+                  </form>
+                  {register.data.history.length > 0 && (
+                    <div className="grid gap-3">
+                      <h4 className="subheading">Session history</h4>
+                      <ol className="timeline">
+                        {register.data.history.map((h) => (
+                          <li key={h.id}>
+                            <div className="timeline-head">
+                              <strong>{h.kind}</strong>
+                              <span
+                                className={
+                                  h.variance < 0
+                                    ? 'amount-out'
+                                    : h.variance > 0
+                                      ? 'amount-in'
+                                      : undefined
+                                }
+                              >
+                                Variance {money(h.variance)}
+                              </span>
+                            </div>
+                            <p>
+                              Expected {money(h.expected)} · counted{' '}
+                              {money(h.counted)}
+                            </p>
+                            <p>{h.reason}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
+          {section === 'udhaar' && (
+            <Card title="Udhaar and aging" icon={HandCoins}>
+              <div className="form-grid">
+                <Select
+                  label="Ledger type"
+                  value={supplier ? 'supplier' : 'customer'}
+                  onChange={(s) => {
+                    setSupplier(s === 'supplier');
+                    setParty('');
+                  }}
+                  options={[
+                    { id: 'customer', name: 'Customer' },
+                    { id: 'supplier', name: 'Supplier' },
+                  ]}
+                />
+                <Select
+                  label="Counterparty"
+                  value={party}
+                  onChange={setParty}
+                  options={parties.data || []}
+                />
+                <Field
+                  label="As of date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+              {!party && (
+                <p className="muted-text pt-4">
+                  Choose a customer or supplier to see their balance, open
+                  invoices and aging.
+                </p>
+              )}
+              {credit.data && (
+                <div className="grid gap-4 pt-4">
+                  <StatGrid label="Credit balance">
+                    <StatCard
+                      label="Balance"
+                      icon={HandCoins}
+                      tone={credit.data.balance > 0 ? 'warning' : 'success'}
+                      value={money(credit.data.balance)}
+                      note="Net of unapplied payments"
+                    />
+                    <StatCard
+                      label="Unapplied"
+                      icon={Wallet}
+                      value={money(credit.data.unapplied)}
+                      note="Payments not yet allocated"
+                    />
+                  </StatGrid>
+                  <p className="section-help">
+                    Aging uses invoice dates; opening balances age from their
+                    original invoice date. Refundable cylinder deposits are
+                    separate from receivables.
+                  </p>
+                  <div
+                    className="data-table finance-table"
+                    role="region"
+                    aria-label="Outstanding invoices table"
+                    tabIndex={0}
+                  >
+                    <table>
+                      <caption>Outstanding invoices</caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Reference</th>
+                          <th scope="col">Type</th>
+                          <th scope="col">Date</th>
+                          <th scope="col">Outstanding</th>
+                          <th scope="col">Age</th>
+                          <th scope="col">Correction</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {credit.data.invoices.map((i) => (
+                          <tr key={i.id}>
+                            <td>{i.reference}</td>
+                            <td>{label(i.kind)}</td>
+                            <td className="whitespace-nowrap">{i.date}</td>
+                            <td className="whitespace-nowrap">
+                              {money(i.outstanding)}
+                            </td>
+                            <td>
+                              <span className="kind-tag">{i.bucket}</span>
+                            </td>
+                            <td>
+                              {i.kind === 'Opening' &&
+                                i.outstanding === i.original &&
+                                has('finance.reverse') &&
+                                has('finance.manage') && (
+                                  <form
+                                    className="inline-form"
+                                    onSubmit={(event) =>
+                                      submit(
+                                        event,
+                                        (d) =>
+                                          void write(
+                                            `/openings/${i.id}/reverse`,
+                                            { reason: str(d, 'reason') },
+                                          ),
+                                      )
+                                    }
+                                  >
+                                    <Field
+                                      label={`Reversal reason for ${i.reference}`}
+                                      name="reason"
+                                      required
+                                      maxLength={300}
+                                    />
+                                    <Button disabled={busy} variant="outline">
+                                      Reverse opening balance
+                                    </Button>
+                                  </form>
+                                )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {has('finance.manage') && (
+                    <details className="disclosure">
+                      <summary>Record opening balance</summary>
+                      <form
+                        className="grid gap-3 pt-3"
+                        onSubmit={(e) =>
+                          submit(
+                            e,
+                            (d) =>
+                              void write('/openings', {
+                                branchId: branch,
+                                customerId: supplier ? null : party,
+                                supplierId: supplier ? party : null,
+                                reference: str(d, 'reference'),
+                                originalDate: str(d, 'originalDate'),
+                                amount: Number(str(d, 'amount')),
+                                reason: str(d, 'reason'),
+                              }),
+                          )
+                        }
+                      >
+                        <p className="section-help">
+                          Use for credit that existed before Gas365. It moves no
+                          cash; settle it later by recording a payment and
+                          allocating it.
+                        </p>
+                        <div className="form-grid">
+                          <Field
+                            label="Original invoice date"
+                            name="originalDate"
+                            type="date"
+                            max={date}
+                            required
+                          />
+                          <Field
+                            label="Opening amount (PKR)"
+                            name="amount"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            required
+                          />
+                          <Field
+                            label="Old reference"
+                            name="reference"
+                            maxLength={120}
+                          />
+                          <Field
+                            label="Reconciliation reason"
+                            name="reason"
+                            required
+                            maxLength={300}
+                          />
+                        </div>
+                        <div>
+                          <Button disabled={busy}>
+                            Record opening balance
+                          </Button>
+                        </div>
+                      </form>
+                    </details>
+                  )}
+                  <details className="disclosure">
+                    <summary>Append-only credit history</summary>
+                    <ol className="timeline pt-3">
+                      {credit.data.entries.map((e) => (
+                        <li key={e.id}>
+                          <div className="timeline-head">
+                            <strong>{label(e.kind)}</strong>
+                            <span>{e.date}</span>
+                          </div>
+                          <p>
+                            {money(e.balanceChange)} · {e.reason}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                </div>
+              )}
+            </Card>
+          )}
+          {history}
         </div>
-      </section>
+        <aside className="grid gap-6 content-start">
+          {has('finance.post') && (
+            <Card title="Record transaction" className="accent-card">
+              <form
+                className="grid gap-3"
+                onSubmit={(e) =>
+                  submit(e, (d) => {
+                    const partyFields =
+                      kind === 'CustomerReceipt'
+                        ? { customerId: party }
+                        : kind === 'SupplierPayment'
+                          ? { supplierId: party }
+                          : {};
+                    void write('/entries', {
+                      ...common(d),
+                      ...partyFields,
+                      ...(kind === 'Expense'
+                        ? { categoryId: str(d, 'categoryId') }
+                        : {}),
+                      ...(kind === 'Transfer'
+                        ? { destinationAccountId: str(d, 'destination') }
+                        : {}),
+                      ...(kind === 'LoanReceived' || kind === 'LoanGiven'
+                        ? { counterparty: str(d, 'counterparty') }
+                        : {}),
+                      ...(kind === 'Allocate' || kind === 'LoanRepayment'
+                        ? { parentId: parent }
+                        : {}),
+                      ...(kind === 'Allocate'
+                        ? allocationTarget(str(d, 'invoiceId'))
+                        : {}),
+                    });
+                  })
+                }
+              >
+                <Select
+                  label="Transaction type"
+                  value={kind}
+                  onChange={(s) => {
+                    setKind(s);
+                    setParent('');
+                    if (s === 'CustomerReceipt' || s === 'SupplierPayment') {
+                      setSupplier(s === 'SupplierPayment');
+                      setParty('');
+                    }
+                  }}
+                  options={kinds.map((id) => ({ id, name: label(id) }))}
+                />
+                {kind !== 'Allocate' && (
+                  <Select
+                    label="Payment account"
+                    name="accountId"
+                    options={usableAccounts}
+                  />
+                )}
+                {kind === 'Expense' && (
+                  <Select
+                    label="Expense category"
+                    name="categoryId"
+                    options={usableCategories}
+                  />
+                )}
+                {kind === 'Transfer' && (
+                  <Select
+                    label="Destination account"
+                    name="destination"
+                    options={usableAccounts}
+                  />
+                )}
+                {(kind === 'CustomerReceipt' || kind === 'SupplierPayment') && (
+                  <p className="section-help">
+                    Payment will be recorded for the{' '}
+                    {kind === 'CustomerReceipt' ? 'customer' : 'supplier'}{' '}
+                    selected in the Udhaar panel
+                    {party ? '' : ' (none selected yet)'}. Leave it unapplied or
+                    allocate it to invoices afterwards.
+                  </p>
+                )}
+                {(kind === 'LoanReceived' || kind === 'LoanGiven') && (
+                  <Field
+                    label="Loan counterparty"
+                    name="counterparty"
+                    required
+                    maxLength={120}
+                  />
+                )}
+                {(kind === 'Allocate' || kind === 'LoanRepayment') && (
+                  <Select
+                    label={
+                      kind === 'Allocate'
+                        ? 'Unapplied payment'
+                        : 'Outstanding loan'
+                    }
+                    value={parent}
+                    onChange={(id) => {
+                      setParent(id);
+                      const p = openItems.data?.find((x) => x.id === id);
+                      if (kind === 'Allocate') {
+                        setSupplier(!!p?.supplierId);
+                        setParty(p?.customerId || p?.supplierId || '');
+                      }
+                    }}
+                    options={(openItems.data || [])
+                      .filter((x) =>
+                        kind === 'Allocate'
+                          ? ['CustomerReceipt', 'SupplierPayment'].includes(
+                              x.kind,
+                            )
+                          : ['LoanReceived', 'LoanGiven'].includes(x.kind),
+                      )
+                      .map((x) => ({
+                        id: x.id,
+                        name: `${x.counterparty || x.kind} · ${x.reason} · ${money(x.unapplied)}`,
+                      }))}
+                  />
+                )}
+                {kind === 'Allocate' && (
+                  <Select
+                    label="Invoice to allocate"
+                    name="invoiceId"
+                    options={(credit.data?.invoices || [])
+                      .filter((x) => x.outstanding > 0)
+                      .map((x) => ({
+                        id: x.id,
+                        name: `${x.reference} · ${money(x.outstanding)}`,
+                      }))}
+                  />
+                )}
+                <Field
+                  label="Amount (PKR)"
+                  name="amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  required
+                />
+                <Field
+                  label="Transaction reason / reference"
+                  name="reason"
+                  required
+                  maxLength={300}
+                />
+                <Button
+                  className="w-full"
+                  disabled={
+                    busy ||
+                    ((kind === 'CustomerReceipt' ||
+                      kind === 'SupplierPayment') &&
+                      !party)
+                  }
+                >
+                  Post transaction
+                </Button>
+              </form>
+            </Card>
+          )}
+          {section === 'expenses' && has('finance.manage') && (
+            <Card title="Expense categories" icon={Tags}>
+              <ul className="master-list">
+                {categories.data?.map((c) => (
+                  <li key={c.id}>
+                    <div className="master-row">
+                      <span>
+                        <strong>{c.name}</strong>
+                        <span className="cell-note">
+                          {c.capital ? 'Capital item' : 'Operating expense'}
+                        </span>
+                      </span>
+                      {!c.active && (
+                        <StatusChip tone="neutral">Retired</StatusChip>
+                      )}
+                    </div>
+                    <MasterEditor
+                      label={c.name}
+                      name={c.name}
+                      active={c.active}
+                      busy={busy}
+                      onSave={(name, active) =>
+                        void update(`/categories/${c.id}`, {
+                          name,
+                          active,
+                          version: c.version,
+                        })
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+              <form
+                className="grid gap-3 pt-4"
+                onSubmit={(e) =>
+                  submit(
+                    e,
+                    (d) =>
+                      void write('/categories', {
+                        name: str(d, 'name'),
+                        capital: d.has('capital'),
+                      }),
+                  )
+                }
+              >
+                <Field
+                  label="Category name"
+                  name="name"
+                  required
+                  maxLength={120}
+                />
+                <Field
+                  label="Capital item (excluded from operating expenses)"
+                  name="capital"
+                  type="checkbox"
+                />
+                <Button disabled={busy} variant="outline">
+                  Add category
+                </Button>
+              </form>
+            </Card>
+          )}
+          <Card title="Accounts" icon={Landmark}>
+            {accounts.data?.length === 0 && (
+              <p className="section-help">
+                Create an account with a reconciled opening balance. The first
+                cash account becomes the drawer used by sales, purchases and
+                cylinder payments. Earlier transactions remain in their original
+                history.
+              </p>
+            )}
+            <ul className="master-list">
+              {accounts.data?.map((a) => (
+                <li key={a.id}>
+                  <div className="master-row">
+                    <span>
+                      <strong>{a.name}</strong>
+                      <span className="cell-note">
+                        {a.kind}
+                        {a.defaultCash ? ' · default drawer' : ''}
+                      </span>
+                    </span>
+                    <span className="master-amount">
+                      {money(a.balance)}
+                      {!a.active && (
+                        <StatusChip tone="neutral">Retired</StatusChip>
+                      )}
+                    </span>
+                  </div>
+                  {has('finance.manage') && (
+                    <MasterEditor
+                      label={a.name}
+                      name={a.name}
+                      active={a.active}
+                      busy={busy}
+                      onSave={(name, active) =>
+                        void update(`/accounts/${a.id}`, {
+                          name,
+                          active,
+                          version: a.version,
+                        })
+                      }
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+            {has('finance.manage') && (
+              <details className="disclosure">
+                <summary>Create account</summary>
+                <form
+                  className="grid gap-3 pt-3"
+                  onSubmit={(e) =>
+                    submit(
+                      e,
+                      (d) =>
+                        void write('/accounts', {
+                          branchId: branch,
+                          name: str(d, 'name'),
+                          kind: str(d, 'kind'),
+                          opening: Number(str(d, 'opening')),
+                          reason: str(d, 'reason'),
+                        }),
+                    )
+                  }
+                >
+                  <Field
+                    label="Account name"
+                    name="name"
+                    required
+                    maxLength={120}
+                  />
+                  <Select
+                    label="Account type"
+                    name="kind"
+                    options={['Cash', 'Bank'].map((id) => ({ id, name: id }))}
+                  />
+                  <Field
+                    label="Reconciled opening balance (PKR)"
+                    name="opening"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                  <Field
+                    label="Opening reconciliation reason"
+                    name="reason"
+                    required
+                    maxLength={300}
+                  />
+                  <Button disabled={busy}>Create account</Button>
+                </form>
+              </details>
+            )}
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -255,3 +255,11 @@ Closed two Phase 07 limitations that no later phase covered: customer advances c
 **Verification in the current chat:** 157 backend, 23 frontend and 30/30 browser tests; load p95 ≤ 235 ms at 12 concurrent users; restore of 243 businesses verified; Trivy, gitleaks and dependency audits clean; deployment definitions validated.
 
 **Next:** owner provisioning (servers, domain, SMTP, backups, GitHub environments) for a staging deployment, then Phase 12 pilot. Details are in the [Phase 11 report](PHASE_11_REPORT.md), [deployment runbook](DEPLOYMENT.md) and [launch readiness](LAUNCH_READINESS.md).
+
+## Interface redesign — 2026-09-30
+
+**Delivered:** a grouped, collapsible sidebar and new top bar; shared summary cards, status chips, toolbars, tabs and detail layouts; split-screen sign-in and registration; and redesigned overview, sales, customers, inventory, price lists, purchases, suppliers, money, reports, notifications, business administration and subscription pages. Presentation only; see [Interface redesign](UI_REDESIGN.md).
+
+**Verification in the current chat:** frontend type-check, lint and Prettier; 23 frontend and 30/30 browser tests, including accessibility checks on desktop and mobile. Backend unchanged; backend tests not rerun.
+
+**Migration impact:** none.

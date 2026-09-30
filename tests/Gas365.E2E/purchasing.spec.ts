@@ -239,7 +239,7 @@ test('owner purchases, retries posting, pays, reverses and exports a voucher', a
     .getByRole('button', { name: 'Purchase supplier', exact: true })
     .filter({ visible: true })
     .click();
-  await expect(
-    page.getByText(/Payable in selected branch:.*0\.00/),
-  ).toBeVisible();
+  await expect(page.getByLabel('Supplier balance')).toContainText(
+    /Payable in selected branch\s*PKR\s0\.00/,
+  );
 });

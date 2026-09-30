@@ -6,6 +6,7 @@ import {
   type OnChangeFn,
   type PaginationState,
 } from '@tanstack/react-table';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { PageState } from './page';
 
@@ -41,6 +42,11 @@ export function DataTable<T>({
     state: { pagination },
     onPaginationChange,
   });
+  const first = rowCount ? pagination.pageIndex * pagination.pageSize + 1 : 0;
+  const last = Math.min(
+    rowCount,
+    (pagination.pageIndex + 1) * pagination.pageSize,
+  );
   if (loading)
     return (
       <PageState
@@ -63,7 +69,7 @@ export function DataTable<T>({
       <PageState
         kind="empty"
         title="No records found"
-        description="Try changing your filters or add a record when this module is available."
+        description="Try changing your filters, or add a new record."
       />
     );
   return (
@@ -114,8 +120,8 @@ export function DataTable<T>({
       </div>
       <div className="pagination">
         <p aria-live="polite">
-          Page {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}{' '}
-          · {rowCount} records
+          Showing {first}–{last} of {rowCount} records · Page{' '}
+          {pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}
         </p>
         <div className="flex gap-2">
           <Button
@@ -123,14 +129,14 @@ export function DataTable<T>({
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
           >
-            Previous
+            <ChevronLeft aria-hidden="true" size={16} /> Previous
           </Button>
           <Button
             variant="outline"
             disabled={!table.getCanNextPage()}
             onClick={() => table.nextPage()}
           >
-            Next
+            Next <ChevronRight aria-hidden="true" size={16} />
           </Button>
         </div>
       </div>

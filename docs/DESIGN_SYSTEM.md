@@ -45,3 +45,7 @@ Deployment hosts must preserve this HTML/header pairing. The Vite development se
 ## Scope boundary
 
 Phase 03 adds no API endpoints, database columns, migrations, inventory behavior, financial logic or commercial plan rules. Dates retain the tenant time zone. Locale configuration beyond the existing browser locale remains a future settings decision. The remaining production security/recovery gates from Phase 02 still apply.
+
+## Redesign (2026-09-30)
+
+The shell and shared page components were refreshed; see [Interface redesign](UI_REDESIGN.md) for the building blocks and batch status.

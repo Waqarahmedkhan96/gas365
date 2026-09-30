@@ -1,12 +1,34 @@
 import { useState, useRef, type FormEvent, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Boxes,
+  Building2,
+  Package,
+  PackageX,
+  Pencil,
+  Plus,
+  Ruler,
+  Settings2,
+  Warehouse as WarehouseIcon,
+} from 'lucide-react';
 import { api, type Branch, type Me } from './access-api';
 import { useBranch } from './components/branch-context';
 import { Button } from './components/ui/button';
 import { Field } from './components/ui/form';
 import { Modal, ConfirmButton, Notification } from './components/ui/feedback';
-import { PageState } from './components/page';
+import {
+  BackButton,
+  Card,
+  PageState,
+  StatCard,
+  StatGrid,
+  StatusChip,
+  Toolbar,
+} from './components/page';
+import { PageActions } from './components/page-actions';
 import { DataTable } from './components/DataTable';
+import { useViewFocus } from './lib/ui-helpers';
+import { businessDate, type Dashboard } from './report-types';
 import type {
   Unit,
   Category,
@@ -20,6 +42,11 @@ import type {
 } from './inventory-types';
 
 const root = '/api/workspace/inventory';
+const kindLabels: Record<string, string> = {
+  Lpg: 'LPG',
+  Cylinder: 'Cylinder',
+  SparePart: 'Spare part',
+};
 function Select({
   label,
   name,
@@ -110,6 +137,18 @@ export function InventoryPage({
         `/items?search=${encodeURIComponent(search)}&page=${pagination.pageIndex + 1}&pageSize=${pagination.pageSize}`,
       ),
   });
+  const today = businessDate(timeZone);
+  const figures = useQuery({
+    queryKey: ['dashboard', user.tenantId, today, today, branchId],
+    enabled: !!branchId && user.permissions.includes('reports.view'),
+    queryFn: () =>
+      api<Dashboard>(
+        `/api/workspace/reports/dashboard?from=${today}&to=${today}&branchId=${branchId}`,
+        'GET',
+        undefined,
+        user.tenantId,
+      ),
+  });
   async function save(
     path: string,
     body: unknown,
@@ -149,70 +188,35 @@ export function InventoryPage({
       />
     );
   const { units, categories, warehouses } = config.data;
+  const branchWarehouses = warehouses.filter(
+    (w) => w.branchId === branchId && w.active,
+  );
+  const lowStock = figures.data?.metrics.find((m) => m.key === 'lowStock');
   return (
     <div className="grid gap-6">
-      {error && (
-        <p role="alert" className="field-error">
+      {manage && !selected && (
+        <PageActions>
+          <Button
+            ref={setupTrigger}
+            variant="outline"
+            onClick={() => setSetup(true)}
+          >
+            <Settings2 aria-hidden="true" size={18} /> Catalog setup
+          </Button>
+          <Button ref={createTrigger} onClick={() => setCreate(true)}>
+            <Plus aria-hidden="true" size={18} /> Add item
+          </Button>
+        </PageActions>
+      )}
+      {error && !setup && !create && !editing && (
+        <p role="alert" className="error-banner">
           {error}
         </p>
       )}
       {notice > 0 && (
         <Notification key={notice} message="Inventory changes saved." />
       )}
-      <div className="flex flex-wrap gap-3 items-end">
-        <Field
-          label="Search catalog"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          }}
-        />
-        {manage && (
-          <>
-            <Button ref={createTrigger} onClick={() => setCreate(true)}>
-              Add item
-            </Button>
-            <Button
-              ref={setupTrigger}
-              variant="outline"
-              onClick={() => setSetup(true)}
-            >
-              Catalog setup
-            </Button>
-          </>
-        )}
-      </div>
-      <DataTable
-        title="Stock directory"
-        data={items.data?.items || []}
-        rowCount={items.data?.total || 0}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-        loading={items.isPending}
-        error={items.error?.message}
-        retry={() => void items.refetch()}
-        columns={[
-          { accessorKey: 'sku', header: 'SKU' },
-          {
-            accessorKey: 'name',
-            header: 'Item',
-            cell: ({ row }) => (
-              <Button variant="ghost" onClick={() => setSelected(row.original)}>
-                {row.original.name}
-              </Button>
-            ),
-          },
-          { accessorKey: 'kind', header: 'Kind' },
-          {
-            accessorKey: 'active',
-            header: 'Status',
-            cell: ({ row }) => (row.original.active ? 'Active' : 'Inactive'),
-          },
-          { accessorKey: 'reorderLevel', header: 'Reorder level' },
-        ]}
-      />
-      {selected && (
+      {selected ? (
         <StockDetail
           key={`${selected.id}:${branchId}`}
           item={selected}
@@ -223,12 +227,108 @@ export function InventoryPage({
           onClose={() => setSelected(null)}
           onEdit={() => setEditing(selected)}
         />
+      ) : (
+        <>
+          <StatGrid label="Stock summary">
+            <StatCard
+              label="Catalog items"
+              icon={Package}
+              value={items.data?.total ?? '—'}
+              note={
+                search ? 'Matching your search' : 'LPG, cylinders and parts'
+              }
+            />
+            <StatCard
+              label="Warehouses in this branch"
+              icon={WarehouseIcon}
+              value={branchWarehouses.length}
+              note={`${warehouses.length} across all branches`}
+            />
+            {lowStock && (
+              <StatCard
+                label="At or below reorder level"
+                icon={PackageX}
+                tone={lowStock.value > 0 ? 'warning' : 'success'}
+                value={lowStock.value}
+                note="Selected branch"
+              />
+            )}
+            <StatCard
+              label="Stock units"
+              icon={Ruler}
+              value={units.length}
+              note={units.map((u) => u.code).join(', ') || 'None yet'}
+            />
+          </StatGrid>
+          <Toolbar
+            search={{
+              label: 'Search catalog',
+              placeholder: 'Search by SKU or item name',
+              value: search,
+              onChange: (value) => {
+                setSearch(value);
+                setPagination((p) => ({ ...p, pageIndex: 0 }));
+              },
+            }}
+          />
+          <DataTable
+            title="Stock directory"
+            data={items.data?.items || []}
+            rowCount={items.data?.total || 0}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            loading={items.isPending}
+            error={items.error?.message}
+            retry={() => void items.refetch()}
+            columns={[
+              {
+                accessorKey: 'name',
+                header: 'Item',
+                cell: ({ row }) => (
+                  <>
+                    <button
+                      type="button"
+                      className="table-link"
+                      onClick={() => setSelected(row.original)}
+                    >
+                      {row.original.name}
+                    </button>
+                    <span className="cell-note">{row.original.sku}</span>
+                  </>
+                ),
+              },
+              {
+                accessorKey: 'kind',
+                header: 'Kind',
+                cell: ({ row }) => (
+                  <span className="kind-tag">
+                    {kindLabels[row.original.kind] ?? row.original.kind}
+                  </span>
+                ),
+              },
+              {
+                id: 'tracking',
+                header: 'Tracking',
+                cell: ({ row }) =>
+                  row.original.serialTracked ? 'Serials' : 'Quantity',
+              },
+              { accessorKey: 'reorderLevel', header: 'Reorder level' },
+              {
+                accessorKey: 'active',
+                header: 'Status',
+                cell: ({ row }) => (
+                  <StatusChip
+                    tone={row.original.active ? 'success' : 'neutral'}
+                  >
+                    {row.original.active ? 'Active' : 'Inactive'}
+                  </StatusChip>
+                ),
+              },
+            ]}
+          />
+        </>
       )}
       <Modal
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          createTrigger.current?.focus({ preventScroll: true });
-        }}
         title="Edit item"
         description="Update catalog display details. Stock identity and posted movements remain fixed."
         open={!!editing}
@@ -240,7 +340,7 @@ export function InventoryPage({
         {editing && (
           <form
             key={editing.id}
-            className="grid gap-3"
+            className="grid gap-4"
             onSubmit={(event) => {
               const d = fields(event);
               void save(
@@ -260,8 +360,8 @@ export function InventoryPage({
               );
             }}
           >
-            <p>
-              {editing.sku} · {editing.kind}
+            <p className="muted-text">
+              {editing.sku} · {kindLabels[editing.kind] ?? editing.kind}
             </p>
             <Field
               label="Item name"
@@ -269,25 +369,36 @@ export function InventoryPage({
               defaultValue={editing.name}
               required
             />
-            <Field label="Brand" name="brand" defaultValue={editing.brand} />
-            <Field
-              label="Reorder level"
-              name="reorder"
-              type="number"
-              min="0"
-              step="0.001"
-              defaultValue={editing.reorderLevel}
-              required
-            />
-            <label>
+            <div className="form-grid">
+              <Field label="Brand" name="brand" defaultValue={editing.brand} />
+              <Field
+                label="Reorder level"
+                name="reorder"
+                type="number"
+                min="0"
+                step="0.001"
+                defaultValue={editing.reorderLevel}
+                required
+              />
+            </div>
+            <label className="check">
               <input
                 type="checkbox"
                 name="active"
                 defaultChecked={editing.active}
-              />{' '}
+              />
               Active item
             </label>
-            <Button disabled={busy}>Save item</Button>
+            <div className="dialog-actions">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditing(null)}
+              >
+                Cancel
+              </Button>
+              <Button disabled={busy}>Save item</Button>
+            </div>
           </form>
         )}
       </Modal>
@@ -302,9 +413,9 @@ export function InventoryPage({
         onOpenChange={setSetup}
       >
         {error && <p role="alert">{error}</p>}
-        <div className="grid gap-6">
+        <div className="grid gap-4">
           <form
-            className="grid gap-3"
+            className="setup-section"
             onSubmit={(e) => {
               const d = fields(e);
               void save('/units', {
@@ -313,40 +424,50 @@ export function InventoryPage({
               });
             }}
           >
-            <h3>Units</h3>
-            <p>
+            <h3>
+              <Ruler aria-hidden="true" size={18} /> Units
+            </h3>
+            <p className="muted-text">
               {units
                 .map((u) => `${u.code} (${u.decimalPlaces} decimals)`)
                 .join(', ') || 'No units yet.'}
             </p>
-            <Field label="Unit code" name="code" required maxLength={20} />
-            <Field
-              label="Decimal places"
-              name="precision"
-              type="number"
-              min="0"
-              max="3"
-              defaultValue="3"
-              required
-            />
-            <Button disabled={busy}>Add unit</Button>
+            <div className="form-grid">
+              <Field label="Unit code" name="code" required maxLength={20} />
+              <Field
+                label="Decimal places"
+                name="precision"
+                type="number"
+                min="0"
+                max="3"
+                defaultValue="3"
+                required
+              />
+            </div>
+            <Button variant="outline" disabled={busy}>
+              Add unit
+            </Button>
           </form>
           <form
-            className="grid gap-3"
+            className="setup-section"
             onSubmit={(e) => {
               const d = fields(e);
               void save('/categories', { name: text(d, 'name') });
             }}
           >
-            <h3>Spare-part categories</h3>
-            <p>
+            <h3>
+              <Boxes aria-hidden="true" size={18} /> Spare-part categories
+            </h3>
+            <p className="muted-text">
               {categories.map((c) => c.name).join(', ') || 'No categories yet.'}
             </p>
             <Field label="Category name" name="name" required />
-            <Button disabled={busy}>Add category</Button>
+            <Button variant="outline" disabled={busy}>
+              Add category
+            </Button>
           </form>
           <form
-            className="grid gap-3"
+            className="setup-section"
             onSubmit={(e) => {
               const d = fields(e);
               void save('/warehouses', {
@@ -356,8 +477,11 @@ export function InventoryPage({
               });
             }}
           >
-            <h3>Warehouses and locations</h3>
-            <ul>
+            <h3>
+              <Building2 aria-hidden="true" size={18} /> Warehouses and
+              locations
+            </h3>
+            <ul className="setup-list">
               {warehouses.map((w) => (
                 <li key={w.id}>
                   {w.name} · {branches.find((b) => b.id === w.branchId)?.name} ·{' '}
@@ -374,9 +498,13 @@ export function InventoryPage({
                   </option>
                 ))}
             </Select>
-            <Field label="Warehouse name" name="name" required />
-            <Field label="Location / rack description" name="location" />
-            <Button disabled={busy}>Add warehouse</Button>
+            <div className="form-grid">
+              <Field label="Warehouse name" name="name" required />
+              <Field label="Location / rack description" name="location" />
+            </div>
+            <Button variant="outline" disabled={busy}>
+              Add warehouse
+            </Button>
           </form>
         </div>
       </Modal>
@@ -392,7 +520,7 @@ export function InventoryPage({
       >
         {error && <p role="alert">{error}</p>}
         <form
-          className="grid gap-3"
+          className="grid gap-4"
           onSubmit={(e) => {
             const d = fields(e);
             void save(
@@ -414,51 +542,53 @@ export function InventoryPage({
             );
           }}
         >
-          <Field label="SKU" name="sku" required maxLength={40} />
-          <Field label="Item name" name="name" required />
-          <Select label="Item kind" value={kind} onChange={setKind}>
-            {['Lpg', 'Cylinder', 'SparePart'].map((k) => (
-              <option key={k}>{k}</option>
-            ))}
-          </Select>
-          <Select label="Stock unit" name="unit">
-            <option value="">Choose a unit</option>
-            {units
-              .filter((u) => kind !== 'Cylinder' || u.decimalPlaces === 0)
-              .map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.code}
-                </option>
-              ))}
-          </Select>
-          {kind === 'SparePart' ? (
-            <Select label="Category" name="category">
-              <option value="">Choose a category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+          <div className="form-grid">
+            <Field label="SKU" name="sku" required maxLength={40} />
+            <Field label="Item name" name="name" required />
+            <Select label="Item kind" value={kind} onChange={setKind}>
+              {['Lpg', 'Cylinder', 'SparePart'].map((k) => (
+                <option key={k} value={k}>
+                  {kindLabels[k]}
                 </option>
               ))}
             </Select>
-          ) : (
-            <>
-              <Field label="Brand" name="brand" />
-              <Select label="Classification" name="classification">
-                <option>Domestic</option>
-                <option>Commercial</option>
+            <Select label="Stock unit" name="unit">
+              <option value="">Choose a unit</option>
+              {units
+                .filter((u) => kind !== 'Cylinder' || u.decimalPlaces === 0)
+                .map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.code}
+                  </option>
+                ))}
+            </Select>
+            {kind === 'SparePart' ? (
+              <Select label="Category" name="category">
+                <option value="">Choose a category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </Select>
-              <Field
-                label="Nominal capacity (kg)"
-                name="capacity"
-                type="number"
-                min="0.001"
-                step="0.001"
-                required
-              />
-            </>
-          )}
-          {kind === 'Cylinder' && (
-            <>
+            ) : (
+              <>
+                <Field label="Brand" name="brand" />
+                <Select label="Classification" name="classification">
+                  <option>Domestic</option>
+                  <option>Commercial</option>
+                </Select>
+                <Field
+                  label="Nominal capacity (kg)"
+                  name="capacity"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  required
+                />
+              </>
+            )}
+            {kind === 'Cylinder' && (
               <Field
                 label="Tare weight (kg)"
                 name="tare"
@@ -466,21 +596,32 @@ export function InventoryPage({
                 min="0"
                 step="0.001"
               />
-              <label className="flex gap-2">
-                <input type="checkbox" name="serial" />
-                Track individual serials
-              </label>
-            </>
+            )}
+            <Field
+              label="Reorder level"
+              name="reorder"
+              type="number"
+              min="0"
+              step="0.001"
+              defaultValue="0"
+            />
+          </div>
+          {kind === 'Cylinder' && (
+            <label className="check">
+              <input type="checkbox" name="serial" />
+              Track individual serials
+            </label>
           )}
-          <Field
-            label="Reorder level"
-            name="reorder"
-            type="number"
-            min="0"
-            step="0.001"
-            defaultValue="0"
-          />
-          <Button disabled={busy || !units.length}>Create item</Button>
+          <div className="dialog-actions">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCreate(false)}
+            >
+              Cancel
+            </Button>
+            <Button disabled={busy || !units.length}>Create item</Button>
+          </div>
         </form>
       </Modal>
     </div>
@@ -506,6 +647,7 @@ function StockDetail({
 }) {
   const client = useQueryClient();
   const branchId = useBranch();
+  const heading = useViewFocus<HTMLHeadingElement>();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [warehouseId, setWarehouseId] = useState(
     warehouses.find((w) => w.active)?.id || '',
@@ -579,135 +721,153 @@ function StockDetail({
   const sequence = (id: string) =>
     (balances.data || []).find((b) => b.warehouseId === id)?.sequence || 0;
   return (
-    <section className="panel grid gap-6" aria-label="Stock detail">
-      <div className="flex justify-between gap-3">
+    <section className="detail-page" aria-label="Stock detail">
+      <BackButton onClick={onClose}>Back to inventory</BackButton>
+      <div className="detail-header">
         <div>
-          <h2>{item.name}</h2>
+          <h2 ref={heading} tabIndex={-1}>
+            {item.name}{' '}
+            <StatusChip tone={item.active ? 'success' : 'neutral'}>
+              {item.active ? 'Active' : 'Inactive'}
+            </StatusChip>
+          </h2>
           <p>
-            {item.sku} · {item.kind} ·{' '}
-            {item.serialTracked ? 'Serial tracked' : 'Quantity tracked'}
+            {item.sku} · {kindLabels[item.kind] ?? item.kind} ·{' '}
+            {item.serialTracked ? 'Serial tracked' : 'Quantity tracked'} ·
+            Reorder at {item.reorderLevel}
           </p>
         </div>
         {user.permissions.includes('catalog.manage') && (
-          <Button variant="outline" onClick={onEdit}>
-            Edit item
-          </Button>
+          <div className="detail-actions">
+            <Button variant="outline" onClick={onEdit}>
+              <Pencil aria-hidden="true" size={16} /> Edit item
+            </Button>
+          </div>
         )}
-        <Button variant="outline" onClick={onClose}>
-          Close detail
-        </Button>
       </div>
       {error && (
-        <p role="alert" className="field-error">
+        <p role="alert" className="error-banner">
           {error}
         </p>
       )}
-      <p>
-        Stock is calculated from posted movements. Values and average costs are
-        for the whole product at each warehouse, across all states.
-      </p>
-      {balances.isError ? (
-        <PageState
-          kind="error"
-          title="Balances unavailable"
-          description={balances.error.message}
-          retry={() => void balances.refetch()}
-        />
-      ) : balances.isPending ? (
-        <p role="status">Loading balances…</p>
-      ) : !visible.length ? (
-        <p>No stock movements in the active branch.</p>
-      ) : (
-        <div className="summary-grid">
-          {visible.map((b) => (
-            <div key={`${b.warehouseId}:${b.bucket}`} className="status-card">
-              <h3>
-                {warehouses.find((w) => w.id === b.warehouseId)?.name} ·{' '}
-                {b.bucket}
-              </h3>
-              <p>Quantity: {b.quantity}</p>
-              <p>Warehouse value: PKR {b.warehouseValue.toFixed(2)}</p>
-              <p>Average unit cost: PKR {b.averageCost.toFixed(6)}</p>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="flex flex-wrap gap-3 items-end">
-        <Select
-          label="Ledger warehouse"
-          value={warehouseId}
-          onChange={(v) => {
-            setWarehouseId(v);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          }}
-        >
-          <option value="">Choose warehouse</option>
-          {warehouses.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </Select>
-        {user.permissions.includes('inventory.post') && (
-          <Button
-            ref={postTrigger}
-            disabled={!warehouseId || balances.isPending || balances.isError}
-            onClick={() => {
-              setPending(null);
-              setPostOpen(true);
+      <Card title="Balances in the active branch">
+        <p className="section-help">
+          Stock is calculated from posted movements. Values and average costs
+          are for the whole product at each warehouse, across all states.
+        </p>
+        {balances.isError ? (
+          <PageState
+            kind="error"
+            title="Balances unavailable"
+            description={balances.error.message}
+            retry={() => void balances.refetch()}
+          />
+        ) : balances.isPending ? (
+          <p role="status">Loading balances…</p>
+        ) : !visible.length ? (
+          <p className="muted-text pt-3">
+            No stock movements in the active branch.
+          </p>
+        ) : (
+          <div className="balance-grid">
+            {visible.map((b) => (
+              <div
+                key={`${b.warehouseId}:${b.bucket}`}
+                className="balance-card"
+              >
+                <h3>
+                  {warehouses.find((w) => w.id === b.warehouseId)?.name} ·{' '}
+                  {b.bucket}
+                </h3>
+                <p className="balance-quantity">Quantity: {b.quantity}</p>
+                <p>Warehouse value: PKR {b.warehouseValue.toFixed(2)}</p>
+                <p>Average unit cost: PKR {b.averageCost.toFixed(6)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+      <Card title="Movement ledger">
+        <div className="toolbar ledger-toolbar">
+          <Select
+            label="Ledger warehouse"
+            value={warehouseId}
+            onChange={(v) => {
+              setWarehouseId(v);
+              setPagination((p) => ({ ...p, pageIndex: 0 }));
             }}
           >
-            Post stock movement
-          </Button>
+            <option value="">Choose warehouse</option>
+            {warehouses.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
+            ))}
+          </Select>
+          {user.permissions.includes('inventory.post') && (
+            <Button
+              ref={postTrigger}
+              disabled={!warehouseId || balances.isPending || balances.isError}
+              onClick={() => {
+                setPending(null);
+                setPostOpen(true);
+              }}
+            >
+              <Plus aria-hidden="true" size={16} />
+              Post stock movement
+            </Button>
+          )}
+        </div>
+        {warehouseId ? (
+          <DataTable
+            title="Stock movement ledger"
+            data={ledger.data?.items || []}
+            rowCount={ledger.data?.total || 0}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            loading={ledger.isPending}
+            error={ledger.error?.message}
+            retry={() => void ledger.refetch()}
+            columns={[
+              { accessorKey: 'sequence', header: 'Entry' },
+              { accessorKey: 'bucket', header: 'State' },
+              { accessorKey: 'quantity', header: 'Quantity' },
+              { accessorKey: 'value', header: 'Value (PKR)' },
+              { accessorKey: 'unitCost', header: 'Unit cost (PKR)' },
+              {
+                id: 'document',
+                header: 'Document',
+                cell: ({ row }) => (
+                  <button
+                    type="button"
+                    className="table-link"
+                    onClick={(event) => {
+                      documentTrigger.current = event.currentTarget;
+                      setError('');
+                      void get<StockDocument>(
+                        `/documents/${row.original.documentId}`,
+                      )
+                        .then((d) => {
+                          setDocument(d);
+                          setReverseKey(crypto.randomUUID());
+                        })
+                        .catch((e) => setError(e.message));
+                    }}
+                  >
+                    View document
+                  </button>
+                ),
+              },
+            ]}
+          />
+        ) : (
+          <p className="muted-text">Choose a warehouse to see its movements.</p>
         )}
-      </div>
-      {warehouseId && (
-        <DataTable
-          title="Stock movement ledger"
-          data={ledger.data?.items || []}
-          rowCount={ledger.data?.total || 0}
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          loading={ledger.isPending}
-          error={ledger.error?.message}
-          retry={() => void ledger.refetch()}
-          columns={[
-            { accessorKey: 'sequence', header: 'Entry' },
-            { accessorKey: 'bucket', header: 'State' },
-            { accessorKey: 'quantity', header: 'Quantity' },
-            { accessorKey: 'value', header: 'Value (PKR)' },
-            { accessorKey: 'unitCost', header: 'Unit cost (PKR)' },
-            {
-              id: 'document',
-              header: 'Document',
-              cell: ({ row }) => (
-                <Button
-                  variant="ghost"
-                  onClick={(event) => {
-                    documentTrigger.current = event.currentTarget;
-                    setError('');
-                    void get<StockDocument>(
-                      `/documents/${row.original.documentId}`,
-                    )
-                      .then((d) => {
-                        setDocument(d);
-                        setReverseKey(crypto.randomUUID());
-                      })
-                      .catch((e) => setError(e.message));
-                  }}
-                >
-                  View document
-                </Button>
-              ),
-            },
-          ]}
-        />
-      )}
+      </Card>
       {item.serialTracked && user.permissions.includes('catalog.manage') && (
-        <details>
-          <summary>Cylinder assets and inspection records</summary>
+        <Card title="Cylinder assets and inspections">
           {assets.error && <p role="alert">{assets.error.message}</p>}
-          <ul>
+          <ul className="setup-list">
             {assets.data?.map((a) => (
               <li key={a.id}>
                 {a.serial} · {a.owner} · Inspection{' '}
@@ -716,26 +876,33 @@ function StockDetail({
               </li>
             ))}
           </ul>
-          <form
-            className="grid gap-3 mt-4"
-            onSubmit={(e) => {
-              const d = fields(e);
-              void action('/assets', {
-                itemId: item.id,
-                serial: text(d, 'serial'),
-                owner: text(d, 'owner'),
-                inspectionReference: text(d, 'inspection'),
-                inspectionDue: text(d, 'due') || null,
-              });
-            }}
-          >
-            <Field label="Cylinder serial" name="serial" required />
-            <Field label="Cylinder owner" name="owner" required />
-            <Field label="Inspection reference" name="inspection" />
-            <Field label="Next inspection date" name="due" type="date" />
-            <Button disabled={busy}>Register cylinder</Button>
-          </form>
-        </details>
+          <details className="pt-3">
+            <summary>Register a cylinder</summary>
+            <form
+              className="grid gap-3 mt-4"
+              onSubmit={(e) => {
+                const d = fields(e);
+                void action('/assets', {
+                  itemId: item.id,
+                  serial: text(d, 'serial'),
+                  owner: text(d, 'owner'),
+                  inspectionReference: text(d, 'inspection'),
+                  inspectionDue: text(d, 'due') || null,
+                });
+              }}
+            >
+              <div className="form-grid">
+                <Field label="Cylinder serial" name="serial" required />
+                <Field label="Cylinder owner" name="owner" required />
+                <Field label="Inspection reference" name="inspection" />
+                <Field label="Next inspection date" name="due" type="date" />
+              </div>
+              <div>
+                <Button disabled={busy}>Register cylinder</Button>
+              </div>
+            </form>
+          </details>
+        </Card>
       )}
       <Modal
         onCloseAutoFocus={(event) => {
@@ -752,7 +919,7 @@ function StockDetail({
         {error && <p role="alert">{error}</p>}
         {!pending ? (
           <form
-            className="grid gap-3"
+            className="grid gap-4"
             onSubmit={(e) => {
               const d = fields(e);
               setPending({
@@ -781,60 +948,64 @@ function StockDetail({
               });
             }}
           >
-            <p>From {warehouses.find((w) => w.id === warehouseId)?.name}</p>
-            <Select label="Movement kind" value={kind} onChange={setKind}>
-              {['Opening', 'AdjustmentIn', 'AdjustmentOut', 'Transfer'].map(
-                (k) => (
-                  <option key={k}>{k}</option>
-                ),
-              )}
-            </Select>
-            <Select label="Source state" name="bucket">
-              {states(item).map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </Select>
-            <Field
-              label="Quantity"
-              name="quantity"
-              type="number"
-              min="0.001"
-              step="0.001"
-              required
-            />
-            {(kind === 'Opening' || kind === 'AdjustmentIn') && (
+            <p className="muted-text">
+              From {warehouses.find((w) => w.id === warehouseId)?.name}
+            </p>
+            <div className="form-grid">
+              <Select label="Movement kind" value={kind} onChange={setKind}>
+                {['Opening', 'AdjustmentIn', 'AdjustmentOut', 'Transfer'].map(
+                  (k) => (
+                    <option key={k}>{k}</option>
+                  ),
+                )}
+              </Select>
+              <Select label="Source state" name="bucket">
+                {states(item).map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </Select>
               <Field
-                label="Receipt unit cost (PKR)"
-                name="cost"
+                label="Quantity"
+                name="quantity"
                 type="number"
-                min="0"
-                step="0.000001"
+                min="0.001"
+                step="0.001"
                 required
               />
-            )}
-            {kind === 'Transfer' && (
-              <>
-                <Select
-                  label="Destination warehouse"
-                  value={destination}
-                  onChange={setDestination}
-                >
-                  <option value="">Choose warehouse</option>
-                  {allWarehouses
-                    .filter((w) => w.active)
-                    .map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
+              {(kind === 'Opening' || kind === 'AdjustmentIn') && (
+                <Field
+                  label="Receipt unit cost (PKR)"
+                  name="cost"
+                  type="number"
+                  min="0"
+                  step="0.000001"
+                  required
+                />
+              )}
+              {kind === 'Transfer' && (
+                <>
+                  <Select
+                    label="Destination warehouse"
+                    value={destination}
+                    onChange={setDestination}
+                  >
+                    <option value="">Choose warehouse</option>
+                    {allWarehouses
+                      .filter((w) => w.active)
+                      .map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name}
+                        </option>
+                      ))}
+                  </Select>
+                  <Select label="Destination state" name="destinationBucket">
+                    {states(item).map((s) => (
+                      <option key={s}>{s}</option>
                     ))}
-                </Select>
-                <Select label="Destination state" name="destinationBucket">
-                  {states(item).map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </Select>
-              </>
-            )}
+                  </Select>
+                </>
+              )}
+            </div>
             {item.serialTracked && (
               <Field
                 label="Serials (comma separated)"
@@ -848,51 +1019,59 @@ function StockDetail({
               required
               maxLength={300}
             />
-            <Button>Review movement</Button>
+            <div className="dialog-actions">
+              <Button>Review movement</Button>
+            </div>
           </form>
         ) : (
           <div className="grid gap-4">
-            <p>
-              {String(pending.kind)} · Quantity {String(pending.quantity)} ·{' '}
-              {String(pending.bucket)}
-            </p>
-            <p>
-              Source:{' '}
-              {allWarehouses.find((w) => w.id === pending.warehouseId)?.name} ·{' '}
-              {String(pending.bucket)}
-            </p>
-            {pending.destinationWarehouseId ? (
+            <div className="review-box">
               <p>
-                Destination:{' '}
-                {
-                  allWarehouses.find(
-                    (w) => w.id === pending.destinationWarehouseId,
-                  )?.name
-                }{' '}
-                · {String(pending.destinationBucket)}
+                <strong>
+                  {String(pending.kind)} · Quantity {String(pending.quantity)} ·{' '}
+                  {String(pending.bucket)}
+                </strong>
               </p>
-            ) : null}
-            {pending.unitCost !== null && (
-              <p>Receipt unit cost: PKR {String(pending.unitCost)}</p>
-            )}
-            <p>{String(pending.reason)}</p>
-            <p>
+              <p>
+                Source:{' '}
+                {allWarehouses.find((w) => w.id === pending.warehouseId)?.name}{' '}
+                · {String(pending.bucket)}
+              </p>
+              {pending.destinationWarehouseId ? (
+                <p>
+                  Destination:{' '}
+                  {
+                    allWarehouses.find(
+                      (w) => w.id === pending.destinationWarehouseId,
+                    )?.name
+                  }{' '}
+                  · {String(pending.destinationBucket)}
+                </p>
+              ) : null}
+              {pending.unitCost !== null && (
+                <p>Receipt unit cost: PKR {String(pending.unitCost)}</p>
+              )}
+              <p>{String(pending.reason)}</p>
+            </div>
+            <p className="section-help">
               No totals are calculated in the browser. Retrying this submission
               uses the same command key.
             </p>
-            <Button
-              disabled={busy}
-              onClick={() => void action('/documents', pending, true)}
-            >
-              Confirm posting
-            </Button>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() => setPending(null)}
-            >
-              Edit movement
-            </Button>
+            <div className="dialog-actions">
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => setPending(null)}
+              >
+                Edit movement
+              </Button>
+              <Button
+                disabled={busy}
+                onClick={() => void action('/documents', pending, true)}
+              >
+                Confirm posting
+              </Button>
+            </div>
           </div>
         )}
       </Modal>
@@ -913,27 +1092,34 @@ function StockDetail({
       >
         {error && <p role="alert">{error}</p>}
         {document && (
-          <div className="grid gap-3">
-            <p>
-              {document.kind} · {document.reversedById ? 'Reversed' : 'Posted'}
-            </p>
-            <p>{document.id}</p>
-            <p>
-              {new Intl.DateTimeFormat(undefined, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-                timeZone,
-              }).format(new Date(document.postedAt))}{' '}
-              · Business date {document.businessDate}
-            </p>
-            <p>{document.reason}</p>
-            {document.movements.map((m) => (
-              <p key={m.id}>
-                {allWarehouses.find((w) => w.id === m.warehouseId)?.name} ·{' '}
-                {m.bucket}: {m.quantity} · PKR {m.value.toFixed(2)}{' '}
-                {m.serials.join(', ')}
+          <div className="grid gap-4">
+            <div className="review-box">
+              <p>
+                <strong>
+                  {document.kind} ·{' '}
+                  {document.reversedById ? 'Reversed' : 'Posted'}
+                </strong>
               </p>
-            ))}
+              <p className="cell-note">{document.id}</p>
+              <p>
+                {new Intl.DateTimeFormat(undefined, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                  timeZone,
+                }).format(new Date(document.postedAt))}{' '}
+                · Business date {document.businessDate}
+              </p>
+              <p>{document.reason}</p>
+            </div>
+            <ul className="setup-list">
+              {document.movements.map((m) => (
+                <li key={m.id}>
+                  {allWarehouses.find((w) => w.id === m.warehouseId)?.name} ·{' '}
+                  {m.bucket}: {m.quantity} · PKR {m.value.toFixed(2)}{' '}
+                  {m.serials.join(', ')}
+                </li>
+              ))}
+            </ul>
             {!document.reversedById &&
               !document.reversesId &&
               user.permissions.includes('inventory.reverse') && (
@@ -949,21 +1135,23 @@ function StockDetail({
                     required
                     maxLength={300}
                   />
-                  <ConfirmButton
-                    destructive
-                    disabled={busy || !reverseReason.trim()}
-                    title="Reverse this stock document?"
-                    description="An equal and opposite entry will be posted. Later dependent movements prevent reversal."
-                    onConfirm={() => {
-                      void action(
-                        `/documents/${document.id}/reverse`,
-                        { idempotencyKey: reverseKey, reason: reverseReason },
-                        true,
-                      );
-                    }}
-                  >
-                    Reverse document
-                  </ConfirmButton>
+                  <div>
+                    <ConfirmButton
+                      destructive
+                      disabled={busy || !reverseReason.trim()}
+                      title="Reverse this stock document?"
+                      description="An equal and opposite entry will be posted. Later dependent movements prevent reversal."
+                      onConfirm={() => {
+                        void action(
+                          `/documents/${document.id}/reverse`,
+                          { idempotencyKey: reverseKey, reason: reverseReason },
+                          true,
+                        );
+                      }}
+                    >
+                      Reverse document
+                    </ConfirmButton>
+                  </div>
                 </form>
               )}
           </div>

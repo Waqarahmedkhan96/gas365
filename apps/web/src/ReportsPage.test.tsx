@@ -6,6 +6,7 @@ import {
   within,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { expect, it, vi } from 'vitest';
 import { ReportsPage } from './ReportsPage';
 import { Dashboard } from './Dashboard';
@@ -27,7 +28,9 @@ const wrap = (node: React.ReactNode) => (
   <QueryClientProvider
     client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
   >
-    <BranchContext.Provider value="branch">{node}</BranchContext.Provider>
+    <MemoryRouter>
+      <BranchContext.Provider value="branch">{node}</BranchContext.Provider>
+    </MemoryRouter>
   </QueryClientProvider>
 );
 
