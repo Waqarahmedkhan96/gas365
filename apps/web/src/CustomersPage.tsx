@@ -1,9 +1,37 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  CheckCircle2,
+  Eye,
+  FileText,
+  HandCoins,
+  MapPin,
+  Pencil,
+  Phone,
+  Plus,
+  Wallet,
+} from 'lucide-react';
 import { api, type Me } from './access-api';
 import { DataTable } from './components/DataTable';
 import { Button } from './components/ui/button';
 import { Field } from './components/ui/form';
+import { Modal } from './components/ui/feedback';
+import { PageActions } from './components/page-actions';
+import {
+  BackButton,
+  Card,
+  KeyValues,
+  PageState,
+  Pager,
+  StatCard,
+  StatGrid,
+  StatusChip,
+  Tabs,
+  Toolbar,
+} from './components/page';
+import { useViewFocus } from './lib/ui-helpers';
+import { businessDate } from './report-types';
 import type { Item, Page } from './inventory-types';
 import { useBranch } from './components/branch-context';
 import { SalesRegister } from './SalesRegister';
@@ -56,12 +84,13 @@ const value = (data: FormData, name: string) => String(data.get(name) ?? '');
 export function CustomersPage({
   user,
   pricesOnly,
+  timeZone,
 }: {
   user: Me;
   pricesOnly: boolean;
+  timeZone: string;
 }) {
   const cache = useQueryClient();
-  const branch = useBranch();
   const [search, setSearch] = useState('');
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [editor, setEditor] = useState<Customer | PriceList | 'new' | null>(
@@ -76,6 +105,7 @@ export function CustomersPage({
     pricesOnly ? 'prices.manage' : 'customers.manage',
   );
   const path = pricesOnly ? '/price-lists' : '/customers';
+  const noun = pricesOnly ? 'price list' : 'customer';
   const rows = useQuery({
     queryKey: ['sales-directory', user.tenantId, path, search, pagination],
     queryFn: () =>
@@ -86,6 +116,9 @@ export function CustomersPage({
         user.tenantId,
       ),
   });
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [customer?.id]);
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -118,38 +151,34 @@ export function CustomersPage({
       setBusy(false);
     }
   }
-  return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-end gap-3">
-        <Field
-          label={pricesOnly ? 'Search price lists' : 'Search customers'}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          }}
-        />
-        {canEdit && (
-          <Button
-            onClick={() => {
-              setEditor('new');
-              setError('');
-            }}
-          >
-            {pricesOnly ? 'Add price list' : 'Add customer'}
-          </Button>
-        )}
-      </div>
-      {notice && <p role="status">{notice}</p>}
-      {error && <p role="alert">{error}</p>}
+  const startEdit = (row: Customer | PriceList | 'new') => {
+    setEditor(row);
+    setError('');
+  };
+  const editorDialog = (
+    <Modal
+      title={
+        editor === 'new'
+          ? `Add ${noun}`
+          : `Edit ${noun}${editor ? ` · ${editor.name}` : ''}`
+      }
+      description={
+        pricesOnly
+          ? 'Price lists group selling prices, for example retail or commercial.'
+          : 'Contact details appear on sales and receipts.'
+      }
+      open={!!editor}
+      onOpenChange={(open) => {
+        if (!open) setEditor(null);
+      }}
+    >
       {editor && (
         <form
           key={editor === 'new' ? 'new' : editor.id}
           aria-label={pricesOnly ? 'Price list editor' : 'Customer editor'}
-          className="panel grid gap-4"
+          className="grid gap-4"
           onSubmit={save}
         >
-          <h2>{pricesOnly ? 'Price list details' : 'Customer details'}</h2>
           <Field
             label={pricesOnly ? 'Price list name' : 'Customer name'}
             name="name"
@@ -163,6 +192,8 @@ export function CustomersPage({
                 label="Phone"
                 name="phone"
                 maxLength={80}
+                inputMode="tel"
+                placeholder="03XX-XXXXXXX"
                 defaultValue={
                   editor === 'new' ? '' : (editor as Customer).phone
                 }
@@ -177,16 +208,16 @@ export function CustomersPage({
               />
             </>
           )}
-          <Field
-            label="Active"
-            name="active"
-            type="checkbox"
-            defaultChecked={editor === 'new' || editor.active}
-          />
-          <div className="flex flex-wrap gap-3">
-            <Button disabled={busy}>
-              {pricesOnly ? 'Save price list' : 'Save customer'}
-            </Button>
+          <label className="check">
+            <input
+              type="checkbox"
+              name="active"
+              defaultChecked={editor === 'new' || editor.active}
+            />
+            Active
+          </label>
+          {error && <p role="alert">{error}</p>}
+          <div className="dialog-actions">
             <Button
               type="button"
               variant="outline"
@@ -195,100 +226,218 @@ export function CustomersPage({
             >
               Cancel
             </Button>
+            <Button disabled={busy}>
+              {pricesOnly ? 'Save price list' : 'Save customer'}
+            </Button>
           </div>
         </form>
       )}
-      <DataTable
-        title={pricesOnly ? 'Price lists' : 'Customers'}
-        data={rows.data?.items ?? []}
-        rowCount={rows.data?.total ?? 0}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-        loading={rows.isPending}
-        error={rows.error?.message}
-        retry={() => void rows.refetch()}
-        columns={[
-          {
-            header: 'Name',
-            accessorKey: 'name',
-            cell: ({ row }) => (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  if (pricesOnly) setSelected(row.original);
-                  else setCustomer(row.original);
-                }}
-              >
-                {row.original.name}
+    </Modal>
+  );
+  if (!pricesOnly && customer)
+    return (
+      <>
+        {notice && (
+          <p role="status" className="notice-banner">
+            <CheckCircle2 aria-hidden="true" size={18} /> {notice}
+          </p>
+        )}
+        <CustomerProfile
+          user={user}
+          customer={customer}
+          timeZone={timeZone}
+          canEdit={canEdit}
+          edit={() => startEdit(customer)}
+          back={() => {
+            setCustomer(null);
+            setNotice('');
+          }}
+        />
+        {editorDialog}
+      </>
+    );
+  const total = rows.data?.total ?? 0;
+  return (
+    <div className="grid gap-6">
+      {canEdit && (
+        <PageActions>
+          <Button onClick={() => startEdit('new')}>
+            <Plus aria-hidden="true" size={18} />
+            {pricesOnly ? 'Add price list' : 'Add customer'}
+          </Button>
+        </PageActions>
+      )}
+      {notice && (
+        <p role="status" className="notice-banner">
+          <CheckCircle2 aria-hidden="true" size={18} /> {notice}
+        </p>
+      )}
+      {!editor && error && <p role="alert">{error}</p>}
+      <Toolbar
+        search={{
+          label: pricesOnly ? 'Search price lists' : 'Search customers',
+          placeholder: pricesOnly
+            ? 'Search price lists by name'
+            : 'Search customers by name or phone',
+          value: search,
+          onChange: (text) => {
+            setSearch(text);
+            setPagination((p) => ({ ...p, pageIndex: 0 }));
+          },
+        }}
+      >
+        <span className="toolbar-count">
+          {total} {pricesOnly ? 'price lists' : 'customers'}
+        </span>
+      </Toolbar>
+      {editorDialog}
+      {pricesOnly ? (
+        <DataTable
+          title="Price lists"
+          data={rows.data?.items ?? []}
+          rowCount={total}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          loading={rows.isPending}
+          error={rows.error?.message}
+          retry={() => void rows.refetch()}
+          columns={[
+            {
+              header: 'Name',
+              accessorKey: 'name',
+              cell: ({ row }) => (
+                <button
+                  type="button"
+                  className="table-link"
+                  onClick={() => setSelected(row.original)}
+                >
+                  {row.original.name}
+                </button>
+              ),
+            },
+            {
+              header: 'Status',
+              cell: ({ row }) => (
+                <StatusChip tone={row.original.active ? 'success' : 'neutral'}>
+                  {row.original.active ? 'Active' : 'Inactive'}
+                </StatusChip>
+              ),
+            },
+            ...(canEdit
+              ? [
+                  {
+                    header: 'Actions',
+                    cell: ({
+                      row,
+                    }: {
+                      row: { original: Customer & PriceList };
+                    }) => (
+                      <Button
+                        variant="outline"
+                        onClick={() => startEdit(row.original)}
+                      >
+                        Edit {row.original.name}
+                      </Button>
+                    ),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      ) : rows.isPending ? (
+        <PageState
+          kind="loading"
+          title="Loading customers"
+          description="Please wait while customers are loaded."
+        />
+      ) : rows.error ? (
+        <PageState
+          kind="error"
+          title="Customers unavailable"
+          description={rows.error.message}
+          retry={() => void rows.refetch()}
+        />
+      ) : !rows.data.items.length ? (
+        <PageState
+          kind="empty"
+          title={search ? 'No matching customers' : 'No customers yet'}
+          description={
+            search
+              ? 'Try another name or phone number.'
+              : 'Add your first customer to start recording sales and credit.'
+          }
+          action={
+            canEdit && !search ? (
+              <Button onClick={() => startEdit('new')}>
+                <Plus aria-hidden="true" size={18} /> Add your first customer
               </Button>
-            ),
-          },
-          ...(!pricesOnly ? [{ header: 'Phone', accessorKey: 'phone' }] : []),
-          {
-            header: 'Status',
-            cell: ({ row }) => (row.original.active ? 'Active' : 'Inactive'),
-          },
-          ...(canEdit
-            ? [
-                {
-                  header: 'Actions',
-                  cell: ({
-                    row,
-                  }: {
-                    row: { original: Customer & PriceList };
-                  }) => (
-                    <Button
-                      variant="outline"
+            ) : undefined
+          }
+        />
+      ) : (
+        <section aria-label="Customers" className="grid gap-4">
+          <ul className="entity-grid">
+            {rows.data.items.map((row) => (
+              <li key={row.id} className="entity-card">
+                <div className="entity-card-top">
+                  <span className="avatar large" aria-hidden="true">
+                    {initials(row.name)}
+                  </span>
+                  <div className="entity-card-title">
+                    <button
+                      type="button"
+                      className="table-link"
                       onClick={() => {
-                        setEditor(row.original);
-                        setError('');
+                        setCustomer(row);
+                        setNotice('');
                       }}
                     >
-                      Edit {row.original.name}
+                      {row.name}
+                    </button>
+                    <StatusChip tone={row.active ? 'success' : 'neutral'}>
+                      {row.active ? 'Active' : 'Inactive'}
+                    </StatusChip>
+                  </div>
+                </div>
+                <ul className="entity-facts">
+                  <li>
+                    <Phone aria-hidden="true" size={16} />
+                    {row.phone || 'No phone'}
+                  </li>
+                  <li>
+                    <MapPin aria-hidden="true" size={16} />
+                    {row.address || 'No address'}
+                  </li>
+                </ul>
+                <div className="entity-actions">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCustomer(row);
+                      setNotice('');
+                    }}
+                  >
+                    <Eye aria-hidden="true" size={16} />
+                    View<span className="sr-only"> {row.name} profile</span>
+                  </Button>
+                  {canEdit && (
+                    <Button variant="outline" onClick={() => startEdit(row)}>
+                      <Pencil aria-hidden="true" size={16} />
+                      Edit<span className="sr-only"> {row.name}</span>
                     </Button>
-                  ),
-                },
-              ]
-            : []),
-        ]}
-      />
-      {!pricesOnly && customer && (
-        <section className="panel grid gap-3" aria-label="Customer profile">
-          <h2>{customer.name}</h2>
-          <dl>
-            <dt>Phone</dt>
-            <dd>{customer.phone || 'Not provided'}</dd>
-            <dt>Address</dt>
-            <dd>{customer.address || 'Not provided'}</dd>
-            <dt>Status</dt>
-            <dd>{customer.active ? 'Active' : 'Inactive'}</dd>
-          </dl>
-          {user.permissions.includes('sales.view') && (
-            <DepositArrangement
-              key={customer.id}
-              user={user}
-              customerId={customer.id}
-            />
-          )}
-          {branch && user.permissions.includes('sales.view') && (
-            <>
-              <SalesRegister
-                key={`sales-${branch}-${customer.id}`}
-                user={user}
-                branch={branch}
-                customerId={customer.id}
-              />
-              <CylinderWorkspace
-                key={`loans-${branch}-${customer.id}`}
-                user={user}
-                branch={branch}
-                customerId={customer.id}
-              />
-            </>
-          )}
-          <Button variant="outline" onClick={() => setCustomer(null)}>
-            Close profile
-          </Button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <Pager
+            page={pagination.pageIndex + 1}
+            pageSize={pagination.pageSize}
+            total={total}
+            onChange={(page) =>
+              setPagination((p) => ({ ...p, pageIndex: page - 1 }))
+            }
+          />
         </section>
       )}
       {pricesOnly && selected && (
@@ -301,6 +450,182 @@ export function CustomersPage({
         />
       )}
     </div>
+  );
+}
+
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]!.toUpperCase())
+      .join('') || '?'
+  );
+}
+
+type Credit = {
+  balance: number;
+  unapplied: number;
+  invoices: { outstanding: number }[];
+};
+
+function CustomerProfile({
+  user,
+  customer,
+  timeZone,
+  canEdit,
+  edit,
+  back,
+}: {
+  user: Me;
+  customer: Customer;
+  timeZone: string;
+  canEdit: boolean;
+  edit: () => void;
+  back: () => void;
+}) {
+  const branch = useBranch();
+  const heading = useViewFocus<HTMLHeadingElement>();
+  const [tab, setTab] = useState('sales');
+  const has = (permission: string) => user.permissions.includes(permission);
+  const today = businessDate(timeZone);
+  const credit = useQuery({
+    queryKey: ['customer-credit', user.tenantId, branch, customer.id, today],
+    enabled: !!branch && has('finance.view'),
+    queryFn: () =>
+      api<Credit>(
+        `/api/workspace/finance/credit?branchId=${branch}&partyId=${customer.id}&supplier=false&asOf=${today}`,
+        'GET',
+        undefined,
+        user.tenantId,
+      ),
+  });
+  const sales = has('sales.view') && !!branch;
+  const details = (
+    <div className="grid gap-6">
+      <Card title="Contact details">
+        <KeyValues
+          items={[
+            ['Phone', customer.phone || 'Not provided'],
+            ['Address', customer.address || 'Not provided'],
+            ['Status', customer.active ? 'Active' : 'Inactive'],
+          ]}
+        />
+      </Card>
+      {has('sales.view') && (
+        <Card title="Cylinder deposit arrangement">
+          <DepositArrangement
+            key={customer.id}
+            user={user}
+            customerId={customer.id}
+          />
+        </Card>
+      )}
+    </div>
+  );
+  return (
+    <section className="detail-page" aria-label="Customer profile">
+      <BackButton onClick={back}>Back to customers</BackButton>
+      <div className="profile-hero">
+        <span className="avatar hero" aria-hidden="true">
+          {initials(customer.name)}
+        </span>
+        <div className="profile-hero-text">
+          <h2 ref={heading} tabIndex={-1}>
+            {customer.name}{' '}
+            <StatusChip tone={customer.active ? 'success' : 'neutral'}>
+              {customer.active ? 'Active' : 'Inactive'}
+            </StatusChip>
+          </h2>
+          <ul className="entity-facts inline">
+            <li>
+              <Phone aria-hidden="true" size={16} />
+              {customer.phone || 'No phone'}
+            </li>
+            <li>
+              <MapPin aria-hidden="true" size={16} />
+              {customer.address || 'No address'}
+            </li>
+          </ul>
+        </div>
+        <div className="detail-actions">
+          {has('sales.create') && (
+            <Button variant="outline" asChild>
+              <Link to="/workspace/sales?new=1">
+                <Plus aria-hidden="true" size={16} /> New sales draft
+              </Link>
+            </Button>
+          )}
+          {canEdit && (
+            <Button onClick={edit}>
+              <Pencil aria-hidden="true" size={16} />
+              Edit<span className="sr-only"> {customer.name}</span>
+            </Button>
+          )}
+        </div>
+      </div>
+      {credit.data && (
+        <StatGrid label="Customer balance">
+          <StatCard
+            label="Balance owed"
+            icon={HandCoins}
+            tone={credit.data.balance > 0 ? 'warning' : 'success'}
+            value={money(credit.data.balance)}
+            note="Selected branch, net of unapplied payments"
+          />
+          <StatCard
+            label="Unapplied payments"
+            icon={Wallet}
+            value={money(credit.data.unapplied)}
+            note="Advances not yet allocated"
+          />
+          <StatCard
+            label="Open invoices"
+            icon={FileText}
+            value={credit.data.invoices.filter((x) => x.outstanding > 0).length}
+            note="Sales, loans and openings with a balance"
+          />
+        </StatGrid>
+      )}
+      {credit.error && <p role="alert">{credit.error.message}</p>}
+      {sales ? (
+        <Tabs
+          label="Customer sections"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            {
+              id: 'sales',
+              label: 'Sales',
+              content: (
+                <SalesRegister
+                  key={`sales-${branch}-${customer.id}`}
+                  user={user}
+                  branch={branch}
+                  customerId={customer.id}
+                />
+              ),
+            },
+            {
+              id: 'cylinders',
+              label: 'Borrowed cylinders',
+              content: (
+                <CylinderWorkspace
+                  key={`loans-${branch}-${customer.id}`}
+                  user={user}
+                  branch={branch}
+                  customerId={customer.id}
+                />
+              ),
+            },
+            { id: 'details', label: 'Details', content: details },
+          ]}
+        />
+      ) : (
+        details
+      )}
+    </section>
   );
 }
 

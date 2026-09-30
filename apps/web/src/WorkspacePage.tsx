@@ -2,7 +2,9 @@ import { lazy, Suspense, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ApplicationShell } from './components/ApplicationShell';
-import { PageHeading, PageState } from './components/page';
+import { KeyValues, PageHeading, PageState } from './components/page';
+import { PageIcon } from './components/icons';
+import { PageActionsSlot } from './components/page-actions';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/form';
 import { ConfirmButton, Notification } from './components/ui/feedback';
@@ -153,6 +155,7 @@ export function WorkspacePage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeId, setNoticeId] = useState(0);
+  const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null);
   const user = me.data;
   const has = (permission: string) => user?.permissions.includes(permission);
   const info = useQuery({
@@ -303,6 +306,7 @@ export function WorkspacePage() {
         title={currentPage?.label || 'Page not found'}
         description={currentPage?.description || 'This page is not available.'}
         icon={currentPage?.icon}
+        actionsRef={setActionsSlot}
       />
       {!currentPage ? (
         <PageState
@@ -317,7 +321,7 @@ export function WorkspacePage() {
           description="Your role does not include access to this page. Ask your workspace owner if you need it."
         />
       ) : (
-        <>
+        <PageActionsSlot value={actionsSlot}>
           {['udhaar', 'expenses', 'loans', 'cash-register'].includes(tab) && (
             <Suspense fallback={<p>Loading finances…</p>}>
               <FinancePage
@@ -368,7 +372,7 @@ export function WorkspacePage() {
           )}
           {tab === 'sales' && (
             <Suspense fallback={<p role="status">Loading sales drafts...</p>}>
-              <SalesDraftPage user={user} />
+              <SalesDraftPage user={user} timeZone={tenant.timeZone} />
             </Suspense>
           )}
           {(tab === 'customers' || tab === 'prices') && (
@@ -379,6 +383,7 @@ export function WorkspacePage() {
                 key={`${user.tenantId}:${tab}`}
                 user={user}
                 pricesOnly={tab === 'prices'}
+                timeZone={tenant.timeZone}
               />
             </Suspense>
           )}
@@ -401,56 +406,86 @@ export function WorkspacePage() {
           {(tab === 'overview' || tab === 'settings') && (
             <>
               {tab === 'overview' && (
-                <section className="status-card overview-card">
-                  <h2>Workspace details</h2>
-                  <p>{user.email}</p>
-                  <div className="summary-grid">
-                    <div>
-                      <strong>
-                        {branches.filter((b) => b.active).length} /{' '}
-                        {tenant.maxBranches}
-                      </strong>
-                      <span>Active branches</span>
-                    </div>
-                    <div>
-                      <strong>
-                        {has('users.manage')
-                          ? members.filter((m) => m.active).length
-                          : '—'}{' '}
-                        / {tenant.maxUsers}
-                      </strong>
-                      <span>Active team members</span>
-                    </div>
-                    <div>
-                      <strong>{tenant.maxAdmins}</strong>
-                      <span>Administrator limit</span>
-                    </div>
-                  </div>
-                </section>
-              )}
-              {tab === 'overview' && (
-                <section className="panel">
-                  <h2>Make this workspace yours</h2>
-                  <p className="section-help">
-                    Keep your locations and team access up to date.
-                  </p>
-                  <div className="quick-links">
-                    <Link to="/workspace/branches">
-                      <strong>Your branches</strong>
-                      <span>Review locations and branch access →</span>
-                    </Link>
-                    {has('users.manage') && (
-                      <Link to="/workspace/team">
-                        <strong>Your team</strong>
-                        <span>Invite colleagues and manage access →</span>
+                <div className="overview-grid">
+                  <section
+                    className="card"
+                    aria-labelledby="quick-actions-heading"
+                  >
+                    <h2 id="quick-actions-heading" className="card-title">
+                      Quick actions
+                    </h2>
+                    <div className="quick-links">
+                      {has('sales.create') && has('customers.view') && (
+                        <Link to="/workspace/sales?new=1">
+                          <PageIcon name="sales" size={20} />
+                          <strong>New sales draft</strong>
+                          <span>Prepare a sale for review and posting</span>
+                        </Link>
+                      )}
+                      {has('customers.view') && (
+                        <Link to="/workspace/customers">
+                          <PageIcon name="customers" size={20} />
+                          <strong>Customers</strong>
+                          <span>Profiles, balances and borrowed cylinders</span>
+                        </Link>
+                      )}
+                      {has('inventory.view') && (
+                        <Link to="/workspace/inventory">
+                          <PageIcon name="inventory" size={20} />
+                          <strong>Stock</strong>
+                          <span>Balances and movements by warehouse</span>
+                        </Link>
+                      )}
+                      {has('finance.view') && (
+                        <Link to="/workspace/cash-register">
+                          <PageIcon name="cash-register" size={20} />
+                          <strong>Cash register</strong>
+                          <span>Open, count and close the drawer</span>
+                        </Link>
+                      )}
+                      <Link to="/workspace/branches">
+                        <PageIcon name="branches" size={20} />
+                        <strong>Your branches</strong>
+                        <span>Review locations and branch access</span>
                       </Link>
-                    )}
-                    <Link to="/workspace/sessions">
-                      <strong>Your sessions</strong>
-                      <span>Review where you are signed in →</span>
-                    </Link>
-                  </div>
-                </section>
+                      {has('users.manage') && (
+                        <Link to="/workspace/team">
+                          <PageIcon name="team" size={20} />
+                          <strong>Your team</strong>
+                          <span>Invite colleagues and manage access</span>
+                        </Link>
+                      )}
+                      <Link to="/workspace/sessions">
+                        <PageIcon name="sessions" size={20} />
+                        <strong>Your sessions</strong>
+                        <span>Review where you are signed in</span>
+                      </Link>
+                    </div>
+                  </section>
+                  <section
+                    className="card"
+                    aria-labelledby="workspace-details-heading"
+                  >
+                    <h2 id="workspace-details-heading" className="card-title">
+                      Workspace details
+                    </h2>
+                    <KeyValues
+                      items={[
+                        ['Signed in as', user.email],
+                        [
+                          'Active branches',
+                          `${branches.filter((b) => b.active).length} / ${tenant.maxBranches}`,
+                        ],
+                        [
+                          'Active team members',
+                          `${has('users.manage') ? members.filter((m) => m.active).length : '—'} / ${tenant.maxUsers}`,
+                        ],
+                        ['Administrator limit', tenant.maxAdmins],
+                        ['Time zone', tenant.timeZone],
+                      ]}
+                    />
+                  </section>
+                </div>
               )}
               {tab === 'settings' && has('tenant.manage') && (
                 <form
@@ -748,7 +783,7 @@ export function WorkspacePage() {
               <ShowcasePage />
             </Suspense>
           )}
-        </>
+        </PageActionsSlot>
       )}
     </ApplicationShell>
   );

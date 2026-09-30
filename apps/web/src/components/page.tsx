@@ -1,5 +1,7 @@
 import { useId, type ReactNode } from 'react';
+import { Tabs as TabsPrimitive } from 'radix-ui';
 import {
+  ArrowLeft,
   CheckCircle2,
   CircleDashed,
   CircleSlash,
@@ -16,17 +18,22 @@ import {
 import { Button } from './ui/button';
 import { PageIcon } from './icons';
 import { cn } from '../lib/utils';
+import type { Tone } from '../lib/ui-helpers';
+
+export type { Tone };
 
 export function PageHeading({
   title,
   description,
   icon,
   action,
+  actionsRef,
 }: {
   title: string;
   description: string;
   icon?: string;
   action?: ReactNode;
+  actionsRef?: (element: HTMLDivElement | null) => void;
 }) {
   return (
     <div className="page-heading">
@@ -41,7 +48,9 @@ export function PageHeading({
           <p className="text-muted-foreground">{description}</p>
         </div>
       </div>
-      {action && <div className="page-heading-actions">{action}</div>}
+      <div className="page-heading-actions" ref={actionsRef}>
+        {action}
+      </div>
     </div>
   );
 }
@@ -97,7 +106,6 @@ export function PageState({
   );
 }
 
-export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 const toneIcons: Record<Tone, LucideIcon> = {
   neutral: CircleDashed,
   info: Info,
@@ -271,6 +279,125 @@ export function Toolbar({
         </div>
       )}
       {children}
+    </div>
+  );
+}
+
+export function KeyValues({
+  items,
+  className,
+}: {
+  items: [ReactNode, ReactNode][];
+  className?: string;
+}) {
+  return (
+    <dl className={cn('kv-list', className)}>
+      {items.map(([label, value], index) => (
+        <div key={index}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+export function BackButton({
+  children,
+  onClick,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className="back-button" onClick={onClick}>
+      <ArrowLeft aria-hidden="true" size={16} />
+      {children}
+    </button>
+  );
+}
+
+// Underlined page tabs; only the active panel is mounted.
+export function Tabs({
+  label,
+  value,
+  onChange,
+  tabs,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  tabs: { id: string; label: string; count?: number; content: ReactNode }[];
+}) {
+  return (
+    <TabsPrimitive.Root
+      value={value}
+      onValueChange={onChange}
+      className="page-tabs"
+    >
+      <TabsPrimitive.List aria-label={label} className="tab-list">
+        {tabs.map((tab) => (
+          <TabsPrimitive.Trigger
+            key={tab.id}
+            value={tab.id}
+            className="tab-trigger"
+          >
+            {tab.label}
+            {tab.count !== undefined && (
+              <span className="tab-count">{tab.count}</span>
+            )}
+          </TabsPrimitive.Trigger>
+        ))}
+      </TabsPrimitive.List>
+      {tabs.map((tab) => (
+        <TabsPrimitive.Content
+          key={tab.id}
+          value={tab.id}
+          className="tab-panel"
+        >
+          {tab.content}
+        </TabsPrimitive.Content>
+      ))}
+    </TabsPrimitive.Root>
+  );
+}
+
+// Footer for server-paged card lists; mirrors the table footer wording.
+export function Pager({
+  page,
+  pageSize,
+  total,
+  onChange,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onChange: (page: number) => void;
+}) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const first = total ? (page - 1) * pageSize + 1 : 0;
+  const last = Math.min(total, page * pageSize);
+  return (
+    <div className="pagination card-pagination">
+      <p aria-live="polite">
+        Showing {first}–{last} of {total} records · Page {page} of {pages}
+      </p>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          disabled={page >= pages}
+          onClick={() => onChange(page + 1)}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }
