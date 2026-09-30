@@ -175,6 +175,16 @@ export const pages = [
     group: 'platform',
   },
   {
+    id: 'setup',
+    label: 'Business setup',
+    description:
+      'A guided start: business details, branch and store, cash drawer and plan.',
+    permission: 'tenant.manage',
+    icon: 'settings',
+    // Reached from the overview; not listed in the sidebar.
+    group: 'guided',
+  },
+  {
     id: 'showcase',
     label: 'Component showcase',
     description: 'Explore the Gas365 interface patterns with sample data.',
