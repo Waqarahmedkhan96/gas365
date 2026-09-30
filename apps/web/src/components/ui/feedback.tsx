@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { AlertDialog, Dialog, Toast } from 'radix-ui';
 import { X } from 'lucide-react';
 import { Button } from './button';
+import { tr } from '../../i18n';
 
 export function Modal({
   title,
@@ -36,16 +37,20 @@ export function Modal({
         >
           <div className="flex items-start justify-between gap-4">
             <Dialog.Title className="text-xl font-semibold text-primary">
-              {title}
+              {tr(title)}
             </Dialog.Title>
             <Dialog.Close asChild>
-              <Button variant="ghost" size="icon" aria-label="Close dialog">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={tr('Close dialog')}
+              >
                 <X aria-hidden="true" size={18} />
               </Button>
             </Dialog.Close>
           </div>
           <Dialog.Description className="mb-6 text-sm text-muted-foreground">
-            {description}
+            {tr(description)}
           </Dialog.Description>
           {children}
         </Dialog.Content>
@@ -112,21 +117,21 @@ export function ConfirmDialog({
         <AlertDialog.Overlay className="dialog-overlay" />
         <AlertDialog.Content className="dialog-panel">
           <AlertDialog.Title className="text-xl font-semibold text-primary">
-            {title}
+            {tr(title)}
           </AlertDialog.Title>
           <AlertDialog.Description className="my-4 text-muted-foreground">
-            {description}
+            {tr(description)}
           </AlertDialog.Description>
           <div className="flex flex-wrap justify-end gap-3">
             <AlertDialog.Cancel asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{tr('Cancel')}</Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
               <Button
                 variant={destructive ? 'destructive' : 'default'}
                 onClick={onConfirm}
               >
-                Confirm
+                {tr('Confirm')}
               </Button>
             </AlertDialog.Action>
           </div>
@@ -146,15 +151,17 @@ export function Notification({ message }: { message: string }) {
         open={open}
         onOpenChange={setOpen}
       >
-        <Toast.Title className="font-semibold">Saved successfully</Toast.Title>
+        <Toast.Title className="font-semibold">
+          {tr('Saved successfully')}
+        </Toast.Title>
         <Toast.Description>{message}</Toast.Description>
         <Toast.Close asChild>
-          <Button variant="ghost" aria-label="Dismiss notification">
-            Dismiss
+          <Button variant="ghost" aria-label={tr('Dismiss notification')}>
+            {tr('Dismiss')}
           </Button>
         </Toast.Close>
       </Toast.Root>
-      <Toast.Viewport className="toast-viewport" label="Notifications" />
+      <Toast.Viewport className="toast-viewport" label={tr('Notifications')} />
     </Toast.Provider>
   );
 }

@@ -40,6 +40,7 @@ import type {
   StockDocument,
   Asset,
 } from './inventory-types';
+import { tr } from './i18n';
 
 const root = '/api/workspace/inventory';
 const kindLabels: Record<string, string> = {
@@ -174,7 +175,7 @@ export function InventoryPage({
     return (
       <PageState
         kind="error"
-        title="Inventory unavailable"
+        title={tr('Inventory unavailable')}
         description={config.error.message}
         retry={() => void config.refetch()}
       />
@@ -183,8 +184,8 @@ export function InventoryPage({
     return (
       <PageState
         kind="loading"
-        title="Loading inventory"
-        description="Retrieving catalog settings."
+        title={tr('Loading inventory')}
+        description={tr('Retrieving catalog settings.')}
       />
     );
   const { units, categories, warehouses } = config.data;
@@ -201,10 +202,10 @@ export function InventoryPage({
             variant="outline"
             onClick={() => setSetup(true)}
           >
-            <Settings2 aria-hidden="true" size={18} /> Catalog setup
+            <Settings2 aria-hidden="true" size={18} /> {tr('Catalog setup')}
           </Button>
           <Button ref={createTrigger} onClick={() => setCreate(true)}>
-            <Plus aria-hidden="true" size={18} /> Add item
+            <Plus aria-hidden="true" size={18} /> {tr('Add item')}
           </Button>
         </PageActions>
       )}
@@ -229,35 +230,37 @@ export function InventoryPage({
         />
       ) : (
         <>
-          <StatGrid label="Stock summary">
+          <StatGrid label={tr('Stock summary')}>
             <StatCard
-              label="Catalog items"
+              label={tr('Catalog items')}
               icon={Package}
               value={items.data?.total ?? '—'}
               note={
-                search ? 'Matching your search' : 'LPG, cylinders and parts'
+                search
+                  ? tr('Matching your search')
+                  : tr('LPG, cylinders and parts')
               }
             />
             <StatCard
-              label="Warehouses in this branch"
+              label={tr('Warehouses in this branch')}
               icon={WarehouseIcon}
               value={branchWarehouses.length}
               note={`${warehouses.length} across all branches`}
             />
             {lowStock && (
               <StatCard
-                label="At or below reorder level"
+                label={tr('At or below reorder level')}
                 icon={PackageX}
                 tone={lowStock.value > 0 ? 'warning' : 'success'}
                 value={lowStock.value}
-                note="Selected branch"
+                note={tr('Selected branch')}
               />
             )}
             <StatCard
-              label="Stock units"
+              label={tr('Stock units')}
               icon={Ruler}
               value={units.length}
-              note={units.map((u) => u.code).join(', ') || 'None yet'}
+              note={units.map((u) => u.code).join(', ') || tr('None yet')}
             />
           </StatGrid>
           <Toolbar
@@ -272,7 +275,7 @@ export function InventoryPage({
             }}
           />
           <DataTable
-            title="Stock directory"
+            title={tr('Stock directory')}
             data={items.data?.items || []}
             rowCount={items.data?.total || 0}
             pagination={pagination}
@@ -302,7 +305,7 @@ export function InventoryPage({
                 header: 'Kind',
                 cell: ({ row }) => (
                   <span className="kind-tag">
-                    {kindLabels[row.original.kind] ?? row.original.kind}
+                    {tr(kindLabels[row.original.kind] ?? row.original.kind)}
                   </span>
                 ),
               },
@@ -320,7 +323,7 @@ export function InventoryPage({
                   <StatusChip
                     tone={row.original.active ? 'success' : 'neutral'}
                   >
-                    {row.original.active ? 'Active' : 'Inactive'}
+                    {row.original.active ? tr('Active') : tr('Inactive')}
                   </StatusChip>
                 ),
               },
@@ -329,8 +332,10 @@ export function InventoryPage({
         </>
       )}
       <Modal
-        title="Edit item"
-        description="Update catalog display details. Stock identity and posted movements remain fixed."
+        title={tr('Edit item')}
+        description={tr(
+          'Update catalog display details. Stock identity and posted movements remain fixed.',
+        )}
         open={!!editing}
         onOpenChange={(open) => {
           if (!open) setEditing(null);
@@ -361,18 +366,22 @@ export function InventoryPage({
             }}
           >
             <p className="muted-text">
-              {editing.sku} · {kindLabels[editing.kind] ?? editing.kind}
+              {editing.sku} · {tr(kindLabels[editing.kind] ?? editing.kind)}
             </p>
             <Field
-              label="Item name"
+              label={tr('Item name')}
               name="name"
               defaultValue={editing.name}
               required
             />
             <div className="form-grid">
-              <Field label="Brand" name="brand" defaultValue={editing.brand} />
               <Field
-                label="Reorder level"
+                label={tr('Brand')}
+                name="brand"
+                defaultValue={editing.brand}
+              />
+              <Field
+                label={tr('Reorder level')}
                 name="reorder"
                 type="number"
                 min="0"
@@ -387,7 +396,7 @@ export function InventoryPage({
                 name="active"
                 defaultChecked={editing.active}
               />
-              Active item
+              {tr('Active item')}
             </label>
             <div className="dialog-actions">
               <Button
@@ -395,9 +404,9 @@ export function InventoryPage({
                 variant="outline"
                 onClick={() => setEditing(null)}
               >
-                Cancel
+                {tr('Cancel')}
               </Button>
-              <Button disabled={busy}>Save item</Button>
+              <Button disabled={busy}>{tr('Save item')}</Button>
             </div>
           </form>
         )}
@@ -407,8 +416,10 @@ export function InventoryPage({
           event.preventDefault();
           setupTrigger.current?.focus({ preventScroll: true });
         }}
-        title="Catalog setup"
-        description="Define units, spare-part categories and branch storage locations."
+        title={tr('Catalog setup')}
+        description={tr(
+          'Define units, spare-part categories and branch storage locations.',
+        )}
         open={setup}
         onOpenChange={setSetup}
       >
@@ -425,17 +436,22 @@ export function InventoryPage({
             }}
           >
             <h3>
-              <Ruler aria-hidden="true" size={18} /> Units
+              <Ruler aria-hidden="true" size={18} /> {tr('Units')}
             </h3>
             <p className="muted-text">
               {units
                 .map((u) => `${u.code} (${u.decimalPlaces} decimals)`)
-                .join(', ') || 'No units yet.'}
+                .join(', ') || tr('No units yet.')}
             </p>
             <div className="form-grid">
-              <Field label="Unit code" name="code" required maxLength={20} />
               <Field
-                label="Decimal places"
+                label={tr('Unit code')}
+                name="code"
+                required
+                maxLength={20}
+              />
+              <Field
+                label={tr('Decimal places')}
                 name="precision"
                 type="number"
                 min="0"
@@ -445,7 +461,7 @@ export function InventoryPage({
               />
             </div>
             <Button variant="outline" disabled={busy}>
-              Add unit
+              {tr('Add unit')}
             </Button>
           </form>
           <form
@@ -456,14 +472,16 @@ export function InventoryPage({
             }}
           >
             <h3>
-              <Boxes aria-hidden="true" size={18} /> Spare-part categories
+              <Boxes aria-hidden="true" size={18} />{' '}
+              {tr('Spare-part categories')}
             </h3>
             <p className="muted-text">
-              {categories.map((c) => c.name).join(', ') || 'No categories yet.'}
+              {categories.map((c) => c.name).join(', ') ||
+                tr('No categories yet.')}
             </p>
-            <Field label="Category name" name="name" required />
+            <Field label={tr('Category name')} name="name" required />
             <Button variant="outline" disabled={busy}>
-              Add category
+              {tr('Add category')}
             </Button>
           </form>
           <form
@@ -478,8 +496,8 @@ export function InventoryPage({
             }}
           >
             <h3>
-              <Building2 aria-hidden="true" size={18} /> Warehouses and
-              locations
+              <Building2 aria-hidden="true" size={18} />{' '}
+              {tr('Warehouses and locations')}
             </h3>
             <ul className="setup-list">
               {warehouses.map((w) => (
@@ -489,7 +507,7 @@ export function InventoryPage({
                 </li>
               ))}
             </ul>
-            <Select label="Branch" name="branch">
+            <Select label={tr('Branch')} name="branch">
               {branches
                 .filter((b) => b.active)
                 .map((b) => (
@@ -499,11 +517,14 @@ export function InventoryPage({
                 ))}
             </Select>
             <div className="form-grid">
-              <Field label="Warehouse name" name="name" required />
-              <Field label="Location / rack description" name="location" />
+              <Field label={tr('Warehouse name')} name="name" required />
+              <Field
+                label={tr('Location / rack description')}
+                name="location"
+              />
             </div>
             <Button variant="outline" disabled={busy}>
-              Add warehouse
+              {tr('Add warehouse')}
             </Button>
           </form>
         </div>
@@ -513,8 +534,10 @@ export function InventoryPage({
           event.preventDefault();
           createTrigger.current?.focus({ preventScroll: true });
         }}
-        title="Add catalog item"
-        description="Set stock identity carefully. SKU, unit, kind and serial tracking are fixed after creation."
+        title={tr('Add catalog item')}
+        description={tr(
+          'Set stock identity carefully. SKU, unit, kind and serial tracking are fixed after creation.',
+        )}
         open={create}
         onOpenChange={setCreate}
       >
@@ -543,17 +566,17 @@ export function InventoryPage({
           }}
         >
           <div className="form-grid">
-            <Field label="SKU" name="sku" required maxLength={40} />
-            <Field label="Item name" name="name" required />
-            <Select label="Item kind" value={kind} onChange={setKind}>
+            <Field label={tr('SKU')} name="sku" required maxLength={40} />
+            <Field label={tr('Item name')} name="name" required />
+            <Select label={tr('Item kind')} value={kind} onChange={setKind}>
               {['Lpg', 'Cylinder', 'SparePart'].map((k) => (
                 <option key={k} value={k}>
-                  {kindLabels[k]}
+                  {tr(kindLabels[k])}
                 </option>
               ))}
             </Select>
-            <Select label="Stock unit" name="unit">
-              <option value="">Choose a unit</option>
+            <Select label={tr('Stock unit')} name="unit">
+              <option value="">{tr('Choose a unit')}</option>
               {units
                 .filter((u) => kind !== 'Cylinder' || u.decimalPlaces === 0)
                 .map((u) => (
@@ -563,8 +586,8 @@ export function InventoryPage({
                 ))}
             </Select>
             {kind === 'SparePart' ? (
-              <Select label="Category" name="category">
-                <option value="">Choose a category</option>
+              <Select label={tr('Category')} name="category">
+                <option value="">{tr('Choose a category')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -573,13 +596,13 @@ export function InventoryPage({
               </Select>
             ) : (
               <>
-                <Field label="Brand" name="brand" />
-                <Select label="Classification" name="classification">
-                  <option>Domestic</option>
-                  <option>Commercial</option>
+                <Field label={tr('Brand')} name="brand" />
+                <Select label={tr('Classification')} name="classification">
+                  <option>{tr('Domestic')}</option>
+                  <option>{tr('Commercial')}</option>
                 </Select>
                 <Field
-                  label="Nominal capacity (kg)"
+                  label={tr('Nominal capacity (kg)')}
                   name="capacity"
                   type="number"
                   min="0.001"
@@ -590,7 +613,7 @@ export function InventoryPage({
             )}
             {kind === 'Cylinder' && (
               <Field
-                label="Tare weight (kg)"
+                label={tr('Tare weight (kg)')}
                 name="tare"
                 type="number"
                 min="0"
@@ -598,7 +621,7 @@ export function InventoryPage({
               />
             )}
             <Field
-              label="Reorder level"
+              label={tr('Reorder level')}
               name="reorder"
               type="number"
               min="0"
@@ -609,7 +632,7 @@ export function InventoryPage({
           {kind === 'Cylinder' && (
             <label className="check">
               <input type="checkbox" name="serial" />
-              Track individual serials
+              {tr('Track individual serials')}
             </label>
           )}
           <div className="dialog-actions">
@@ -618,9 +641,11 @@ export function InventoryPage({
               variant="outline"
               onClick={() => setCreate(false)}
             >
-              Cancel
+              {tr('Cancel')}
             </Button>
-            <Button disabled={busy || !units.length}>Create item</Button>
+            <Button disabled={busy || !units.length}>
+              {tr('Create item')}
+            </Button>
           </div>
         </form>
       </Modal>
@@ -721,26 +746,26 @@ function StockDetail({
   const sequence = (id: string) =>
     (balances.data || []).find((b) => b.warehouseId === id)?.sequence || 0;
   return (
-    <section className="detail-page" aria-label="Stock detail">
-      <BackButton onClick={onClose}>Back to inventory</BackButton>
+    <section className="detail-page" aria-label={tr('Stock detail')}>
+      <BackButton onClick={onClose}>{tr('Back to inventory')}</BackButton>
       <div className="detail-header">
         <div>
           <h2 ref={heading} tabIndex={-1}>
             {item.name}{' '}
             <StatusChip tone={item.active ? 'success' : 'neutral'}>
-              {item.active ? 'Active' : 'Inactive'}
+              {item.active ? tr('Active') : tr('Inactive')}
             </StatusChip>
           </h2>
           <p>
-            {item.sku} · {kindLabels[item.kind] ?? item.kind} ·{' '}
-            {item.serialTracked ? 'Serial tracked' : 'Quantity tracked'} ·
-            Reorder at {item.reorderLevel}
+            {item.sku} · {tr(kindLabels[item.kind] ?? item.kind)} ·{' '}
+            {item.serialTracked ? tr('Serial tracked') : tr('Quantity tracked')}{' '}
+            {tr('· Reorder at')} {item.reorderLevel}
           </p>
         </div>
         {user.permissions.includes('catalog.manage') && (
           <div className="detail-actions">
             <Button variant="outline" onClick={onEdit}>
-              <Pencil aria-hidden="true" size={16} /> Edit item
+              <Pencil aria-hidden="true" size={16} /> {tr('Edit item')}
             </Button>
           </div>
         )}
@@ -750,23 +775,24 @@ function StockDetail({
           {error}
         </p>
       )}
-      <Card title="Balances in the active branch">
+      <Card title={tr('Balances in the active branch')}>
         <p className="section-help">
-          Stock is calculated from posted movements. Values and average costs
-          are for the whole product at each warehouse, across all states.
+          {tr(
+            'Stock is calculated from posted movements. Values and average costs are for the whole product at each warehouse, across all states.',
+          )}
         </p>
         {balances.isError ? (
           <PageState
             kind="error"
-            title="Balances unavailable"
+            title={tr('Balances unavailable')}
             description={balances.error.message}
             retry={() => void balances.refetch()}
           />
         ) : balances.isPending ? (
-          <p role="status">Loading balances…</p>
+          <p role="status">{tr('Loading balances…')}</p>
         ) : !visible.length ? (
           <p className="muted-text pt-3">
-            No stock movements in the active branch.
+            {tr('No stock movements in the active branch.')}
           </p>
         ) : (
           <div className="balance-grid">
@@ -779,25 +805,31 @@ function StockDetail({
                   {warehouses.find((w) => w.id === b.warehouseId)?.name} ·{' '}
                   {b.bucket}
                 </h3>
-                <p className="balance-quantity">Quantity: {b.quantity}</p>
-                <p>Warehouse value: PKR {b.warehouseValue.toFixed(2)}</p>
-                <p>Average unit cost: PKR {b.averageCost.toFixed(6)}</p>
+                <p className="balance-quantity">
+                  {tr('Quantity:')} {b.quantity}
+                </p>
+                <p>
+                  {tr('Warehouse value: PKR')} {b.warehouseValue.toFixed(2)}
+                </p>
+                <p>
+                  {tr('Average unit cost: PKR')} {b.averageCost.toFixed(6)}
+                </p>
               </div>
             ))}
           </div>
         )}
       </Card>
-      <Card title="Movement ledger">
+      <Card title={tr('Movement ledger')}>
         <div className="toolbar ledger-toolbar">
           <Select
-            label="Ledger warehouse"
+            label={tr('Ledger warehouse')}
             value={warehouseId}
             onChange={(v) => {
               setWarehouseId(v);
               setPagination((p) => ({ ...p, pageIndex: 0 }));
             }}
           >
-            <option value="">Choose warehouse</option>
+            <option value="">{tr('Choose warehouse')}</option>
             {warehouses.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.name}
@@ -814,13 +846,13 @@ function StockDetail({
               }}
             >
               <Plus aria-hidden="true" size={16} />
-              Post stock movement
+              {tr('Post stock movement')}
             </Button>
           )}
         </div>
         {warehouseId ? (
           <DataTable
-            title="Stock movement ledger"
+            title={tr('Stock movement ledger')}
             data={ledger.data?.items || []}
             rowCount={ledger.data?.total || 0}
             pagination={pagination}
@@ -854,30 +886,32 @@ function StockDetail({
                         .catch((e) => setError(e.message));
                     }}
                   >
-                    View document
+                    {tr('View document')}
                   </button>
                 ),
               },
             ]}
           />
         ) : (
-          <p className="muted-text">Choose a warehouse to see its movements.</p>
+          <p className="muted-text">
+            {tr('Choose a warehouse to see its movements.')}
+          </p>
         )}
       </Card>
       {item.serialTracked && user.permissions.includes('catalog.manage') && (
-        <Card title="Cylinder assets and inspections">
+        <Card title={tr('Cylinder assets and inspections')}>
           {assets.error && <p role="alert">{assets.error.message}</p>}
           <ul className="setup-list">
             {assets.data?.map((a) => (
               <li key={a.id}>
-                {a.serial} · {a.owner} · Inspection{' '}
-                {a.inspectionReference || 'not recorded'}{' '}
+                {a.serial} · {a.owner} {tr('· Inspection')}{' '}
+                {a.inspectionReference || tr('not recorded')}{' '}
                 {a.inspectionDue || ''}
               </li>
             ))}
           </ul>
           <details className="pt-3">
-            <summary>Register a cylinder</summary>
+            <summary>{tr('Register a cylinder')}</summary>
             <form
               className="grid gap-3 mt-4"
               onSubmit={(e) => {
@@ -892,13 +926,17 @@ function StockDetail({
               }}
             >
               <div className="form-grid">
-                <Field label="Cylinder serial" name="serial" required />
-                <Field label="Cylinder owner" name="owner" required />
-                <Field label="Inspection reference" name="inspection" />
-                <Field label="Next inspection date" name="due" type="date" />
+                <Field label={tr('Cylinder serial')} name="serial" required />
+                <Field label={tr('Cylinder owner')} name="owner" required />
+                <Field label={tr('Inspection reference')} name="inspection" />
+                <Field
+                  label={tr('Next inspection date')}
+                  name="due"
+                  type="date"
+                />
               </div>
               <div>
-                <Button disabled={busy}>Register cylinder</Button>
+                <Button disabled={busy}>{tr('Register cylinder')}</Button>
               </div>
             </form>
           </details>
@@ -909,8 +947,10 @@ function StockDetail({
           event.preventDefault();
           if (!document) postTrigger.current?.focus({ preventScroll: true });
         }}
-        title="Post stock movement"
-        description="Posting is permanent. Corrections use a separate reversal. The server determines the business date and valuation."
+        title={tr('Post stock movement')}
+        description={tr(
+          'Posting is permanent. Corrections use a separate reversal. The server determines the business date and valuation.',
+        )}
         open={postOpen}
         onOpenChange={(v) => {
           if (!busy) setPostOpen(v);
@@ -949,23 +989,27 @@ function StockDetail({
             }}
           >
             <p className="muted-text">
-              From {warehouses.find((w) => w.id === warehouseId)?.name}
+              {tr('From')} {warehouses.find((w) => w.id === warehouseId)?.name}
             </p>
             <div className="form-grid">
-              <Select label="Movement kind" value={kind} onChange={setKind}>
+              <Select
+                label={tr('Movement kind')}
+                value={kind}
+                onChange={setKind}
+              >
                 {['Opening', 'AdjustmentIn', 'AdjustmentOut', 'Transfer'].map(
                   (k) => (
                     <option key={k}>{k}</option>
                   ),
                 )}
               </Select>
-              <Select label="Source state" name="bucket">
+              <Select label={tr('Source state')} name="bucket">
                 {states(item).map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </Select>
               <Field
-                label="Quantity"
+                label={tr('Quantity')}
                 name="quantity"
                 type="number"
                 min="0.001"
@@ -974,7 +1018,7 @@ function StockDetail({
               />
               {(kind === 'Opening' || kind === 'AdjustmentIn') && (
                 <Field
-                  label="Receipt unit cost (PKR)"
+                  label={tr('Receipt unit cost (PKR)')}
                   name="cost"
                   type="number"
                   min="0"
@@ -985,11 +1029,11 @@ function StockDetail({
               {kind === 'Transfer' && (
                 <>
                   <Select
-                    label="Destination warehouse"
+                    label={tr('Destination warehouse')}
                     value={destination}
                     onChange={setDestination}
                   >
-                    <option value="">Choose warehouse</option>
+                    <option value="">{tr('Choose warehouse')}</option>
                     {allWarehouses
                       .filter((w) => w.active)
                       .map((w) => (
@@ -998,7 +1042,10 @@ function StockDetail({
                         </option>
                       ))}
                   </Select>
-                  <Select label="Destination state" name="destinationBucket">
+                  <Select
+                    label={tr('Destination state')}
+                    name="destinationBucket"
+                  >
                     {states(item).map((s) => (
                       <option key={s}>{s}</option>
                     ))}
@@ -1008,19 +1055,19 @@ function StockDetail({
             </div>
             {item.serialTracked && (
               <Field
-                label="Serials (comma separated)"
+                label={tr('Serials (comma separated)')}
                 name="serials"
                 required
               />
             )}
             <Field
-              label="Posting reason / opening reconciliation reference"
+              label={tr('Posting reason / opening reconciliation reference')}
               name="reason"
               required
               maxLength={300}
             />
             <div className="dialog-actions">
-              <Button>Review movement</Button>
+              <Button>{tr('Review movement')}</Button>
             </div>
           </form>
         ) : (
@@ -1028,18 +1075,18 @@ function StockDetail({
             <div className="review-box">
               <p>
                 <strong>
-                  {String(pending.kind)} · Quantity {String(pending.quantity)} ·{' '}
-                  {String(pending.bucket)}
+                  {String(pending.kind)} {tr('· Quantity')}{' '}
+                  {String(pending.quantity)} · {String(pending.bucket)}
                 </strong>
               </p>
               <p>
-                Source:{' '}
+                {tr('Source:')}{' '}
                 {allWarehouses.find((w) => w.id === pending.warehouseId)?.name}{' '}
                 · {String(pending.bucket)}
               </p>
               {pending.destinationWarehouseId ? (
                 <p>
-                  Destination:{' '}
+                  {tr('Destination:')}{' '}
                   {
                     allWarehouses.find(
                       (w) => w.id === pending.destinationWarehouseId,
@@ -1049,13 +1096,16 @@ function StockDetail({
                 </p>
               ) : null}
               {pending.unitCost !== null && (
-                <p>Receipt unit cost: PKR {String(pending.unitCost)}</p>
+                <p>
+                  {tr('Receipt unit cost: PKR')} {String(pending.unitCost)}
+                </p>
               )}
               <p>{String(pending.reason)}</p>
             </div>
             <p className="section-help">
-              No totals are calculated in the browser. Retrying this submission
-              uses the same command key.
+              {tr(
+                'No totals are calculated in the browser. Retrying this submission uses the same command key.',
+              )}
             </p>
             <div className="dialog-actions">
               <Button
@@ -1063,13 +1113,13 @@ function StockDetail({
                 disabled={busy}
                 onClick={() => setPending(null)}
               >
-                Edit movement
+                {tr('Edit movement')}
               </Button>
               <Button
                 disabled={busy}
                 onClick={() => void action('/documents', pending, true)}
               >
-                Confirm posting
+                {tr('Confirm posting')}
               </Button>
             </div>
           </div>
@@ -1083,8 +1133,10 @@ function StockDetail({
             : postTrigger.current
           )?.focus({ preventScroll: true });
         }}
-        title="Stock document"
-        description="Immutable movements and their original cost snapshots."
+        title={tr('Stock document')}
+        description={tr(
+          'Immutable movements and their original cost snapshots.',
+        )}
         open={!!document}
         onOpenChange={(open) => {
           if (!open) setDocument(null);
@@ -1097,7 +1149,7 @@ function StockDetail({
               <p>
                 <strong>
                   {document.kind} ·{' '}
-                  {document.reversedById ? 'Reversed' : 'Posted'}
+                  {document.reversedById ? tr('Reversed') : tr('Posted')}
                 </strong>
               </p>
               <p className="cell-note">{document.id}</p>
@@ -1107,7 +1159,7 @@ function StockDetail({
                   timeStyle: 'short',
                   timeZone,
                 }).format(new Date(document.postedAt))}{' '}
-                · Business date {document.businessDate}
+                {tr('· Business date')} {document.businessDate}
               </p>
               <p>{document.reason}</p>
             </div>
@@ -1115,7 +1167,7 @@ function StockDetail({
               {document.movements.map((m) => (
                 <li key={m.id}>
                   {allWarehouses.find((w) => w.id === m.warehouseId)?.name} ·{' '}
-                  {m.bucket}: {m.quantity} · PKR {m.value.toFixed(2)}{' '}
+                  {m.bucket}: {m.quantity} {tr('· PKR')} {m.value.toFixed(2)}{' '}
                   {m.serials.join(', ')}
                 </li>
               ))}
@@ -1128,7 +1180,7 @@ function StockDetail({
                   onSubmit={(e) => e.preventDefault()}
                 >
                   <Field
-                    label="Reversal reason"
+                    label={tr('Reversal reason')}
                     id="reversal-reason"
                     value={reverseReason}
                     onChange={(event) => setReverseReason(event.target.value)}
@@ -1139,8 +1191,10 @@ function StockDetail({
                     <ConfirmButton
                       destructive
                       disabled={busy || !reverseReason.trim()}
-                      title="Reverse this stock document?"
-                      description="An equal and opposite entry will be posted. Later dependent movements prevent reversal."
+                      title={tr('Reverse this stock document?')}
+                      description={tr(
+                        'An equal and opposite entry will be posted. Later dependent movements prevent reversal.',
+                      )}
                       onConfirm={() => {
                         void action(
                           `/documents/${document.id}/reverse`,
@@ -1149,7 +1203,7 @@ function StockDetail({
                         );
                       }}
                     >
-                      Reverse document
+                      {tr('Reverse document')}
                     </ConfirmButton>
                   </div>
                 </form>

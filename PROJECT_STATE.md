@@ -154,3 +154,17 @@ Next action: the owner provisions the staging server, domain, SMTP, off-site bac
 ## Interface redesign — completed 2026-09-30
 
 At the owner's request, every workspace page, the shell and the sign-in pages were redesigned in five batches on `feature/ui-redesign`, following [the approved plan](docs/UI_REDESIGN.md) and the GasFlow screenshots as layout inspiration only (Gas365 name, theme, icons and copy). Presentation only: no API, schema or business-rule changes. Verified in this chat: frontend type-check, lint and Prettier; 23/23 frontend tests; 30/30 browser tests including axe checks on desktop and mobile. Backend code is unchanged and backend tests were not rerun. Test updates follow deliberate navigation and label changes and are listed in the redesign notes. Next action: owner review of the new interface in the running app; staging and Phase 12 remain as recorded above.
+
+## Post-redesign additions — completed 2026-09-30
+
+Delivered and merged one at a time on their own feature branches, each with full checks:
+
+- Yearly billing (ten months for twelve): server-derived yearly price and saving, requested period on plan requests, admin activation defaults. Migration `20260930110219_YearlyBilling`. See [platform contract](docs/PLATFORM.md).
+- Guided business setup for new owners (`/workspace/setup`), reached from an overview banner. See [interface redesign](docs/UI_REDESIGN.md).
+- Public website at `/` with live plans from `GET /api/public/plans`; status page moved to `/status`. Contact details are placeholders in `apps/web/src/site-config.ts`.
+- Optional Google sign-in, off until `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. See [deployment runbook](docs/DEPLOYMENT.md) section 6.
+- Urdu interface with right-to-left layout and an English/Urdu switch. See [Urdu interface](docs/URDU.md).
+
+Latest verification in this chat: 161 backend tests (4 architecture, 65 unit, 92 integration), 26 frontend tests, 36 browser tests on desktop and mobile including accessibility checks (on the final Urdu run the notification test, which waits for a timed background sweep, failed once and passed on rerun on both viewports); Prettier, ESLint, TypeScript, `dotnet format` and OpenAPI validation pass.
+
+Owner actions before launch: review the Urdu wording; fill in website contact details; set plan prices in Platform admin; create Google OAuth keys if Google sign-in is wanted; add privacy and terms pages; then provision staging. Server messages, PDFs and exports remain English.

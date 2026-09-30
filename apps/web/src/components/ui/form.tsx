@@ -1,5 +1,6 @@
 import { useId, type ComponentProps } from 'react';
 import { cn } from '../../lib/utils';
+import { tr } from '../../i18n';
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return (
@@ -38,8 +39,10 @@ export function Field({
           {...props}
         />
         <label htmlFor={inputId}>
-          {label}
-          {props.required && <span className="sr-only"> (required)</span>}
+          {tr(label)}
+          {props.required && (
+            <span className="sr-only"> {tr('(required)')}</span>
+          )}
         </label>
         {(error || hint) && (
           <p
@@ -54,8 +57,8 @@ export function Field({
   return (
     <div className="grid gap-2">
       <label htmlFor={inputId}>
-        {label}
-        {props.required && <span className="sr-only"> (required)</span>}
+        {tr(label)}
+        {props.required && <span className="sr-only"> {tr('(required)')}</span>}
       </label>
       <Input
         id={inputId}

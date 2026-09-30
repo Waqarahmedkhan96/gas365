@@ -263,3 +263,13 @@ Closed two Phase 07 limitations that no later phase covered: customer advances c
 **Verification in the current chat:** frontend type-check, lint and Prettier; 23 frontend and 30/30 browser tests, including accessibility checks on desktop and mobile. Backend unchanged; backend tests not rerun.
 
 **Migration impact:** none.
+
+## Post-redesign additions — 2026-09-30
+
+**Delivered:** yearly billing with two months free, guided business setup, public website with live plans, optional Google sign-in and a full Urdu interface with right-to-left layout.
+
+**Owner decisions:** yearly price is ten monthly prices; Google sign-in built but off until keys are added; website contact details stay placeholders until provided; the whole app is translated to Urdu for later native review.
+
+**Verification in the current chat:** 161 backend, 26 frontend and 36 browser tests; formatting, lint, types and OpenAPI pass.
+
+**Migration impact:** apply `20260930110219_YearlyBilling` (nullable column with a check constraint).

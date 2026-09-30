@@ -25,6 +25,7 @@ import {
   type Member,
   type Session,
 } from './access-api';
+import { tr } from './i18n';
 
 const FinancePage = lazy(() =>
   import('./FinancePage').then((module) => ({ default: module.FinancePage })),
@@ -218,18 +219,18 @@ export function WorkspacePage() {
   if (!user || !info.data || me.isError || info.isError)
     return (
       <main className="initial-state">
-        <h1>Your workspace</h1>
+        <h1>{tr('Your workspace')}</h1>
         <PageState
           kind={me.isError || info.isError ? 'error' : 'loading'}
           title={
             me.isError || info.isError
-              ? 'Workspace unavailable'
-              : 'Loading your workspace'
+              ? tr('Workspace unavailable')
+              : tr('Loading your workspace')
           }
           description={
             me.error?.message ||
             info.error?.message ||
-            'Retrieving your workspace and permissions.'
+            tr('Retrieving your workspace and permissions.')
           }
           retry={
             me.isError || info.isError
@@ -240,7 +241,7 @@ export function WorkspacePage() {
               : undefined
           }
         />
-        <Link to="/login">Sign in</Link>
+        <Link to="/login">{tr('Sign in')}</Link>
       </main>
     );
   const { tenant, branches, roles, members, sessions } = info.data;
@@ -270,12 +271,14 @@ export function WorkspacePage() {
     >
       {user.support && (
         <div className="support-banner">
-          <strong>Support view of {user.support.tenantName}</strong> — read-only
-          until{' '}
+          <strong>
+            {tr('Support view of')} {user.support.tenantName}
+          </strong>{' '}
+          {tr('— read-only until')}{' '}
           {new Date(user.support.expiresAt).toLocaleString('en-PK', {
             timeZone: tenant.timeZone,
           })}
-          . Every page you open is recorded for the owner.{' '}
+          {tr('. Every page you open is recorded for the owner.')}{' '}
           <Button
             variant="secondary"
             onClick={() =>
@@ -286,18 +289,20 @@ export function WorkspacePage() {
               })
             }
           >
-            Exit support view
+            {tr('Exit support view')}
           </Button>
         </div>
       )}
       {!user.support && tenant.subscriptionStatus === 'Expired' && (
         <div className="subscription-banner">
-          <strong>Read-only:</strong> your trial or plan has ended. Your data is
-          safe and can still be viewed and exported.{' '}
+          <strong>{tr('Read-only:')}</strong>{' '}
+          {tr(
+            'your trial or plan has ended. Your data is safe and can still be viewed and exported.',
+          )}{' '}
           {has('tenant.manage') ? (
-            <Link to="/workspace/subscription">Choose a plan</Link>
+            <Link to="/workspace/subscription">{tr('Choose a plan')}</Link>
           ) : (
-            'Ask the business owner to choose a plan.'
+            tr('Ask the business owner to choose a plan.')
           )}
         </div>
       )}
@@ -306,32 +311,38 @@ export function WorkspacePage() {
         tenant.trialEndsAt &&
         has('tenant.manage') && (
           <div className="subscription-banner">
-            Free trial: {daysLeft(tenant.trialEndsAt)} days left.{' '}
-            <Link to="/workspace/subscription">Choose a plan</Link>
+            {tr('Free trial: {days} days left.', {
+              days: daysLeft(tenant.trialEndsAt),
+            })}{' '}
+            <Link to="/workspace/subscription">{tr('Choose a plan')}</Link>
           </div>
         )}
       <PageHeading
-        title={currentPage?.label || 'Page not found'}
-        description={currentPage?.description || 'This page is not available.'}
+        title={currentPage?.label || tr('Page not found')}
+        description={
+          currentPage?.description || tr('This page is not available.')
+        }
         icon={currentPage?.icon}
         actionsRef={setActionsSlot}
       />
       {!currentPage ? (
         <PageState
           kind="empty"
-          title="Page not found"
-          description="Choose a page from the workspace navigation."
+          title={tr('Page not found')}
+          description={tr('Choose a page from the workspace navigation.')}
         />
       ) : !allowed ? (
         <PageState
           kind="denied"
-          title="Access restricted"
-          description="Your role does not include access to this page. Ask your workspace owner if you need it."
+          title={tr('Access restricted')}
+          description={tr(
+            'Your role does not include access to this page. Ask your workspace owner if you need it.',
+          )}
         />
       ) : (
         <PageActionsSlot value={actionsSlot}>
           {['udhaar', 'expenses', 'loans', 'cash-register'].includes(tab) && (
-            <Suspense fallback={<p>Loading finances…</p>}>
+            <Suspense fallback={<p>{tr('Loading finances…')}</p>}>
               <FinancePage
                 user={user}
                 section={tab}
@@ -340,7 +351,7 @@ export function WorkspacePage() {
             </Suspense>
           )}
           {tab === 'reports' && (
-            <Suspense fallback={<p role="status">Loading reports…</p>}>
+            <Suspense fallback={<p role="status">{tr('Loading reports…')}</p>}>
               <ReportsPage
                 user={user}
                 branches={branches}
@@ -349,27 +360,31 @@ export function WorkspacePage() {
             </Suspense>
           )}
           {tab === 'notifications' && (
-            <Suspense fallback={<p role="status">Loading notifications…</p>}>
+            <Suspense
+              fallback={<p role="status">{tr('Loading notifications…')}</p>}
+            >
               <NotificationsPage user={user} timeZone={tenant.timeZone} />
             </Suspense>
           )}
           {tab === 'imports' && (
-            <Suspense fallback={<p role="status">Loading imports…</p>}>
+            <Suspense fallback={<p role="status">{tr('Loading imports…')}</p>}>
               <ImportsPage user={user} />
             </Suspense>
           )}
           {tab === 'subscription' && (
-            <Suspense fallback={<p role="status">Loading subscription…</p>}>
+            <Suspense
+              fallback={<p role="status">{tr('Loading subscription…')}</p>}
+            >
               <SubscriptionPage user={user} timeZone={tenant.timeZone} />
             </Suspense>
           )}
           {tab === 'platform' && (
-            <Suspense fallback={<p role="status">Loading platform…</p>}>
+            <Suspense fallback={<p role="status">{tr('Loading platform…')}</p>}>
               <PlatformPage timeZone={tenant.timeZone} />
             </Suspense>
           )}
           {tab === 'setup' && (
-            <Suspense fallback={<p role="status">Loading setup…</p>}>
+            <Suspense fallback={<p role="status">{tr('Loading setup…')}</p>}>
               <SetupWizard user={user} tenant={tenant} branches={branches} />
             </Suspense>
           )}
@@ -379,18 +394,24 @@ export function WorkspacePage() {
             </Suspense>
           )}
           {tab === 'overview' && has('reports.view') && (
-            <Suspense fallback={<p role="status">Loading dashboard…</p>}>
+            <Suspense
+              fallback={<p role="status">{tr('Loading dashboard…')}</p>}
+            >
               <Dashboard user={user} timeZone={tenant.timeZone} />
             </Suspense>
           )}
           {tab === 'sales' && (
-            <Suspense fallback={<p role="status">Loading sales drafts...</p>}>
+            <Suspense
+              fallback={<p role="status">{tr('Loading sales drafts...')}</p>}
+            >
               <SalesDraftPage user={user} timeZone={tenant.timeZone} />
             </Suspense>
           )}
           {(tab === 'customers' || tab === 'prices') && (
             <Suspense
-              fallback={<p role="status">Loading customers and prices...</p>}
+              fallback={
+                <p role="status">{tr('Loading customers and prices...')}</p>
+              }
             >
               <CustomersPage
                 key={`${user.tenantId}:${tab}`}
@@ -401,7 +422,9 @@ export function WorkspacePage() {
             </Suspense>
           )}
           {(tab === 'purchases' || tab === 'suppliers') && (
-            <Suspense fallback={<p role="status">Loading purchasing…</p>}>
+            <Suspense
+              fallback={<p role="status">{tr('Loading purchasing…')}</p>}
+            >
               <PurchasingPage
                 user={user}
                 suppliersOnly={tab === 'suppliers'}
@@ -410,7 +433,9 @@ export function WorkspacePage() {
             </Suspense>
           )}
           {tab === 'inventory' && (
-            <Suspense fallback={<p role="status">Loading inventory…</p>}>
+            <Suspense
+              fallback={<p role="status">{tr('Loading inventory…')}</p>}
+            >
               <InventoryPage
                 user={user}
                 branches={branches}
@@ -429,53 +454,61 @@ export function WorkspacePage() {
                     aria-labelledby="quick-actions-heading"
                   >
                     <h2 id="quick-actions-heading" className="card-title">
-                      Quick actions
+                      {tr('Quick actions')}
                     </h2>
                     <div className="quick-links">
                       {has('sales.create') && has('customers.view') && (
                         <Link to="/workspace/sales?new=1">
                           <PageIcon name="sales" size={20} />
-                          <strong>New sales draft</strong>
-                          <span>Prepare a sale for review and posting</span>
+                          <strong>{tr('New sales draft')}</strong>
+                          <span>
+                            {tr('Prepare a sale for review and posting')}
+                          </span>
                         </Link>
                       )}
                       {has('customers.view') && (
                         <Link to="/workspace/customers">
                           <PageIcon name="customers" size={20} />
-                          <strong>Customers</strong>
-                          <span>Profiles, balances and borrowed cylinders</span>
+                          <strong>{tr('Customers')}</strong>
+                          <span>
+                            {tr('Profiles, balances and borrowed cylinders')}
+                          </span>
                         </Link>
                       )}
                       {has('inventory.view') && (
                         <Link to="/workspace/inventory">
                           <PageIcon name="inventory" size={20} />
-                          <strong>Stock</strong>
-                          <span>Balances and movements by warehouse</span>
+                          <strong>{tr('Stock')}</strong>
+                          <span>
+                            {tr('Balances and movements by warehouse')}
+                          </span>
                         </Link>
                       )}
                       {has('finance.view') && (
                         <Link to="/workspace/cash-register">
                           <PageIcon name="cash-register" size={20} />
-                          <strong>Cash register</strong>
-                          <span>Open, count and close the drawer</span>
+                          <strong>{tr('Cash register')}</strong>
+                          <span>{tr('Open, count and close the drawer')}</span>
                         </Link>
                       )}
                       <Link to="/workspace/branches">
                         <PageIcon name="branches" size={20} />
-                        <strong>Your branches</strong>
-                        <span>Review locations and branch access</span>
+                        <strong>{tr('Your branches')}</strong>
+                        <span>{tr('Review locations and branch access')}</span>
                       </Link>
                       {has('users.manage') && (
                         <Link to="/workspace/team">
                           <PageIcon name="team" size={20} />
-                          <strong>Your team</strong>
-                          <span>Invite colleagues and manage access</span>
+                          <strong>{tr('Your team')}</strong>
+                          <span>
+                            {tr('Invite colleagues and manage access')}
+                          </span>
                         </Link>
                       )}
                       <Link to="/workspace/sessions">
                         <PageIcon name="sessions" size={20} />
-                        <strong>Your sessions</strong>
-                        <span>Review where you are signed in</span>
+                        <strong>{tr('Your sessions')}</strong>
+                        <span>{tr('Review where you are signed in')}</span>
                       </Link>
                     </div>
                   </section>
@@ -484,7 +517,7 @@ export function WorkspacePage() {
                     aria-labelledby="workspace-details-heading"
                   >
                     <h2 id="workspace-details-heading" className="card-title">
-                      Workspace details
+                      {tr('Workspace details')}
                     </h2>
                     <KeyValues
                       items={[
@@ -520,13 +553,15 @@ export function WorkspacePage() {
                       );
                     }}
                   >
-                    <h2 className="card-title">Business settings</h2>
+                    <h2 className="card-title">{tr('Business settings')}</h2>
                     <p className="section-help">
-                      These details apply to every branch in this workspace.
+                      {tr(
+                        'These details apply to every branch in this workspace.',
+                      )}
                     </p>
                     <div className="form-grid">
                       <label>
-                        Business name
+                        {tr('Business name')}
                         <Input
                           name="name"
                           defaultValue={tenant.name}
@@ -535,7 +570,7 @@ export function WorkspacePage() {
                         />
                       </label>
                       <label>
-                        Time zone
+                        {tr('Time zone')}
                         <Input
                           name="timeZone"
                           defaultValue={tenant.timeZone}
@@ -543,7 +578,7 @@ export function WorkspacePage() {
                         />
                       </label>
                       <label>
-                        Credit is overdue after (days)
+                        {tr('Credit is overdue after (days)')}
                         <Input
                           name="overdueCreditDays"
                           type="number"
@@ -554,7 +589,7 @@ export function WorkspacePage() {
                         />
                       </label>
                       <label>
-                        Remind to close open registers at
+                        {tr('Remind to close open registers at')}
                         <Input
                           name="closingReminder"
                           type="time"
@@ -564,7 +599,9 @@ export function WorkspacePage() {
                       </label>
                     </div>
                     <div>
-                      <Button disabled={busy}>Save business settings</Button>
+                      <Button disabled={busy}>
+                        {tr('Save business settings')}
+                      </Button>
                     </div>
                   </form>
                 </div>
@@ -578,20 +615,22 @@ export function WorkspacePage() {
                 aria-labelledby="branches-heading"
               >
                 <div className="section-title">
-                  <h2 id="branches-heading">Branches</h2>
+                  <h2 id="branches-heading">{tr('Branches')}</h2>
                   <span className="toolbar-count">
-                    {branches.filter((b) => b.active).length} active of{' '}
-                    {tenant.maxBranches} allowed
+                    {tr('{active} active of {limit} allowed', {
+                      active: branches.filter((b) => b.active).length,
+                      limit: tenant.maxBranches,
+                    })}
                   </span>
                 </div>
                 <p className="section-help">
-                  Branch access is assigned by a team administrator.
+                  {tr('Branch access is assigned by a team administrator.')}
                 </p>
                 {branches.length === 0 && (
                   <PageState
                     kind="empty"
-                    title="No branches"
-                    description="No branches have been assigned to you."
+                    title={tr('No branches')}
+                    description={tr('No branches have been assigned to you.')}
                   />
                 )}
                 <ul className="entity-grid">
@@ -623,11 +662,11 @@ export function WorkspacePage() {
                           <StatusChip
                             tone={branch.active ? 'success' : 'neutral'}
                           >
-                            {branch.active ? 'Active' : 'Inactive'}
+                            {branch.active ? tr('Active') : tr('Inactive')}
                           </StatusChip>
                         </div>
                         <label>
-                          Branch name
+                          {tr('Branch name')}
                           <Input
                             name="name"
                             defaultValue={branch.name}
@@ -643,12 +682,12 @@ export function WorkspacePage() {
                             defaultChecked={branch.active}
                             disabled={!has('branches.manage')}
                           />
-                          Active
+                          {tr('Active')}
                         </label>
                         {has('branches.manage') && (
                           <div className="entity-actions">
                             <Button variant="outline" disabled={busy}>
-                              Save branch
+                              {tr('Save branch')}
                             </Button>
                           </div>
                         )}
@@ -668,13 +707,13 @@ export function WorkspacePage() {
                       );
                     }}
                   >
-                    <h2 className="card-title">Add a branch</h2>
+                    <h2 className="card-title">{tr('Add a branch')}</h2>
                     <label>
-                      New branch name
+                      {tr('New branch name')}
                       <Input name="name" maxLength={120} required />
                     </label>
                     <Button disabled={busy} className="w-full">
-                      Add branch
+                      {tr('Add branch')}
                     </Button>
                   </form>
                 </aside>
@@ -688,10 +727,12 @@ export function WorkspacePage() {
                 aria-labelledby="team-heading"
               >
                 <div className="section-title">
-                  <h2 id="team-heading">Your team</h2>
+                  <h2 id="team-heading">{tr('Your team')}</h2>
                   <span className="toolbar-count">
-                    {members.filter((m) => m.active).length} active of{' '}
-                    {tenant.maxUsers} allowed
+                    {tr('{active} active of {limit} allowed', {
+                      active: members.filter((m) => m.active).length,
+                      limit: tenant.maxUsers,
+                    })}
                   </span>
                 </div>
                 <ul className="member-list">
@@ -728,17 +769,17 @@ export function WorkspacePage() {
                     );
                   }}
                 >
-                  <h2 className="card-title">Invite a team member</h2>
+                  <h2 className="card-title">{tr('Invite a team member')}</h2>
                   <label>
-                    Name
+                    {tr('Name')}
                     <Input name="name" maxLength={120} required />
                   </label>
                   <label>
-                    Email address
+                    {tr('Email address')}
                     <Input name="email" type="email" required />
                   </label>
                   <label>
-                    Role
+                    {tr('Role')}
                     <select
                       name="roleId"
                       defaultValue={roles.find((r) => r.name === 'Worker')?.id}
@@ -759,7 +800,7 @@ export function WorkspacePage() {
                     </select>
                   </label>
                   <fieldset className="check-group">
-                    <legend>Branch access</legend>
+                    <legend>{tr('Branch access')}</legend>
                     {branches
                       .filter((b) => b.active)
                       .map((b) => (
@@ -774,7 +815,7 @@ export function WorkspacePage() {
                       ))}
                   </fieldset>
                   <Button disabled={busy} className="w-full">
-                    Send invitation
+                    {tr('Send invitation')}
                   </Button>
                 </form>
               </aside>
@@ -783,11 +824,12 @@ export function WorkspacePage() {
           {tab === 'roles' && (
             <section className="grid gap-4" aria-labelledby="roles-heading">
               <div className="section-title">
-                <h2 id="roles-heading">Roles and permissions</h2>
+                <h2 id="roles-heading">{tr('Roles and permissions')}</h2>
               </div>
               <p className="section-help">
-                Permissions are enforced by the server. Only the owner can
-                define roles.
+                {tr(
+                  'Permissions are enforced by the server. Only the owner can define roles.',
+                )}
               </p>
               <div className="role-grid">
                 {roles.map((role) => (
@@ -814,11 +856,12 @@ export function WorkspacePage() {
           {tab === 'sessions' && (
             <section className="card" aria-labelledby="sessions-heading">
               <h2 id="sessions-heading" className="card-title">
-                Your sessions in this workspace
+                {tr('Your sessions in this workspace')}
               </h2>
               <p className="section-help">
-                Sessions expire after 30 minutes of inactivity or eight hours.
-                You can end them here.
+                {tr(
+                  'Sessions expire after 30 minutes of inactivity or eight hours. You can end them here.',
+                )}
               </p>
               <ul className="session-list">
                 {sessions.map((session) => (
@@ -829,22 +872,26 @@ export function WorkspacePage() {
                     <div className="session-text">
                       <strong>
                         {session.current
-                          ? 'Current session'
-                          : 'Another session'}
+                          ? tr('Current session')
+                          : tr('Another session')}
                       </strong>
                       <span>
-                        Started{' '}
+                        {tr('Started')}{' '}
                         {new Date(session.createdAt).toLocaleString(undefined, {
                           timeZone: tenant.timeZone,
                         })}
                       </span>
                     </div>
                     {session.current && (
-                      <StatusChip tone="success">This device</StatusChip>
+                      <StatusChip tone="success">
+                        {tr('This device')}
+                      </StatusChip>
                     )}
                     <ConfirmButton
-                      title="End this session?"
-                      description="The device using this session will need to sign in again."
+                      title={tr('End this session?')}
+                      description={tr(
+                        'The device using this session will need to sign in again.',
+                      )}
                       destructive
                       disabled={busy}
                       onConfirm={() =>
@@ -860,7 +907,7 @@ export function WorkspacePage() {
                         })
                       }
                     >
-                      End session
+                      {tr('End session')}
                     </ConfirmButton>
                   </li>
                 ))}
@@ -868,7 +915,7 @@ export function WorkspacePage() {
             </section>
           )}
           {tab === 'audit' && (
-            <Suspense fallback={<p role="status">Loading activity…</p>}>
+            <Suspense fallback={<p role="status">{tr('Loading activity…')}</p>}>
               <AuditPage
                 user={user}
                 branches={branches}
@@ -881,8 +928,8 @@ export function WorkspacePage() {
               fallback={
                 <PageState
                   kind="loading"
-                  title="Loading components"
-                  description="Opening the component showcase."
+                  title={tr('Loading components')}
+                  description={tr('Opening the component showcase.')}
                 />
               }
             >
@@ -942,11 +989,11 @@ function MemberForm({
           <p>{member.email}</p>
         </div>
         <StatusChip tone={member.active ? 'success' : 'neutral'}>
-          {member.active ? currentRole?.name || 'Active' : 'Inactive'}
+          {member.active ? currentRole?.name || tr('Active') : tr('Inactive')}
         </StatusChip>
       </div>
       <label>
-        Role
+        {tr('Role')}
         <select name="roleId" defaultValue={member.roleId} disabled={!editable}>
           {roles
             .filter(
@@ -963,7 +1010,7 @@ function MemberForm({
         </select>
       </label>
       <fieldset disabled={!editable} className="check-group">
-        <legend>Branch access</legend>
+        <legend>{tr('Branch access')}</legend>
         {branches
           .filter((b) => b.active)
           .map((b) => (
@@ -985,12 +1032,12 @@ function MemberForm({
           defaultChecked={member.active}
           disabled={!editable}
         />
-        Active member
+        {tr('Active member')}
       </label>
       {editable && (
         <div>
           <Button variant="outline" disabled={busy}>
-            Save member
+            {tr('Save member')}
           </Button>
         </div>
       )}
@@ -1025,11 +1072,11 @@ function RoleForm({
         <span className="header-business-icon" aria-hidden="true">
           <PageIcon name="roles" size={20} />
         </span>
-        <h3>{role ? role.name : 'Create a role'}</h3>
-        {role?.isOwner && <StatusChip tone="info">Owner</StatusChip>}
+        <h3>{role ? role.name : tr('Create a role')}</h3>
+        {role?.isOwner && <StatusChip tone="info">{tr('Owner')}</StatusChip>}
       </div>
       <label>
-        Role name
+        {tr('Role name')}
         <Input
           name="name"
           defaultValue={role?.name}
@@ -1039,7 +1086,7 @@ function RoleForm({
         />
       </label>
       <fieldset disabled={!editable} className="check-group permission-grid">
-        <legend>Permissions</legend>
+        <legend>{tr('Permissions')}</legend>
         {permissions.map((p) => (
           <label key={p} className="check">
             <Input
@@ -1048,12 +1095,14 @@ function RoleForm({
               value={p}
               defaultChecked={role?.permissions.includes(p)}
             />
-            {permissionLabels[p]}
+            {tr(permissionLabels[p])}
           </label>
         ))}
       </fieldset>
       {editable && (
-        <Button disabled={busy}>{role ? 'Save role' : 'Create role'}</Button>
+        <Button disabled={busy}>
+          {role ? tr('Save role') : tr('Create role')}
+        </Button>
       )}
     </form>
   );

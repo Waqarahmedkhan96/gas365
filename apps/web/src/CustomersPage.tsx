@@ -36,6 +36,7 @@ import type { Item, Page } from './inventory-types';
 import { useBranch } from './components/branch-context';
 import { SalesRegister } from './SalesRegister';
 import { CylinderWorkspace, DepositArrangement } from './CylinderWorkspace';
+import { tr } from './i18n';
 
 type Customer = {
   id: string;
@@ -164,8 +165,10 @@ export function CustomersPage({
       }
       description={
         pricesOnly
-          ? 'Price lists group selling prices, for example retail or commercial.'
-          : 'Contact details appear on sales and receipts.'
+          ? tr(
+              'Price lists group selling prices, for example retail or commercial.',
+            )
+          : tr('Contact details appear on sales and receipts.')
       }
       open={!!editor}
       onOpenChange={(open) => {
@@ -175,12 +178,14 @@ export function CustomersPage({
       {editor && (
         <form
           key={editor === 'new' ? 'new' : editor.id}
-          aria-label={pricesOnly ? 'Price list editor' : 'Customer editor'}
+          aria-label={
+            pricesOnly ? tr('Price list editor') : tr('Customer editor')
+          }
           className="grid gap-4"
           onSubmit={save}
         >
           <Field
-            label={pricesOnly ? 'Price list name' : 'Customer name'}
+            label={pricesOnly ? tr('Price list name') : tr('Customer name')}
             name="name"
             required
             maxLength={120}
@@ -189,17 +194,17 @@ export function CustomersPage({
           {!pricesOnly && (
             <>
               <Field
-                label="Phone"
+                label={tr('Phone')}
                 name="phone"
                 maxLength={80}
                 inputMode="tel"
-                placeholder="03XX-XXXXXXX"
+                placeholder={tr('03XX-XXXXXXX')}
                 defaultValue={
                   editor === 'new' ? '' : (editor as Customer).phone
                 }
               />
               <Field
-                label="Address"
+                label={tr('Address')}
                 name="address"
                 maxLength={300}
                 defaultValue={
@@ -214,7 +219,7 @@ export function CustomersPage({
               name="active"
               defaultChecked={editor === 'new' || editor.active}
             />
-            Active
+            {tr('Active')}
           </label>
           {error && <p role="alert">{error}</p>}
           <div className="dialog-actions">
@@ -224,10 +229,10 @@ export function CustomersPage({
               disabled={busy}
               onClick={() => setEditor(null)}
             >
-              Cancel
+              {tr('Cancel')}
             </Button>
             <Button disabled={busy}>
-              {pricesOnly ? 'Save price list' : 'Save customer'}
+              {pricesOnly ? tr('Save price list') : tr('Save customer')}
             </Button>
           </div>
         </form>
@@ -276,7 +281,7 @@ export function CustomersPage({
         <PageActions>
           <Button onClick={() => startEdit('new')}>
             <Plus aria-hidden="true" size={18} />
-            {pricesOnly ? 'Add price list' : 'Add customer'}
+            {pricesOnly ? tr('Add price list') : tr('Add customer')}
           </Button>
         </PageActions>
       )}
@@ -300,13 +305,13 @@ export function CustomersPage({
         }}
       >
         <span className="toolbar-count">
-          {total} {pricesOnly ? 'price lists' : 'customers'}
+          {total} {pricesOnly ? tr('price lists') : 'customers'}
         </span>
       </Toolbar>
       {editorDialog}
       {pricesOnly ? (
         <DataTable
-          title="Price lists"
+          title={tr('Price lists')}
           data={rows.data?.items ?? []}
           rowCount={total}
           pagination={pagination}
@@ -335,7 +340,7 @@ export function CustomersPage({
               header: 'Status',
               cell: ({ row }) => (
                 <StatusChip tone={row.original.active ? 'success' : 'neutral'}>
-                  {row.original.active ? 'Active' : 'Inactive'}
+                  {row.original.active ? tr('Active') : tr('Inactive')}
                 </StatusChip>
               ),
             },
@@ -353,7 +358,7 @@ export function CustomersPage({
                         onClick={() => startEdit(row.original)}
                       >
                         <Pencil aria-hidden="true" size={16} />
-                        Edit
+                        {tr('Edit')}
                         <span className="sr-only"> {row.original.name}</span>
                       </Button>
                     ),
@@ -365,35 +370,38 @@ export function CustomersPage({
       ) : rows.isPending ? (
         <PageState
           kind="loading"
-          title="Loading customers"
-          description="Please wait while customers are loaded."
+          title={tr('Loading customers')}
+          description={tr('Please wait while customers are loaded.')}
         />
       ) : rows.error ? (
         <PageState
           kind="error"
-          title="Customers unavailable"
+          title={tr('Customers unavailable')}
           description={rows.error.message}
           retry={() => void rows.refetch()}
         />
       ) : !rows.data.items.length ? (
         <PageState
           kind="empty"
-          title={search ? 'No matching customers' : 'No customers yet'}
+          title={search ? tr('No matching customers') : tr('No customers yet')}
           description={
             search
-              ? 'Try another name or phone number.'
-              : 'Add your first customer to start recording sales and credit.'
+              ? tr('Try another name or phone number.')
+              : tr(
+                  'Add your first customer to start recording sales and credit.',
+                )
           }
           action={
             canEdit && !search ? (
               <Button onClick={() => startEdit('new')}>
-                <Plus aria-hidden="true" size={18} /> Add your first customer
+                <Plus aria-hidden="true" size={18} />{' '}
+                {tr('Add your first customer')}
               </Button>
             ) : undefined
           }
         />
       ) : (
-        <section aria-label="Customers" className="grid gap-4">
+        <section aria-label={tr('Customers')} className="grid gap-4">
           <ul className="entity-grid">
             {rows.data.items.map((row) => (
               <li key={row.id} className="entity-card">
@@ -413,18 +421,18 @@ export function CustomersPage({
                       {row.name}
                     </button>
                     <StatusChip tone={row.active ? 'success' : 'neutral'}>
-                      {row.active ? 'Active' : 'Inactive'}
+                      {row.active ? tr('Active') : tr('Inactive')}
                     </StatusChip>
                   </div>
                 </div>
                 <ul className="entity-facts">
                   <li>
                     <Phone aria-hidden="true" size={16} />
-                    {row.phone || 'No phone'}
+                    {row.phone || tr('No phone')}
                   </li>
                   <li>
                     <MapPin aria-hidden="true" size={16} />
-                    {row.address || 'No address'}
+                    {row.address || tr('No address')}
                   </li>
                 </ul>
                 <div className="entity-actions">
@@ -436,12 +444,17 @@ export function CustomersPage({
                     }}
                   >
                     <Eye aria-hidden="true" size={16} />
-                    View<span className="sr-only"> {row.name} profile</span>
+                    {tr('View')}
+                    <span className="sr-only">
+                      {' '}
+                      {row.name} {tr('profile')}
+                    </span>
                   </Button>
                   {canEdit && (
                     <Button variant="outline" onClick={() => startEdit(row)}>
                       <Pencil aria-hidden="true" size={16} />
-                      Edit<span className="sr-only"> {row.name}</span>
+                      {tr('Edit')}
+                      <span className="sr-only"> {row.name}</span>
                     </Button>
                   )}
                 </div>
@@ -513,7 +526,7 @@ function CustomerProfile({
   const sales = has('sales.view') && !!branch;
   const details = (
     <div className="grid gap-6">
-      <Card title="Contact details">
+      <Card title={tr('Contact details')}>
         <KeyValues
           items={[
             ['Phone', customer.phone || 'Not provided'],
@@ -523,7 +536,7 @@ function CustomerProfile({
         />
       </Card>
       {has('sales.view') && (
-        <Card title="Cylinder deposit arrangement">
+        <Card title={tr('Cylinder deposit arrangement')}>
           <DepositArrangement
             key={customer.id}
             user={user}
@@ -534,8 +547,8 @@ function CustomerProfile({
     </div>
   );
   return (
-    <section className="detail-page" aria-label="Customer profile">
-      <BackButton onClick={back}>Back to customers</BackButton>
+    <section className="detail-page" aria-label={tr('Customer profile')}>
+      <BackButton onClick={back}>{tr('Back to customers')}</BackButton>
       <div className="profile-hero">
         <span className="avatar hero" aria-hidden="true">
           {initials(customer.name)}
@@ -544,17 +557,17 @@ function CustomerProfile({
           <h2 ref={heading} tabIndex={-1}>
             {customer.name}{' '}
             <StatusChip tone={customer.active ? 'success' : 'neutral'}>
-              {customer.active ? 'Active' : 'Inactive'}
+              {customer.active ? tr('Active') : tr('Inactive')}
             </StatusChip>
           </h2>
           <ul className="entity-facts inline">
             <li>
               <Phone aria-hidden="true" size={16} />
-              {customer.phone || 'No phone'}
+              {customer.phone || tr('No phone')}
             </li>
             <li>
               <MapPin aria-hidden="true" size={16} />
-              {customer.address || 'No address'}
+              {customer.address || tr('No address')}
             </li>
           </ul>
         </div>
@@ -562,45 +575,46 @@ function CustomerProfile({
           {has('sales.create') && (
             <Button variant="outline" asChild>
               <Link to="/workspace/sales?new=1">
-                <Plus aria-hidden="true" size={16} /> New sales draft
+                <Plus aria-hidden="true" size={16} /> {tr('New sales draft')}
               </Link>
             </Button>
           )}
           {canEdit && (
             <Button onClick={edit}>
               <Pencil aria-hidden="true" size={16} />
-              Edit<span className="sr-only"> {customer.name}</span>
+              {tr('Edit')}
+              <span className="sr-only"> {customer.name}</span>
             </Button>
           )}
         </div>
       </div>
       {credit.data && (
-        <StatGrid label="Customer balance">
+        <StatGrid label={tr('Customer balance')}>
           <StatCard
-            label="Balance owed"
+            label={tr('Balance owed')}
             icon={HandCoins}
             tone={credit.data.balance > 0 ? 'warning' : 'success'}
             value={money(credit.data.balance)}
-            note="Selected branch, net of unapplied payments"
+            note={tr('Selected branch, net of unapplied payments')}
           />
           <StatCard
-            label="Unapplied payments"
+            label={tr('Unapplied payments')}
             icon={Wallet}
             value={money(credit.data.unapplied)}
-            note="Advances not yet allocated"
+            note={tr('Advances not yet allocated')}
           />
           <StatCard
-            label="Open invoices"
+            label={tr('Open invoices')}
             icon={FileText}
             value={credit.data.invoices.filter((x) => x.outstanding > 0).length}
-            note="Sales, loans and openings with a balance"
+            note={tr('Sales, loans and openings with a balance')}
           />
         </StatGrid>
       )}
       {credit.error && <p role="alert">{credit.error.message}</p>}
       {sales ? (
         <Tabs
-          label="Customer sections"
+          label={tr('Customer sections')}
           value={tab}
           onChange={setTab}
           tabs={[
@@ -707,20 +721,20 @@ function PriceEditor({
     }
   }
   return (
-    <section className="detail-page" aria-label="Price list prices">
-      <BackButton onClick={close}>Back to price lists</BackButton>
+    <section className="detail-page" aria-label={tr('Price list prices')}>
+      <BackButton onClick={close}>{tr('Back to price lists')}</BackButton>
       <div className="detail-header">
         <div>
           <h2 ref={heading} tabIndex={-1}>
-            {list.name} — prices{' '}
+            {tr('{name} — prices', { name: list.name })}{' '}
             <StatusChip tone={list.active ? 'success' : 'neutral'}>
-              {list.active ? 'Active' : 'Inactive'}
+              {list.active ? tr('Active') : tr('Inactive')}
             </StatusChip>
           </h2>
           <p>
-            PKR selling price per catalog unit for gas and parts; per cylinder
-            for cylinder modes. Borrowed-cylinder gas prices exclude refundable
-            deposits.
+            {tr(
+              'PKR selling price per catalog unit for gas and parts; per cylinder for cylinder modes. Borrowed-cylinder gas prices exclude refundable deposits.',
+            )}
           </p>
         </div>
         {canEdit && list.active && (
@@ -732,15 +746,17 @@ function PriceEditor({
                 setError('');
               }}
             >
-              <Plus aria-hidden="true" size={16} /> Add price
+              <Plus aria-hidden="true" size={16} /> {tr('Add price')}
             </Button>
           </div>
         )}
       </div>
       {!editor && error && <p role="alert">{error}</p>}
       <Modal
-        title={editor === 'new' ? 'Add price' : 'Edit price'}
-        description="Prices are versioned. Drafts keep the price they were prepared with."
+        title={editor === 'new' ? tr('Add price') : tr('Edit price')}
+        description={tr(
+          'Prices are versioned. Drafts keep the price they were prepared with.',
+        )}
         open={!!editor}
         onOpenChange={(open) => {
           if (!open) setEditor(null);
@@ -748,22 +764,22 @@ function PriceEditor({
       >
         {editor && (
           <form
-            aria-label="Sale price editor"
+            aria-label={tr('Sale price editor')}
             className="grid gap-4"
             onSubmit={save}
           >
             {editor === 'new' ? (
               <>
                 <Field
-                  label="Find item"
+                  label={tr('Find item')}
                   value={itemSearch}
-                  placeholder="Search by SKU or name"
+                  placeholder={tr('Search by SKU or name')}
                   onChange={(e) => {
                     setItemSearch(e.target.value);
                     setItemPage(1);
                   }}
                 />
-                {items.isPending && <p role="status">Loading items…</p>}
+                {items.isPending && <p role="status">{tr('Loading items…')}</p>}
                 {items.error && <p role="alert">{items.error.message}</p>}
                 <div className="option-grid">
                   {items.data?.items
@@ -789,7 +805,7 @@ function PriceEditor({
                       disabled={itemPage === 1}
                       onClick={() => setItemPage((x) => x - 1)}
                     >
-                      Previous items
+                      {tr('Previous items')}
                     </Button>
                     <Button
                       type="button"
@@ -797,13 +813,13 @@ function PriceEditor({
                       disabled={itemPage * 20 >= (items.data?.total ?? 0)}
                       onClick={() => setItemPage((x) => x + 1)}
                     >
-                      Next items
+                      {tr('Next items')}
                     </Button>
                   </div>
                 )}
                 {item && (
                   <div className="grid gap-2">
-                    <label htmlFor="sale-price-mode">Sale mode</label>
+                    <label htmlFor="sale-price-mode">{tr('Sale mode')}</label>
                     <select
                       id="sale-price-mode"
                       key={item.id}
@@ -812,7 +828,7 @@ function PriceEditor({
                     >
                       {modes[item.kind]?.map((mode) => (
                         <option key={mode} value={mode}>
-                          {labels[mode]}
+                          {tr(labels[mode])}
                         </option>
                       ))}
                     </select>
@@ -821,12 +837,12 @@ function PriceEditor({
               </>
             ) : (
               <p className="muted-text">
-                {editor.sku} — {labels[editor.mode]}
+                {editor.sku} — {tr(labels[editor.mode])}
               </p>
             )}
             <Field
               key={editor === 'new' ? 'new' : editor.id}
-              label="Unit price (PKR)"
+              label={tr('Unit price (PKR)')}
               name="price"
               type="number"
               min="0"
@@ -842,7 +858,7 @@ function PriceEditor({
                 name="active"
                 defaultChecked={editor === 'new' || editor.active}
               />
-              Price active
+              {tr('Price active')}
             </label>
             {error && <p role="alert">{error}</p>}
             <div className="dialog-actions">
@@ -852,17 +868,17 @@ function PriceEditor({
                 disabled={busy}
                 onClick={() => setEditor(null)}
               >
-                Cancel price
+                {tr('Cancel price')}
               </Button>
               <Button disabled={busy || (editor === 'new' && !item)}>
-                Save price
+                {tr('Save price')}
               </Button>
             </div>
           </form>
         )}
       </Modal>
       <DataTable
-        title="Selling prices"
+        title={tr('Selling prices')}
         data={prices.data?.items ?? []}
         rowCount={prices.data?.total ?? 0}
         pagination={pagination}
@@ -882,14 +898,17 @@ function PriceEditor({
           },
           {
             header: 'Mode',
-            cell: ({ row }) => labels[row.original.mode] ?? row.original.mode,
+            cell: ({ row }) =>
+              tr(labels[row.original.mode] ?? row.original.mode),
           },
           {
             header: 'Price',
             cell: ({ row }) => (
               <strong>
                 {money(row.original.unitPrice)}
-                <span className="cell-note">per {row.original.unit}</span>
+                <span className="cell-note">
+                  {tr('per')} {row.original.unit}
+                </span>
               </strong>
             ),
           },
@@ -897,7 +916,7 @@ function PriceEditor({
             header: 'Status',
             cell: ({ row }) => (
               <StatusChip tone={row.original.active ? 'success' : 'neutral'}>
-                {row.original.active ? 'Active' : 'Inactive'}
+                {row.original.active ? tr('Active') : tr('Inactive')}
               </StatusChip>
             ),
           },
@@ -914,10 +933,10 @@ function PriceEditor({
                       }}
                     >
                       <Pencil aria-hidden="true" size={16} />
-                      Edit
+                      {tr('Edit')}
                       <span className="sr-only">
                         {' '}
-                        price for {row.original.sku}
+                        {tr('price for')} {row.original.sku}
                       </span>
                     </Button>
                   ),

@@ -6,6 +6,7 @@ import { api, type Branch, type Me, type Tenant } from './access-api';
 import { Button } from './components/ui/button';
 import { Field } from './components/ui/form';
 import { PlanChooser } from './PlanChooser';
+import { tr } from './i18n';
 
 const steps = [
   { key: 'business', label: 'Business details' },
@@ -16,7 +17,7 @@ const steps = [
 
 function Stepper({ current }: { current: number }) {
   return (
-    <ol className="stepper" aria-label="Setup progress">
+    <ol className="stepper" aria-label={tr('Setup progress')}>
       {steps.map((step, i) => {
         const state = i < current ? 'done' : i === current ? 'current' : 'next';
         return (
@@ -32,9 +33,9 @@ function Stepper({ current }: { current: number }) {
               {step.label}
               <span className="sr-only">
                 {state === 'done'
-                  ? ' (completed)'
+                  ? tr(' (completed)')
                   : state === 'next'
-                    ? ' (not started)'
+                    ? tr(' (not started)')
                     : ''}
               </span>
             </span>
@@ -116,7 +117,7 @@ export function SetupWizard({
   }
   const skip = (
     <Button type="button" variant="ghost" onClick={next} disabled={busy}>
-      Skip for now
+      {tr('Skip for now')}
     </Button>
   );
   const text = (d: FormData, key: string) => String(d.get(key) ?? '');
@@ -130,8 +131,10 @@ export function SetupWizard({
       )}
       {step === 0 && (
         <StepCard
-          title="Business details"
-          description="This name appears on receipts and vouchers. You can change it later in Business settings."
+          title={tr('Business details')}
+          description={tr(
+            'This name appears on receipts and vouchers. You can change it later in Business settings.',
+          )}
           icon={<Building2 size={22} />}
         >
           <form
@@ -154,14 +157,14 @@ export function SetupWizard({
           >
             <div className="form-grid">
               <Field
-                label="Business name"
+                label={tr('Business name')}
                 name="name"
                 defaultValue={tenant.name}
                 required
                 maxLength={120}
               />
               <Field
-                label="Time zone"
+                label={tr('Time zone')}
                 name="timeZone"
                 defaultValue={tenant.timeZone}
                 required
@@ -170,7 +173,7 @@ export function SetupWizard({
             <div className="setup-actions">
               {skip}
               <Button disabled={busy || !can('tenant.manage')}>
-                Save and continue
+                {tr('Save and continue')}
               </Button>
             </div>
           </form>
@@ -178,8 +181,10 @@ export function SetupWizard({
       )}
       {step === 1 && (
         <StepCard
-          title="Branch and store"
-          description="Name your first branch and add the store or warehouse where you keep cylinders and gas."
+          title={tr('Branch and store')}
+          description={tr(
+            'Name your first branch and add the store or warehouse where you keep cylinders and gas.',
+          )}
           icon={<Building2 size={22} />}
         >
           <form
@@ -214,30 +219,30 @@ export function SetupWizard({
           >
             <div className="form-grid">
               <Field
-                label="Branch name"
+                label={tr('Branch name')}
                 name="branchName"
                 defaultValue={branch?.name}
                 required
                 maxLength={120}
               />
               <Field
-                label="Store or warehouse name"
+                label={tr('Store or warehouse name')}
                 name="warehouse"
                 defaultValue="Main store"
                 required
                 maxLength={120}
               />
               <Field
-                label="Location (optional)"
+                label={tr('Location (optional)')}
                 name="location"
                 maxLength={200}
-                placeholder="e.g. Back yard, rack A"
+                placeholder={tr('e.g. Back yard, rack A')}
               />
             </div>
             <div className="setup-actions">
               {skip}
               <Button disabled={busy || !can('catalog.manage')}>
-                Save and continue
+                {tr('Save and continue')}
               </Button>
             </div>
           </form>
@@ -245,8 +250,10 @@ export function SetupWizard({
       )}
       {step === 2 && (
         <StepCard
-          title="Cash drawer"
-          description="Count the cash you have now. This becomes the drawer used by sales, purchases and daily closing."
+          title={tr('Cash drawer')}
+          description={tr(
+            'Count the cash you have now. This becomes the drawer used by sales, purchases and daily closing.',
+          )}
           icon={<Wallet size={22} />}
         >
           <form
@@ -271,14 +278,14 @@ export function SetupWizard({
           >
             <div className="form-grid">
               <Field
-                label="Drawer name"
+                label={tr('Drawer name')}
                 name="name"
                 defaultValue="Main drawer"
                 required
                 maxLength={120}
               />
               <Field
-                label="Cash in the drawer now (PKR)"
+                label={tr('Cash in the drawer now (PKR)')}
                 name="opening"
                 type="number"
                 min="0"
@@ -290,7 +297,7 @@ export function SetupWizard({
             <div className="setup-actions">
               {skip}
               <Button disabled={busy || !can('finance.manage')}>
-                Save and continue
+                {tr('Save and continue')}
               </Button>
             </div>
           </form>
@@ -298,14 +305,16 @@ export function SetupWizard({
       )}
       {step === 3 && (
         <StepCard
-          title="Choose a plan"
-          description="Keep using your free trial or request a plan now. Every paid plan is activated after the Gas365 team confirms your payment."
+          title={tr('Choose a plan')}
+          description={tr(
+            'Keep using your free trial or request a plan now. Every paid plan is activated after the Gas365 team confirms your payment.',
+          )}
           icon={<Check size={22} />}
         >
           <PlanChooser user={user} />
           <div className="setup-actions">
             <Button type="button" onClick={next}>
-              Continue
+              {tr('Continue')}
             </Button>
           </div>
         </StepCard>
@@ -313,18 +322,18 @@ export function SetupWizard({
       {step === 4 && (
         <section className="card setup-done" aria-labelledby="setup-done-title">
           <PartyPopper aria-hidden="true" size={40} />
-          <h2 id="setup-done-title">Your business is ready</h2>
+          <h2 id="setup-done-title">{tr('Your business is ready')}</h2>
           <p className="section-help">
-            Next, add your LPG, cylinder and spare-part items, record opening
-            stock and add customers. The Getting started checklist on the
-            overview tracks what is left.
+            {tr(
+              'Next, add your LPG, cylinder and spare-part items, record opening stock and add customers. The Getting started checklist on the overview tracks what is left.',
+            )}
           </p>
           <div className="setup-actions center">
             <Button variant="outline" asChild>
-              <Link to="/workspace/inventory">Add items</Link>
+              <Link to="/workspace/inventory">{tr('Add items')}</Link>
             </Button>
             <Button onClick={() => navigate('/workspace')}>
-              Go to overview
+              {tr('Go to overview')}
             </Button>
           </div>
         </section>

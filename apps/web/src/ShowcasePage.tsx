@@ -4,6 +4,7 @@ import { Field, Input } from './components/ui/form';
 import { ConfirmButton, Modal, Notification } from './components/ui/feedback';
 import { PageState, StatusBadge } from './components/page';
 import { DataTable } from './components/DataTable';
+import { tr } from './i18n';
 
 const samples = [
   {
@@ -39,10 +40,11 @@ export function ShowcasePage() {
   return (
     <div className="showcase-grid">
       <section className="panel">
-        <h2>Color & typography</h2>
+        <h2>{tr('Color & typography')}</h2>
         <p className="section-help">
-          Inter, an open font hosted with the application. Text uses accessible
-          shades of the brand palette.
+          {tr(
+            'Inter, an open font hosted with the application. Text uses accessible shades of the brand palette.',
+          )}
         </p>
         <div className="swatches">
           {['navy', 'blue', 'surface', 'success', 'warning', 'danger'].map(
@@ -61,37 +63,39 @@ export function ShowcasePage() {
         </div>
       </section>
       <section className="panel">
-        <h2>Actions & confirmation</h2>
+        <h2>{tr('Actions & confirmation')}</h2>
         <p className="section-help">
-          These examples do not create or change business records.
+          {tr('These examples do not create or change business records.')}
         </p>
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => setNotice((n) => n + 1)}>
-            Show notification
+            {tr('Show notification')}
           </Button>
           <Button variant="secondary" disabled>
-            Unavailable action
+            {tr('Unavailable action')}
           </Button>
           <ConfirmButton
-            title="Confirm sample action?"
-            description="This is a component demonstration. No business data will change."
+            title={tr('Confirm sample action?')}
+            description={tr(
+              'This is a component demonstration. No business data will change.',
+            )}
             onConfirm={() => setNotice((n) => n + 1)}
           >
-            Preview confirmation
+            {tr('Preview confirmation')}
           </ConfirmButton>
           <Modal
-            title="Sample record"
-            description="A detail drawer for quick inspection."
+            title={tr('Sample record')}
+            description={tr('A detail drawer for quick inspection.')}
             drawer
-            trigger={<Button variant="outline">Preview drawer</Button>}
+            trigger={<Button variant="outline">{tr('Preview drawer')}</Button>}
           >
             <dl className="detail-list">
               <div>
-                <dt>Reference</dt>
-                <dd>SAMPLE-001</dd>
+                <dt>{tr('Reference')}</dt>
+                <dd>{tr('SAMPLE-001')}</dd>
               </div>
               <div>
-                <dt>Status</dt>
+                <dt>{tr('Status')}</dt>
                 <dd>
                   <StatusBadge status="Draft" />
                 </dd>
@@ -101,9 +105,11 @@ export function ShowcasePage() {
         </div>
       </section>
       <section className="panel">
-        <h2>Form fields</h2>
+        <h2>{tr('Form fields')}</h2>
         <p className="section-help">
-          Required labels, help text and errors stay connected to their fields.
+          {tr(
+            'Required labels, help text and errors stay connected to their fields.',
+          )}
         </p>
         <form
           noValidate
@@ -117,31 +123,31 @@ export function ShowcasePage() {
         >
           <Field
             name="sampleName"
-            label="Sample name"
-            hint="Use any name to try this field."
+            label={tr('Sample name')}
+            hint={tr('Use any name to try this field.')}
             error={error}
             required
           />
           <Field
-            label="Read-only example"
+            label={tr('Read-only example')}
             value="PKR · Pakistani rupee"
             readOnly
           />
-          <Button type="submit">Validate sample</Button>
+          <Button type="submit">{tr('Validate sample')}</Button>
         </form>
       </section>
       <section className="panel">
-        <h2>Page states</h2>
+        <h2>{tr('Page states')}</h2>
         <label className="mt-4">
-          Preview state
+          {tr('Preview state')}
           <select
             value={state}
             onChange={(e) => setState(e.target.value as typeof state)}
           >
-            <option value="empty">Empty</option>
-            <option value="loading">Loading</option>
-            <option value="error">Error</option>
-            <option value="denied">Permission denied</option>
+            <option value="empty">{tr('Empty')}</option>
+            <option value="loading">{tr('Loading')}</option>
+            <option value="error">{tr('Error')}</option>
+            <option value="denied">{tr('Permission denied')}</option>
           </select>
         </label>
         <PageState
@@ -166,17 +172,18 @@ export function ShowcasePage() {
         />
       </section>
       <section className="panel showcase-wide">
-        <h2>Table & mobile records</h2>
+        <h2>{tr('Table & mobile records')}</h2>
         <p className="section-help">
-          Synthetic samples only. Pagination and filters are controlled by the
-          page; operational pages will fetch records from the server.
+          {tr(
+            'Synthetic samples only. Pagination and filters are controlled by the page; operational pages will fetch records from the server.',
+          )}
         </p>
         <label htmlFor="sample-search" className="sr-only">
-          Filter sample records
+          {tr('Filter sample records')}
         </label>
         <Input
           id="sample-search"
-          placeholder="Filter sample records…"
+          placeholder={tr('Filter sample records…')}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -184,7 +191,7 @@ export function ShowcasePage() {
           }}
         />
         <DataTable
-          title="Sample records"
+          title={tr('Sample records')}
           data={filtered.slice(
             pagination.pageIndex * pagination.pageSize,
             (pagination.pageIndex + 1) * pagination.pageSize,

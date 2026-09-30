@@ -8,6 +8,7 @@ import {
   type ImportBatch,
   type ImportType,
 } from './operations-types';
+import { tr } from './i18n';
 
 const root = '/api/workspace/imports';
 
@@ -117,11 +118,11 @@ export function ImportsPage({ user }: { user: Me }) {
         </p>
       )}
       <section className="panel grid gap-4">
-        <h2>1. Choose what to import</h2>
+        <h2>{tr('1. Choose what to import')}</h2>
         {types.error && <p role="alert">{types.error.message}</p>}
         <form className="grid gap-3" onSubmit={upload}>
           <label className="grid gap-1">
-            Data to import
+            {tr('Data to import')}
             <select
               value={definition?.key ?? ''}
               onChange={(e) => {
@@ -142,23 +143,23 @@ export function ImportsPage({ user }: { user: Me }) {
               <div
                 className="data-table report-table overflow-x-auto"
                 role="region"
-                aria-label="Expected columns"
+                aria-label={tr('Expected columns')}
                 tabIndex={0}
               >
                 <table>
-                  <caption>Expected columns</caption>
+                  <caption>{tr('Expected columns')}</caption>
                   <thead>
                     <tr>
-                      <th scope="col">Column</th>
-                      <th scope="col">Required</th>
-                      <th scope="col">Notes</th>
+                      <th scope="col">{tr('Column')}</th>
+                      <th scope="col">{tr('Required')}</th>
+                      <th scope="col">{tr('Notes')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {definition.fields.map((f) => (
                       <tr key={f.key}>
                         <td>{f.label}</td>
-                        <td>{f.required ? 'Required' : 'Optional'}</td>
+                        <td>{f.required ? tr('Required') : tr('Optional')}</td>
                         <td>{f.hint}</td>
                       </tr>
                     ))}
@@ -168,27 +169,34 @@ export function ImportsPage({ user }: { user: Me }) {
             </>
           )}
           <label className="grid gap-1">
-            Excel (.xlsx) or CSV file, up to 2 MB and 5,000 rows
+            {tr('Excel (.xlsx) or CSV file, up to 2 MB and 5,000 rows')}
             <input name="file" type="file" accept=".xlsx,.csv" required />
           </label>
-          <Button disabled={busy || !definition}>Upload and check</Button>
+          <Button disabled={busy || !definition}>
+            {tr('Upload and check')}
+          </Button>
         </form>
       </section>
       {batch && definition && (
         <section className="panel grid gap-4" aria-live="polite">
-          <h2>2. Check the columns and preview</h2>
+          <h2>{tr('2. Check the columns and preview')}</h2>
           <p>
-            {batch.fileName} · {batch.rowCount} rows ·{' '}
-            <strong>{importStatusText[batch.status]}</strong>
-            {batch.errorCount > 0 && ` · ${batch.errorCount} rows need fixes`}
-            {batch.committedCount > 0 && ` · ${batch.committedCount} imported`}
+            {tr('{file} · {rows} rows ·', {
+              file: batch.fileName,
+              rows: batch.rowCount,
+            })}{' '}
+            <strong>{tr(importStatusText[batch.status])}</strong>
+            {batch.errorCount > 0 &&
+              tr(' · {count} rows need fixes', { count: batch.errorCount })}
+            {batch.committedCount > 0 &&
+              tr(' · {count} imported', { count: batch.committedCount })}
           </p>
           <form className="grid gap-3" onSubmit={remap}>
             <div className="flex flex-wrap gap-4">
               {definition.fields.map((f) => (
                 <label key={f.key} className="grid gap-1">
                   {f.label}
-                  {f.required ? ' (required)' : ''}
+                  {f.required ? tr(' (required)') : ''}
                   <select
                     name={f.key}
                     defaultValue={batch.mapping[f.key] ?? ''}
@@ -198,7 +206,7 @@ export function ImportsPage({ user }: { user: Me }) {
                       'PartiallyCommitted',
                     ].includes(batch.status)}
                   >
-                    <option value="">Not in file</option>
+                    <option value="">{tr('Not in file')}</option>
                     {batch.headers.map((h) => (
                       <option key={h} value={h}>
                         {h}
@@ -210,28 +218,28 @@ export function ImportsPage({ user }: { user: Me }) {
             </div>
             {['Uploaded', 'Validated', 'Invalid'].includes(batch.status) && (
               <Button variant="secondary" disabled={busy}>
-                Match columns and check again
+                {tr('Match columns and check again')}
               </Button>
             )}
           </form>
           <div
             className="data-table report-table overflow-x-auto"
             role="region"
-            aria-label="Import preview"
+            aria-label={tr('Import preview')}
             tabIndex={0}
           >
             <table>
-              <caption>Preview — rows with problems first</caption>
+              <caption>{tr('Preview — rows with problems first')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Row</th>
-                  <th scope="col">Result</th>
+                  <th scope="col">{tr('Row')}</th>
+                  <th scope="col">{tr('Result')}</th>
                   {definition.fields.map((f) => (
                     <th key={f.key} scope="col">
                       {f.label}
                     </th>
                   ))}
-                  <th scope="col">Problems</th>
+                  <th scope="col">{tr('Problems')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -262,7 +270,7 @@ export function ImportsPage({ user }: { user: Me }) {
                   )
                 }
               >
-                Download error list
+                {tr('Download error list')}
               </Button>
             )}
             {canCommit && (
@@ -282,21 +290,21 @@ export function ImportsPage({ user }: { user: Me }) {
                 }
               >
                 {batch.status === 'PartiallyCommitted'
-                  ? 'Retry remaining rows'
+                  ? tr('Retry remaining rows')
                   : `3. Import ${batch.rowCount} rows`}
               </Button>
             )}
           </div>
           <p className="section-help">
-            Each row is saved through the same checks as manual entry. Retrying
-            only processes rows that have not been imported, so nothing is
-            duplicated.
+            {tr(
+              'Each row is saved through the same checks as manual entry. Retrying only processes rows that have not been imported, so nothing is duplicated.',
+            )}
           </p>
         </section>
       )}
       <section className="panel grid gap-3">
-        <h2>Your recent imports</h2>
-        {history.data?.items.length === 0 && <p>No imports yet.</p>}
+        <h2>{tr('Your recent imports')}</h2>
+        {history.data?.items.length === 0 && <p>{tr('No imports yet.')}</p>}
         <ul className="grid gap-2">
           {history.data?.items.map((b) => (
             <li key={b.id}>
@@ -317,8 +325,8 @@ export function ImportsPage({ user }: { user: Me }) {
                 {b.fileName}
               </button>{' '}
               · {types.data?.find((t) => t.key === b.type)?.title ?? b.type} ·{' '}
-              {importStatusText[b.status]} · {b.committedCount}/{b.rowCount}{' '}
-              imported
+              {tr(importStatusText[b.status])} · {b.committedCount}/{b.rowCount}{' '}
+              {tr('imported')}
             </li>
           ))}
         </ul>

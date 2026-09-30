@@ -12,6 +12,7 @@ import {
   type Subscription,
   type SupportGrant,
 } from './platform-types';
+import { tr } from './i18n';
 
 const statusText = {
   Trial: 'Free trial',
@@ -43,27 +44,32 @@ export function OnboardingChecklist({ user }: { user: Me }) {
       {!basicsDone && user.permissions.includes('tenant.manage') && (
         <section className="setup-hero" aria-labelledby="setup-hero-title">
           <div>
-            <h2 id="setup-hero-title">Set up your business in 4 steps</h2>
+            <h2 id="setup-hero-title">
+              {tr('Set up your business in 4 steps')}
+            </h2>
             <p>
-              Business details, your branch and store, the cash drawer and a
-              plan. It takes about five minutes and every step can be skipped.
+              {tr(
+                'Business details, your branch and store, the cash drawer and a plan. It takes about five minutes and every step can be skipped.',
+              )}
             </p>
           </div>
           <Button asChild>
-            <Link to="/workspace/setup">Start setup</Link>
+            <Link to="/workspace/setup">{tr('Start setup')}</Link>
           </Button>
         </section>
       )}
-      <section className="panel grid gap-3" aria-label="Getting started">
-        <h2>Getting started</h2>
+      <section className="panel grid gap-3" aria-label={tr('Getting started')}>
+        <h2>{tr('Getting started')}</h2>
         <p className="section-help">
-          {done} of {data.steps.length} steps done. Steps complete themselves as
-          you set up the business.
+          {tr(
+            '{done} of {total} steps done. Steps complete themselves as you set up the business.',
+            { done, total: data.steps.length },
+          )}
         </p>
         <ol className="grid gap-2">
           {data.steps.map((s) => (
             <li key={s.key}>
-              <strong>{s.done ? 'Done' : 'To do'}</strong> ·{' '}
+              <strong>{s.done ? tr('Done') : tr('To do')}</strong> ·{' '}
               {s.done ? (
                 s.label
               ) : (
@@ -89,7 +95,7 @@ export function OnboardingChecklist({ user }: { user: Me }) {
                 )
               }
             >
-              Hide checklist
+              {tr('Hide checklist')}
             </Button>
           </div>
         )}
@@ -174,52 +180,55 @@ export function SubscriptionPage({
       {s && (
         <>
           <section className="panel plan-hero grid gap-3">
-            <h2>Your plan</h2>
+            <h2>{tr('Your plan')}</h2>
             <p className="plan-hero-line">
-              <strong>{s.plan?.name ?? 'No plan'}</strong> ·{' '}
-              {statusText[s.status]}
+              <strong>{s.plan?.name ?? tr('No plan')}</strong> ·{' '}
+              {tr(statusText[s.status])}
               {s.status === 'Trial' &&
                 s.trialEndsAt &&
                 ` · ${daysLeft(s.trialEndsAt)} days left (ends ${dateText(s.trialEndsAt, timeZone)})`}
               {s.status === 'Active' &&
                 (s.paidThrough
                   ? ` · paid through ${dateText(s.paidThrough, timeZone)}`
-                  : ' · pilot access with no end date')}
+                  : tr(' · pilot access with no end date'))}
             </p>
             {s.status === 'Expired' && (
               <p>
-                Your data is safe and remains readable and exportable. Choose a
-                plan below to make changes again.
+                {tr(
+                  'Your data is safe and remains readable and exportable. Choose a plan below to make changes again.',
+                )}
               </p>
             )}
             {s.requestedPlan && (
               <p>
-                Requested: <strong>{s.requestedPlan.name}</strong>
+                {tr('Requested:')} <strong>{s.requestedPlan.name}</strong>
                 {s.requestedBillingPeriod === 'Yearly'
-                  ? ' (billed yearly)'
-                  : ' (billed monthly)'}
-                . The Gas365 team activates it after confirming your payment.
+                  ? tr(' (billed yearly)')
+                  : tr(' (billed monthly)')}
+                {tr(
+                  '. The Gas365 team activates it after confirming your payment.',
+                )}
               </p>
             )}
           </section>
           <section className="panel grid gap-3">
-            <h2>Usage in {s.usage.month}</h2>
+            <h2>{tr('Usage in {month}', { month: s.usage.month })}</h2>
             <div
               className="data-table report-table overflow-x-auto"
               role="region"
-              aria-label="Usage table"
+              aria-label={tr('Usage table')}
               tabIndex={0}
             >
               <table>
-                <caption>Usage against your plan limits</caption>
+                <caption>{tr('Usage against your plan limits')}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Measure</th>
+                    <th scope="col">{tr('Measure')}</th>
                     <th scope="col" className="text-right">
-                      This month / now
+                      {tr('This month / now')}
                     </th>
                     <th scope="col" className="text-right">
-                      Plan limit
+                      {tr('Plan limit')}
                     </th>
                   </tr>
                 </thead>
@@ -239,7 +248,7 @@ export function SubscriptionPage({
                       <td>{label}</td>
                       <td className="text-right tabular-nums">{value}</td>
                       <td className="text-right tabular-nums">
-                        {limit ?? 'No limit'}
+                        {limit ?? tr('No limit')}
                       </td>
                     </tr>
                   ))}
@@ -251,7 +260,7 @@ export function SubscriptionPage({
             <PlanChooser user={user} />
           </section>
           <section className="panel grid gap-3">
-            <h2>Billing history</h2>
+            <h2>{tr('Billing history')}</h2>
             <ul className="setup-list">
               {s.history.map((h) => (
                 <li key={h.id}>
@@ -268,41 +277,41 @@ export function SubscriptionPage({
         </>
       )}
       <section className="panel grid gap-3">
-        <h2>Support access</h2>
+        <h2>{tr('Support access')}</h2>
         <p className="section-help">
-          The Gas365 team can only look inside your business when you allow it.
-          Access is read-only, ends automatically, and every page they view is
-          recorded in your activity log.
+          {tr(
+            'The Gas365 team can only look inside your business when you allow it. Access is read-only, ends automatically, and every page they view is recorded in your activity log.',
+          )}
         </p>
         <form className="grid gap-3" onSubmit={grant}>
           <label className="grid gap-1">
-            Allow access for
+            {tr('Allow access for')}
             <select name="hours" defaultValue="4">
-              <option value="1">1 hour</option>
-              <option value="4">4 hours</option>
-              <option value="24">24 hours</option>
-              <option value="72">3 days</option>
+              <option value="1">{tr('1 hour')}</option>
+              <option value="4">{tr('4 hours')}</option>
+              <option value="24">{tr('24 hours')}</option>
+              <option value="72">{tr('3 days')}</option>
             </select>
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" name="includeFinance" />
-            Include cash, credit and profit figures
+            {tr('Include cash, credit and profit figures')}
           </label>
           <label className="grid gap-1">
-            What do you need help with?
+            {tr('What do you need help with?')}
             <input name="reason" required maxLength={300} />
           </label>
-          <Button disabled={busy}>Allow support access</Button>
+          <Button disabled={busy}>{tr('Allow support access')}</Button>
         </form>
         <ul className="grid gap-2">
           {grants.data?.map((g) => (
             <li key={g.id} className="record-row">
               <span>
-                {g.active ? 'Active' : 'Ended'} · until{' '}
+                {g.active ? tr('Active') : tr('Ended')} {tr('· until')}{' '}
                 {new Date(g.expiresAt).toLocaleString('en-PK', { timeZone })} ·{' '}
                 {g.includeFinance
-                  ? 'including financial figures'
-                  : 'operational data only'}{' '}
+                  ? tr('including financial figures')
+                  : tr('operational data only')}{' '}
                 · {g.reason}
               </span>
               {g.active && (
@@ -321,7 +330,7 @@ export function SubscriptionPage({
                     )
                   }
                 >
-                  Revoke
+                  {tr('Revoke')}
                 </Button>
               )}
             </li>
