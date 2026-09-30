@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Gas365.Application;
 using Gas365.Infrastructure;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -51,7 +52,7 @@ public static class AccessSetup
         }).AddEntityFrameworkStores<Gas365DbContext>().AddDefaultTokenProviders();
         builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(1));
         var development = builder.Environment.IsDevelopment();
-        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+        var authentication = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
         {
             options.Cookie.Name = development ? "Gas365.Session" : "__Host-Gas365.Session";
             options.Cookie.HttpOnly = true;
@@ -61,6 +62,29 @@ public static class AccessSetup
             options.SlidingExpiration = false;
             options.EventsType = typeof(SessionEvents);
         });
+        // Google sign-in is off unless both values are configured (owner decision, 2026-09-30).
+        if (ExternalSignIn.GoogleConfigured(builder.Configuration))
+        {
+            // Holds the verified Google identity for a few minutes while the owner finishes sign-up; never a workspace session.
+            authentication.AddCookie(ExternalSignIn.Scheme, options =>
+            {
+                options.Cookie.Name = development ? "Gas365.External" : "__Host-Gas365.External";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = development ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(15);
+                options.SlidingExpiration = false;
+            });
+            authentication.AddGoogle(options =>
+            {
+                options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+                options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+                options.SignInScheme = ExternalSignIn.Scheme;
+                options.CallbackPath = "/api/auth/google/callback";
+                options.SaveTokens = false;
+                options.ClaimActions.MapJsonKey(ExternalSignIn.EmailVerifiedClaim, "email_verified");
+            });
+        }
         builder.Services.AddAuthorization();
         builder.Services.AddAntiforgery(options =>
         {

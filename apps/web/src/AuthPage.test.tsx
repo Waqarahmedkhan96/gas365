@@ -9,6 +9,17 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
+// The sign-in page asks which external providers are enabled; answer that by URL so queued mocks stay in order.
+function withProviders(
+  mock: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+) {
+  return vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
+    String(input).endsWith('/api/auth/providers')
+      ? Promise.resolve(new Response('{"google":false}'))
+      : mock(input, init),
+  );
+}
+
 function renderPage(mode: 'login' | 'confirm') {
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -31,7 +42,7 @@ it('recovers from rejected credentials and navigates after a successful retry', 
     )
     .mockResolvedValueOnce(new Response('{"token":"csrf-two"}'))
     .mockResolvedValueOnce(new Response(null, { status: 204 }));
-  vi.stubGlobal('fetch', fetch);
+  vi.stubGlobal('fetch', withProviders(fetch));
   renderPage('login');
   fireEvent.change(screen.getByLabelText('Email address'), {
     target: { value: 'synthetic@test.example' },

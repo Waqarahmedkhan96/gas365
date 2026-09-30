@@ -90,6 +90,20 @@ export function AuthPage({ mode }: { mode: Mode }) {
   useEffect(() => {
     document.title = `${titles[mode]} · Gas365`;
   }, [mode]);
+  // Google appears only when the server has it configured.
+  const [google, setGoogle] = useState(false);
+  useEffect(() => {
+    if (mode !== 'login' && mode !== 'register') return;
+    let live = true;
+    fetch('/api/auth/providers', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : { google: false }))
+      .then((p: { google?: boolean }) => live && setGoogle(!!p.google))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [mode]);
+  const googleFailed = params.get('error') === 'google';
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -173,6 +187,25 @@ export function AuthPage({ mode }: { mode: Mode }) {
           </Link>
           <h1>{titles[mode]}</h1>
           <p className="auth-subtitle">{subtitles[mode]}</p>
+          {googleFailed && mode === 'login' && (
+            <p role="alert" className="auth-alert">
+              Google sign-in could not be completed. Try again, or use your
+              email and password.
+            </p>
+          )}
+          {google && (
+            <>
+              <a className="google-button" href="/api/auth/google/start">
+                <span className="google-mark" aria-hidden="true">
+                  G
+                </span>
+                Continue with Google
+              </a>
+              <p className="auth-divider">
+                <span>or use your email</span>
+              </p>
+            </>
+          )}
           <form className="auth-form" onSubmit={submit}>
             {mode === 'register' && (
               <>

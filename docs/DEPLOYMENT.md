@@ -49,7 +49,19 @@ If a data problem needs restoring rather than a code rollback, see section 5. Ne
 2. Check the restored data. Then stop `api` and `web`, set `POSTGRES_DB=gas365_restore_check` in `.env` and run `./deploy.sh <current-tag>`. After confirming the restore, rename the databases during a maintenance window.
 3. The restore procedure is exercised locally with `node scripts/verify-restore.mjs`. It dumps, restores into an isolated database, compares row counts, applies this release's migrations and drops the copy. Run it before each release and quarterly on staging with a production backup.
 
-## 6. Monitoring and alerting
+## 6. Optional Google sign-in
+
+Google sign-in is off until both keys are set (owner decision, 2026-09-30).
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and create a project named Gas365.
+2. Under **APIs & Services → OAuth consent screen**, choose **External**, enter the app name Gas365, your support email and the domain, and add the scopes `openid`, `email` and `profile`. Publish the app.
+3. Under **Credentials → Create credentials → OAuth client ID**, choose **Web application**.
+4. Add the authorised redirect URI `https://<your domain>/api/auth/google/callback` (for example `https://gas365.pk/api/auth/google/callback`). Add the staging domain too if you test there.
+5. Copy the client ID and secret into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the server's `.env` (never in Git), then redeploy.
+
+Behaviour: a Google-verified email that matches an existing account is linked to it; a new Google user finishes sign-up with a name and business name and gets the normal 14-day trial. Unverified Google emails are refused. Google accounts have no password until the owner uses "Forgot password".
+
+## 7. Monitoring and alerting
 
 | Signal          | How                                                                                                                                                   | Alert                                                    |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
@@ -60,7 +72,7 @@ If a data problem needs restoring rather than a code rollback, see section 5. Ne
 | Certificates    | Caddy renews automatically; the uptime monitor catches failures                                                                                       | HTTPS error                                              |
 | Logs            | Structured JSON from the API (`docker compose logs api`), with no passwords, tokens or record contents                                                | On investigation                                         |
 
-## 7. Security checklist per environment
+## 8. Security checklist per environment
 
 - Secrets exist only in the server `.env` (mode 600) and GitHub environment secrets, never in the repository. CI runs gitleaks on the full history.
 - `ASPNETCORE_ENVIRONMENT=Production` makes the API refuse to start with missing or unsafe settings, including an HTTP public origin or a default password.
