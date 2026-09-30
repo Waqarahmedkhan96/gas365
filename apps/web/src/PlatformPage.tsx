@@ -109,7 +109,8 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                       ` until ${dateText(t.trialEndsAt, timeZone)}`}
                     {t.paidThrough &&
                       ` · paid through ${dateText(t.paidThrough, timeZone)}`}
-                    {t.requestedPlan && ` · requested ${t.requestedPlan}`}
+                    {t.requestedPlan &&
+                      ` · requested ${t.requestedPlan} (${(t.requestedBillingPeriod ?? 'Monthly').toLowerCase()})`}
                   </p>
                   <p className="section-help">
                     {t.users} users · {t.branches} branches ·{' '}
@@ -157,7 +158,9 @@ export function PlatformPage({ timeZone }: { timeZone: string }) {
                         type="number"
                         min={1}
                         max={24}
-                        defaultValue={1}
+                        defaultValue={
+                          t.requestedBillingPeriod === 'Yearly' ? 12 : 1
+                        }
                         required
                       />
                     </label>

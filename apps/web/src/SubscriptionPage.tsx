@@ -11,6 +11,7 @@ import {
   type Onboarding,
   type Subscription,
   type SupportGrant,
+  type BillingPeriod,
 } from './platform-types';
 
 const statusText = {
@@ -90,6 +91,7 @@ export function SubscriptionPage({
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [period, setPeriod] = useState<BillingPeriod | null>(null);
   const get = <T,>(path: string) =>
     api<T>('/api/workspace' + path, 'GET', undefined, user.tenantId);
   const subscription = useQuery({
@@ -139,6 +141,8 @@ export function SubscriptionPage({
   }
   const s = subscription.data;
   const limits = s?.plan;
+  const billing: BillingPeriod =
+    period ?? s?.requestedBillingPeriod ?? 'Monthly';
   return (
     <div className="grid gap-6">
       {message && (
@@ -175,8 +179,11 @@ export function SubscriptionPage({
             )}
             {s.requestedPlan && (
               <p>
-                Requested: <strong>{s.requestedPlan.name}</strong>. The Gas365
-                team activates it after confirming your payment.
+                Requested: <strong>{s.requestedPlan.name}</strong>
+                {s.requestedBillingPeriod === 'Yearly'
+                  ? ' (billed yearly)'
+                  : ' (billed monthly)'}
+                . The Gas365 team activates it after confirming your payment.
               </p>
             )}
           </section>
@@ -226,7 +233,29 @@ export function SubscriptionPage({
             </div>
           </section>
           <section className="panel grid gap-3">
-            <h2>Plans</h2>
+            <div className="plans-header">
+              <h2>Plans</h2>
+              <div
+                className="billing-toggle"
+                role="radiogroup"
+                aria-label="Billing period"
+              >
+                {(['Monthly', 'Yearly'] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={billing === value}
+                    onClick={() => setPeriod(value)}
+                  >
+                    {value}
+                    {value === 'Yearly' && (
+                      <span className="billing-badge">2 months free</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
             <ul className="plan-grid">
               {s.plans.map((p) => (
                 <li
@@ -239,8 +268,15 @@ export function SubscriptionPage({
                   <p className="plan-price">
                     {p.monthlyPrice === null
                       ? 'Price on request'
-                      : `${money(p.monthlyPrice)} per month`}
+                      : billing === 'Yearly' && p.yearlyPrice !== null
+                        ? `${money(p.yearlyPrice)} per year`
+                        : `${money(p.monthlyPrice)} per month`}
                   </p>
+                  {billing === 'Yearly' && p.yearlySaving !== null && (
+                    <p className="plan-saving">
+                      You save {money(p.yearlySaving)} (2 months free)
+                    </p>
+                  )}
                   <ul className="plan-features">
                     <li>{p.maxBranches} branches</li>
                     <li>{p.maxUsers} users</li>
@@ -253,22 +289,29 @@ export function SubscriptionPage({
                   ) : (
                     <Button
                       className="w-full"
-                      disabled={busy || s.requestedPlan?.id === p.id}
+                      disabled={
+                        busy ||
+                        (s.requestedPlan?.id === p.id &&
+                          s.requestedBillingPeriod === billing)
+                      }
                       onClick={() =>
                         void run(async () => {
                           const r = await api<{ instructions: string }>(
                             '/api/workspace/subscription/request',
                             'POST',
-                            { planId: p.id },
+                            { planId: p.id, billingPeriod: billing },
                             user.tenantId,
                           );
                           setMessage(r.instructions);
                         }, '')
                       }
                     >
-                      {s.requestedPlan?.id === p.id
+                      {s.requestedPlan?.id === p.id &&
+                      s.requestedBillingPeriod === billing
                         ? 'Requested'
-                        : `Choose ${p.name}`}
+                        : billing === 'Yearly'
+                          ? `Choose ${p.name} yearly`
+                          : `Choose ${p.name}`}
                     </Button>
                   )}
                 </li>

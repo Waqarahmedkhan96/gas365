@@ -2127,6 +2127,10 @@ namespace Gas365.Infrastructure.Migrations
                     b.Property<Guid?>("PlanId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("RequestedBillingPeriod")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<Guid?>("RequestedPlanId")
                         .HasColumnType("uuid");
 
@@ -2151,6 +2155,8 @@ namespace Gas365.Infrastructure.Migrations
 
                     b.ToTable("Tenants", t =>
                         {
+                            t.HasCheckConstraint("CK_Tenant_BillingPeriod", "\"RequestedBillingPeriod\" IS NULL OR \"RequestedBillingPeriod\" IN ('Monthly','Yearly')");
+
                             t.HasCheckConstraint("CK_Tenant_Limits", "\"MaxBranches\" > 0 AND \"MaxUsers\" > 0 AND \"MaxAdmins\" > 0 AND \"MaxAdmins\" <= \"MaxUsers\"");
 
                             t.HasCheckConstraint("CK_Tenant_Notifications", "\"OverdueCreditDays\" BETWEEN 1 AND 365");

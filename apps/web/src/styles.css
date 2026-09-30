@@ -2831,3 +2831,48 @@ kbd {
 .grid > .status-card {
   margin-bottom: 0;
 }
+
+/* ---------- Billing period ---------- */
+.plans-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.billing-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--page);
+}
+.billing-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+}
+.billing-toggle button[aria-checked='true'] {
+  background: var(--primary);
+  color: #fff;
+}
+.billing-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--chip-success-bg);
+  color: var(--chip-success-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+.plan-saving {
+  color: var(--chip-success-text);
+  font-size: 13px;
+  font-weight: 600;
+}

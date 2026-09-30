@@ -19,10 +19,15 @@ public sealed partial class Gas365DbContext
 
         var tenant = model.Entity<Tenant>();
         tenant.Property(x => x.SubscriptionStatus).HasMaxLength(20);
+        tenant.Property(x => x.RequestedBillingPeriod).HasMaxLength(10);
         tenant.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
         tenant.HasOne<Plan>().WithMany().HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Restrict);
         tenant.HasOne<Plan>().WithMany().HasForeignKey(x => x.RequestedPlanId).OnDelete(DeleteBehavior.Restrict);
-        tenant.ToTable(t => t.HasCheckConstraint("CK_Tenant_Subscription", "\"SubscriptionStatus\" IN ('Trial','Active','Expired') AND (\"SubscriptionStatus\" <> 'Trial' OR \"TrialEndsAt\" IS NOT NULL)"));
+        tenant.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_Tenant_Subscription", "\"SubscriptionStatus\" IN ('Trial','Active','Expired') AND (\"SubscriptionStatus\" <> 'Trial' OR \"TrialEndsAt\" IS NOT NULL)");
+            t.HasCheckConstraint("CK_Tenant_BillingPeriod", "\"RequestedBillingPeriod\" IS NULL OR \"RequestedBillingPeriod\" IN ('Monthly','Yearly')");
+        });
 
         var history = model.Entity<SubscriptionEvent>();
         history.HasKey(x => new { x.TenantId, x.Id }); history.HasQueryFilter(x => x.TenantId == scope.TenantId);

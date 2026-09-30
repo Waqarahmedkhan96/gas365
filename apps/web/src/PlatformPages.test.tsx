@@ -35,6 +35,8 @@ const plan = (code: string, name: string, branches: number) => ({
   code,
   name,
   monthlyPrice: code === 'starter' ? 2500 : null,
+  yearlyPrice: code === 'starter' ? 25000 : null,
+  yearlySaving: code === 'starter' ? 5000 : null,
   maxBranches: branches,
   maxUsers: 10,
   maxAdmins: 3,
@@ -88,10 +90,23 @@ it('shows trial status, usage against limits and requests a plan', async () => {
     expect(calls).toContainEqual({
       path: '/api/workspace/subscription/request',
       method: 'POST',
-      body: { planId: 'starter' },
+      body: { planId: 'starter', billingPeriod: 'Monthly' },
     }),
   );
   expect(await screen.findByText('Pay by bank transfer.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('radio', { name: /Yearly/ }));
+  expect(screen.getByText(/25,000.00 per year/)).toBeInTheDocument();
+  expect(screen.getByText(/You save PKR.5,000.00/)).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Choose Starter yearly' }),
+  );
+  await waitFor(() =>
+    expect(calls).toContainEqual({
+      path: '/api/workspace/subscription/request',
+      method: 'POST',
+      body: { planId: 'starter', billingPeriod: 'Yearly' },
+    }),
+  );
 });
 
 it('lists onboarding steps with links until they are done', async () => {
