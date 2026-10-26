@@ -1,47 +1,49 @@
 # Gas365
 
-Gas365 is a planned multi-tenant LPG operations platform for retailers and distributors in Pakistan. It covers LPG, cylinders, spare parts, purchasing, sales, credit, cash and profitability.
+Gas365 is a multi-tenant SaaS platform for LPG retailers and distributors. One business can run several branches from one place: gas and cylinder stock, purchasing, sales, customer credit, cash and reports. The whole app is available in English and Urdu.
 
-Gas365 covers the full LPG business cycle: verified sign-in with tenant and branch permissions; inventory with weighted-average costing; purchasing; sales, exchanges and cylinder custody with deposits; credit (udhaar), expenses, loans and cash registers; reconciled reports with CSV, Excel and PDF exports and a dashboard; validated Excel/CSV imports and opening balances; alerts and an audit and corrections explorer; subscriptions with owner-approved support access; and a hardened, portable deployment. The functional MVP (Phases 00–08) and Phases 09–11 are implemented and locally verified. See [project state](PROJECT_STATE.md) for the current checkpoint.
+## What it handles
 
-## Run locally
+| Area | What the app does |
+|---|---|
+| **Businesses, branches and staff** | Each business has its own isolated workspace, branches and team. Roles and permissions decide what each person can see and do, branch by branch. |
+| **Catalog and inventory** | LPG by kilogram, cylinders and spare parts across several warehouses. Stock moves, transfers and adjustments are recorded in a ledger with weighted-average costing. |
+| **Purchasing** | Suppliers, multi-line purchase receipts, transport costs spread across the goods, supplier payments and supplier balances, with PDF vouchers. |
+| **Sales and cylinders** | Price lists, refills, full cylinders, exchanges and cylinder loans with deposits. Every customer cylinder is tracked, and every sale gets a receipt. |
+| **Credit (udhaar), cash and expenses** | Customer and supplier balances, overdue credit, daily cash-register sessions, bank accounts, expenses, owner funds and loans. |
+| **Reports and dashboard** | Sales, profit, stock value, credit aging, supplier payables and cylinder custody. Every report can be exported to CSV, Excel or PDF, and every total ties back to the underlying records. |
+| **Imports and audit** | Excel and CSV imports for opening stock and balances, in-app alerts, a full audit timeline, and corrections made by reversal instead of editing history. |
+| **Subscriptions** | Three plans with branch and user limits, a free trial, monthly or yearly billing, and owner-approved support access. |
 
-With Docker's Linux engine and Node installed, run `node scripts/bootstrap.mjs`, then open [localhost:8080](http://localhost:8080). The script creates local credentials and waits for healthy services. See [local development](docs/LOCAL_DEVELOPMENT.md) for exact tools, hot reload, tests and migrations.
+## How it is built
 
-## Project documentation
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, TanStack Query and React Router. Responsive on desktop and mobile, with a right-to-left Urdu layout.
+- **Backend:** ASP.NET Core Web API (.NET 10) with Entity Framework Core, built as a modular monolith (Domain, Application, Infrastructure and API layers).
+- **Database:** PostgreSQL. Every business's data is separated by tenant, and the server calculates every amount.
+- **Security:** cookie-based sign-in with CSRF protection, Google sign-in, permission checks on every request, and an audit log of every change.
+- **Testing:** xUnit unit, integration and architecture tests, and Playwright end-to-end tests.
+- **DevOps:** Docker Compose, GitHub Actions CI, and Caddy for HTTPS.
 
-- [Project state and next step](PROJECT_STATE.md)
-- [Combined phase history and new-chat handoff](docs/PHASE_HISTORY.md)
-- [Source inventory and workflow gaps](docs/SOURCE_INVENTORY.md)
-- [Requirement traceability](docs/REQUIREMENTS.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Architecture decisions](docs/adr/README.md)
-- [Prioritized backlog](docs/BACKLOG.md)
-- [MVP boundary](docs/SCOPE.md)
-- [Risks and open decisions](docs/RISKS.md)
-- [Repository conventions](docs/CONVENTIONS.md)
-- [Phase 00 verification](docs/PHASE_00_REPORT.md)
-- [Phase 01 verification](docs/PHASE_01_REPORT.md)
-- [Phase 02 verification](docs/PHASE_02_REPORT.md)
-- [Phase 03 verification](docs/PHASE_03_REPORT.md)
-- [Phase 04 checkpoint](docs/PHASE_04_REPORT.md)
-- [Phase 05 checkpoint](docs/PHASE_05_REPORT.md)
-- [Purchasing and supplier contracts](docs/PURCHASING.md)
-- [Inventory rules and API contracts](docs/INVENTORY.md)
-- [Design system and application shell](docs/DESIGN_SYSTEM.md)
-- [Sales, cylinders and receipts](docs/SALES.md)
-- [Credit, expenses, loans and cash registers](docs/FINANCE.md)
-- [Reports, dashboard and exports](docs/REPORTS.md)
-- [Imports, opening balances, notifications and audit](docs/OPERATIONS.md)
-- [Subscriptions, onboarding and platform administration](docs/PLATFORM.md)
-- [Deployment runbook](docs/DEPLOYMENT.md)
-- [Launch readiness](docs/LAUNCH_READINESS.md)
-- Phase reports: [06](docs/PHASE_06_REPORT.md), [07](docs/PHASE_07_REPORT.md), [08](docs/PHASE_08_REPORT.md), [09](docs/PHASE_09_REPORT.md), [10](docs/PHASE_10_REPORT.md), [11](docs/PHASE_11_REPORT.md)
-- [Controlled phase prompts](prompts/PHASE_PROMPTS.md)
-- [Master prompt](00_MASTER_PROMPT.md)
+## Run it locally
 
-## Stack
+You need Docker and Node.js. Run:
 
-React, TypeScript and Vite; ASP.NET Core Web API and EF Core; PostgreSQL; Docker Compose; GitHub Actions. Versions are pinned in runtime files, package manifests, lockfiles and Dockerfiles.
+```bash
+node scripts/bootstrap.mjs
+```
 
-Original workbooks, screenshots and the supplied development pack remain local and excluded from Git. Repository documentation contains workflow descriptions, not customer records or copied third-party assets.
+Then open [localhost:8080](http://localhost:8080). The script creates local credentials and starts the database, API and web app. See [local development](docs/LOCAL_DEVELOPMENT.md) for tests, hot reload and database migrations.
+
+## Repository layout
+
+```
+apps/web/     React frontend
+src/          ASP.NET Core API, application, domain and infrastructure layers
+tests/        Unit, integration, architecture and end-to-end tests
+deploy/       Production Docker Compose and deployment files
+docs/         Technical documentation
+```
+
+## Author
+
+Built by [Waqar Ahmed Khan](https://github.com/Waqarahmedkhan96).
